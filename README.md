@@ -48,6 +48,8 @@ To check the realistic setting, where the app already has some of a user's histo
 
 - The yes/no deload alert beats persistence, and unlike persistence it gives a probability (AUC 0.76), so the alert threshold can be tuned.
 - On the 3-class task the model ties persistence: the 95% bootstrap interval for the macro-F1 difference is [-0.072, +0.050]. During exploration the model looked 0.05 ahead in this setting; the locked test did not confirm it.
+- **Confident alerts.** Using the threshold chosen on the early 80% (`experiments/explore_more.py`), the alert is confident (probability at least 0.65 either way) on 51% of the locked days, and right on 77.2% of those, against 75.8% for persistence on the same days and 65.7% for the model on the remaining days. In exploration this looked like 85%; the locked test did not confirm it. This was the locked set's second use, stated here for that reason.
+- Also tried and dropped in round two: readiness and fatigue from the previous two days and their trend (no gain), and weighting each person's own history three times (about one point of accuracy, within noise).
 - Training-load features from `srpe.csv` (acute:chronic workload ratio), personal-baseline deviations, recent injuries and tomorrow's weekday were tried during exploration and did not help, so they are not used.
 
 Selected model, per class:

@@ -46,6 +46,15 @@
       "accuracy": 0.6986,
       "f1": 0.6271
     },
-    "base_rate": 0.411
+    "base_rate": 0.411,
+    "confident_alerts": {
+      "threshold": 0.65,
+      "coverage": 0.5103,
+      "days": 149,
+      "model_accuracy": 0.7718,
+      "persistence_accuracy_same_days": 0.7584,
+      "model_accuracy_other_days": 0.6573,
+      "note": "Second use of the locked set; threshold chosen on the early 80% only."
+    }
   }
 }

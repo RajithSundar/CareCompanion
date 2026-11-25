@@ -22,6 +22,11 @@ from extra_features import split_by_time  # noqa: E402
 
 OUT = Path(__file__).resolve().parents[1] / "models" / "holdout_metrics.json"
 
+# Chosen on the early 80% in explore_more.py, fixed before this script's second run.
+# The locked set was first used for the 3-class and plain binary results; the confident-alert
+# numbers below are its second use.
+CONFIDENT_AT = 0.65
+
 
 def main():
     df = T.add_next_day_target(T.engineer_features(T.load_raw_pmdata_if_available()))
@@ -63,6 +68,16 @@ def main():
         "model": {"accuracy": round(accuracy_score(yte_b, pb), 4), "f1": round(f1_score(yte_b, pb), 4), "auc": round(roc_auc_score(yte_b, proba), 4)},
         "persistence": {"accuracy": round(accuracy_score(yte_b, pers_b), 4), "f1": round(f1_score(yte_b, pers_b), 4)},
         "base_rate": round(float(yte_b.mean()), 4),
+    }
+    sure = (proba >= CONFIDENT_AT) | (proba <= 1 - CONFIDENT_AT)
+    res["binary_deload"]["confident_alerts"] = {
+        "threshold": CONFIDENT_AT,
+        "coverage": round(float(sure.mean()), 4),
+        "days": int(sure.sum()),
+        "model_accuracy": round(accuracy_score(yte_b[sure], pb[sure]), 4),
+        "persistence_accuracy_same_days": round(accuracy_score(yte_b[sure], pers_b[sure]), 4),
+        "model_accuracy_other_days": round(accuracy_score(yte_b[~sure], pb[~sure]), 4),
+        "note": "Second use of the locked set; threshold chosen on the early 80% only.",
     }
 
     # Bootstrap the 3-class macro-F1 difference (model - persistence) over test rows.
