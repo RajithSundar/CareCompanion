@@ -1,20 +1,58 @@
 """
-CareCompanion — Supervised ML Training Pipeline for PMData Fitbit + PMSys Dataset
-Trains and compares RandomForest, GradientBoosting, and LogisticRegression to predict
-daily recovery_state ('Ready', 'Moderate', 'Deload Needed') from Fitbit biometrics.
+CareCompanion: supervised training pipeline for next-day recovery forecasting.
+
+Task
+----
+Given the biometrics recorded for participant p on day t, predict the recovery
+state on day t+1 (Ready / Moderate / Deload Needed).
+
+Why a forecast?
+---------------
+The recovery_state label is itself a fixed rule on same-day readiness and fatigue
+(see `label_recovery_state`). Predicting the same day's label from biometrics only
+measures how well the model reproduces that rule. Predicting the next day's label
+asks whether today's biometrics carry information about tomorrow's state.
+
+Evaluation
+----------
+* Nested leave-one-participant-out (LOPO) validation. The outer loop holds out one
+  participant at a time. The inner loop tunes hyperparameters with grouped CV on the
+  remaining participants only, so the held-out participant never influences tuning.
+* Pooled out-of-fold predictions are scored with macro F1, per-class precision and
+  recall, a confusion matrix and a multi-class Brier score. Per-participant accuracy
+  shows the spread.
+* Baselines: majority class, and persistence (tomorrow = today's state).
+* Permutation importance is computed on each held-out participant and averaged.
+
+Leakage controls
+----------------
+* Rolling features use only the current and past days of the same participant.
+* Imputation sits inside the sklearn Pipeline, so it is fit on training folds only.
+* No feature is derived from readiness or fatigue, which define the labels.
+* Features the app does not store (sedentary and very-active minutes) are excluded,
+  so the trained model sees exactly the inputs the app can supply.
 """
 
 import json
-import os
+import platform
+from importlib.metadata import version as pkg_version
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.impute import SimpleImputer
+from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, f1_score
-from sklearn.model_selection import GroupShuffleSplit, StratifiedGroupKFold, cross_val_score
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_recall_fscore_support,
+)
+from sklearn.model_selection import GridSearchCV, GroupKFold, LeaveOneGroupOut
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -24,27 +62,46 @@ SAMPLE_CSV = BASE_DIR / "data" / "pmdata_sample.csv"
 MODELS_DIR = BASE_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
+TARGET = "next_day_recovery_state"
+CLASSES = ["Deload Needed", "Moderate", "Ready"]
+
+# Only features the app stores and can recompute from its day records.
 FEATURE_COLS = [
     "steps",
     "resting_heart_rate",
     "sleep_score",
     "deep_sleep_min",
     "rem_sleep_min",
-    "sedentary_min",
-    "very_active_min",
     "cardio_min",
     "peak_min",
     "rhr_delta",
     "sleep_3d_avg",
     "steps_3d_avg",
 ]
+RAW_REQUIRED = ["steps", "rem_sleep_min", "cardio_min", "peak_min"]
+
+
+def label_recovery_state(df: pd.DataFrame) -> pd.Series:
+    """Same-day rule used to create the labels. Kept explicit for the write-up."""
+    return pd.Series(
+        np.where(
+            (df["readiness"] >= 7) & (df["fatigue"] <= 3),
+            "Ready",
+            np.where((df["readiness"] <= 4) | (df["fatigue"] >= 4), "Deload Needed", "Moderate"),
+        ),
+        index=df.index,
+    )
 
 
 def load_raw_pmdata_if_available() -> pd.DataFrame | None:
-    """Ingest raw Kaggle PMData participant folders (p01..p16) if present."""
+    """Ingest raw Kaggle PMData participant folders (p01..p16) if present.
+
+    Raises instead of filling missing columns with constants, because a constant
+    fill would silently train the model on values that were never measured.
+    """
     if not RAW_DIR.exists():
         return None
-    participant_dirs = sorted([d for d in RAW_DIR.iterdir() if d.is_dir() and d.name.startswith("p")])
+    participant_dirs = sorted(d for d in RAW_DIR.iterdir() if d.is_dir() and d.name.startswith("p"))
     if not participant_dirs:
         return None
 
@@ -79,18 +136,15 @@ def load_raw_pmdata_if_available() -> pd.DataFrame | None:
         merged = wellness_df.merge(sleep_df[["date", "sleep_score", "deep_sleep_min"]], on="date", how="inner")
         merged = merged.merge(rhr_df, on="date", how="inner")
         merged["participant_id"] = pdir.name
-        for col, default in [
-            ("steps", 7500), ("rem_sleep_min", 85), ("sedentary_min", 650),
-            ("very_active_min", 20), ("cardio_min", 18), ("peak_min", 4)
-        ]:
-            if col not in merged.columns:
-                merged[col] = default
 
-        merged["recovery_state"] = np.where(
-            (merged["readiness"] >= 7) & (merged["fatigue"] <= 3),
-            "Ready",
-            np.where((merged["readiness"] <= 4) | (merged["fatigue"] >= 4), "Deload Needed", "Moderate"),
-        )
+        missing = [c for c in RAW_REQUIRED if c not in merged.columns]
+        if missing:
+            raise ValueError(
+                f"{pdir.name}: columns {missing} are not in the raw PMData export. "
+                "Add them to the loader from the matching Fitbit file, or drop them from FEATURE_COLS."
+            )
+
+        merged["recovery_state"] = label_recovery_state(merged)
         records.append(merged)
 
     if not records:
@@ -99,21 +153,85 @@ def load_raw_pmdata_if_available() -> pd.DataFrame | None:
 
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Per-participant rolling features. Each row uses only that day and earlier days."""
     df = df.sort_values(["participant_id", "date"]).reset_index(drop=True)
-    df["rhr_7d_baseline"] = (
-        df.groupby("participant_id")["resting_heart_rate"]
-        .transform(lambda s: s.rolling(7, min_periods=1).mean())
-    )
-    df["rhr_delta"] = df["resting_heart_rate"] - df["rhr_7d_baseline"]
-    df["sleep_3d_avg"] = (
-        df.groupby("participant_id")["sleep_score"]
-        .transform(lambda s: s.rolling(3, min_periods=1).mean())
-    )
-    df["steps_3d_avg"] = (
-        df.groupby("participant_id")["steps"]
-        .transform(lambda s: s.rolling(3, min_periods=1).mean())
-    )
+    grouped = df.groupby("participant_id")
+    # Same definitions as the app's build_biometrics_from_days, so training and serving agree.
+    df["rhr_7d_mean"] = grouped["resting_heart_rate"].transform(lambda s: s.rolling(7, min_periods=1).mean())
+    df["rhr_delta"] = df["resting_heart_rate"] - df["rhr_7d_mean"]
+    df["sleep_3d_avg"] = grouped["sleep_score"].transform(lambda s: s.rolling(3, min_periods=1).mean())
+    df["steps_3d_avg"] = grouped["steps"].transform(lambda s: s.rolling(3, min_periods=1).mean())
     return df
+
+
+def add_next_day_target(df: pd.DataFrame) -> pd.DataFrame:
+    """Pair each day's features with the next day's state. Drops each participant's last day."""
+    df = df.copy()
+    grouped = df.groupby("participant_id")
+    df["today_state"] = df["recovery_state"]
+    df[TARGET] = grouped["recovery_state"].shift(-1)
+    # Only keep rows where the next calendar day exists in the data.
+    next_date = grouped["date"].shift(-1)
+    df["next_date"] = next_date
+    consecutive = pd.to_datetime(df["next_date"]) - pd.to_datetime(df["date"]) == pd.Timedelta(days=1)
+    return df[df[TARGET].notna() & consecutive].reset_index(drop=True)
+
+
+def make_candidates():
+    """Each candidate: a pipeline plus the grid searched inside every training fold."""
+    return {
+        "RandomForest": (
+            Pipeline([
+                ("impute", SimpleImputer(strategy="median")),
+                ("clf", RandomForestClassifier(n_estimators=200, random_state=42, class_weight="balanced")),
+            ]),
+            {"clf__max_depth": [4, 8, None], "clf__min_samples_leaf": [1, 5]},
+        ),
+        "GradientBoosting": (
+            Pipeline([
+                ("impute", SimpleImputer(strategy="median")),
+                ("clf", GradientBoostingClassifier(n_estimators=150, random_state=42)),
+            ]),
+            {"clf__learning_rate": [0.03, 0.06], "clf__max_depth": [2, 4]},
+        ),
+        "LogisticRegression": (
+            Pipeline([
+                ("impute", SimpleImputer(strategy="median")),
+                ("scale", StandardScaler()),
+                ("clf", LogisticRegression(max_iter=2000, class_weight="balanced")),
+            ]),
+            {"clf__C": [0.1, 1.0, 10.0]},
+        ),
+    }
+
+
+def tune(pipe, grid, X, y, groups):
+    """Inner grouped CV. Returns a fitted GridSearchCV on the given rows only."""
+    n_groups = len(np.unique(groups))
+    inner = GroupKFold(n_splits=min(3, n_groups))
+    search = GridSearchCV(pipe, grid, cv=inner, scoring="f1_macro", n_jobs=1)
+    search.fit(X, y, groups=groups)
+    return search
+
+
+def brier_multiclass(y_true, proba, classes):
+    onehot = np.array([[1.0 if t == c else 0.0 for c in classes] for t in y_true])
+    return float(np.mean(np.sum((proba - onehot) ** 2, axis=1)))
+
+
+def summarise(y_true, y_pred, classes):
+    p, r, f, support = precision_recall_fscore_support(y_true, y_pred, labels=classes, zero_division=0)
+    per_class = {
+        c: {"precision": round(float(p[i]), 4), "recall": round(float(r[i]), 4),
+            "f1": round(float(f[i]), 4), "support": int(support[i])}
+        for i, c in enumerate(classes)
+    }
+    return {
+        "accuracy": round(float(accuracy_score(y_true, y_pred)), 4),
+        "macro_f1": round(float(f1_score(y_true, y_pred, labels=classes, average="macro", zero_division=0)), 4),
+        "per_class": per_class,
+        "confusion_matrix": confusion_matrix(y_true, y_pred, labels=classes).tolist(),
+    }
 
 
 def main():
@@ -125,92 +243,120 @@ def main():
     else:
         print(f"Using PMData-schema sample dataset: {SAMPLE_CSV}")
         df = pd.read_csv(SAMPLE_CSV)
+        df["recovery_state"] = label_recovery_state(df)
         dataset_source = "PMData-Schema Sample (480 rows, 16 participants)"
 
-    df = engineer_features(df)
-    X = df[FEATURE_COLS].fillna(df[FEATURE_COLS].median())
-    y = df["recovery_state"]
-    groups = df["participant_id"]
+    df = add_next_day_target(engineer_features(df))
+    X = df[FEATURE_COLS]
+    y = df[TARGET]
+    today = df["today_state"]
+    groups = df["participant_id"].to_numpy()
+    classes = CLASSES
+    print(f"Forecast rows: {len(df)} across {len(np.unique(groups))} participants")
 
-    # Group split by participant_id to prevent rolling-window leakage across adjacent days
-    gss = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-    train_idx, test_idx = next(gss.split(X, y, groups=groups))
-    X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-    y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
-    groups_train = groups.iloc[train_idx]
+    logo = LeaveOneGroupOut()
+    folds = list(logo.split(X, y, groups))
+    candidates = make_candidates()
 
-    candidates = {
-        "RandomForest": RandomForestClassifier(
-            n_estimators=200, max_depth=8, random_state=42, class_weight="balanced"
-        ),
-        "GradientBoosting": GradientBoostingClassifier(
-            n_estimators=150, learning_rate=0.06, max_depth=4, random_state=42
-        ),
-        "LogisticRegression": Pipeline([
-            ("scaler", StandardScaler()),
-            ("clf", LogisticRegression(max_iter=1000, class_weight="balanced", random_state=42)),
-        ]),
-    }
+    # ----- Nested LOPO evaluation -----
+    oof = {name: np.empty(len(y), dtype=object) for name in candidates}
+    oof_proba = {name: np.zeros((len(y), len(classes))) for name in candidates}
+    chosen_params = {name: [] for name in candidates}
+    perm_rows = {name: [] for name in candidates}
+    majority_pred = np.empty(len(y), dtype=object)
 
-    cv = StratifiedGroupKFold(n_splits=5)
+    for fold_i, (tr, te) in enumerate(folds, start=1):
+        held_out = np.unique(groups[te])[0]
+        print(f"[fold {fold_i}/{len(folds)}] held out {held_out}")
+        dummy = DummyClassifier(strategy="most_frequent").fit(X.iloc[tr], y.iloc[tr])
+        majority_pred[te] = dummy.predict(X.iloc[te])
+        for name, (pipe, grid) in candidates.items():
+            search = tune(pipe, grid, X.iloc[tr], y.iloc[tr], groups[tr])
+            best = search.best_estimator_
+            chosen_params[name].append(search.best_params_)
+            oof[name][te] = best.predict(X.iloc[te])
+            proba = best.predict_proba(X.iloc[te])
+            order = [list(best.classes_).index(c) for c in classes]
+            oof_proba[name][te] = proba[:, order]
+            pi = permutation_importance(
+                best, X.iloc[te], y.iloc[te], scoring="f1_macro", n_repeats=5, random_state=42
+            )
+            perm_rows[name].append(pi.importances_mean)
+
     comparison = []
-    best_name, best_model, best_cv_f1 = None, None, -1.0
-
-    for name, model in candidates.items():
-        cv_f1 = cross_val_score(
-            model, X_train, y_train, groups=groups_train, cv=cv, scoring="f1_weighted"
-        ).mean()
-        model.fit(X_train, y_train)
-        preds = model.predict(X_test)
-        test_acc = accuracy_score(y_test, preds)
-        test_f1 = f1_score(y_test, preds, average="weighted")
+    for name in candidates:
+        summary = summarise(y, oof[name], classes)
+        per_part = [
+            accuracy_score(y.iloc[te], oof[name][te]) for _, te in folds
+        ]
         comparison.append({
             "model": name,
-            "cv_f1_weighted": round(float(cv_f1), 4),
-            "test_accuracy": round(float(test_acc), 4),
-            "test_f1_weighted": round(float(test_f1), 4),
+            **summary,
+            "brier": round(brier_multiclass(y.to_numpy(), oof_proba[name], classes), 4),
+            "per_participant_accuracy_mean": round(float(np.mean(per_part)), 4),
+            "per_participant_accuracy_std": round(float(np.std(per_part)), 4),
+            "chosen_params_per_fold": chosen_params[name],
         })
-        print(f"[{name}] 5-Fold Group CV F1={cv_f1:.4f} | Test Acc={test_acc:.4f} | Test F1={test_f1:.4f}")
-        if cv_f1 > best_cv_f1:
-            best_cv_f1 = cv_f1
-            best_name = name
-            best_model = model
 
-    print(f"\nSelected Best Model: {best_name} (5-Fold Group CV F1={best_cv_f1:.4f})")
-    print(classification_report(y_test, best_model.predict(X_test)))
+    baselines = {
+        "majority_class": summarise(y, majority_pred, classes),
+        "persistence_today_state": summarise(y, today.to_numpy(), classes),
+    }
+    print(json.dumps({"comparison": [(c["model"], c["macro_f1"]) for c in comparison], "baselines": {k: v["macro_f1"] for k, v in baselines.items()}}, indent=2))
 
-    # Extract feature importances
-    importances = {}
-    if hasattr(best_model, "feature_importances_"):
-        for col, imp in zip(FEATURE_COLS, best_model.feature_importances_):
-            importances[col] = round(float(imp), 4)
-    elif hasattr(best_model, "named_steps"):
-        coef = np.abs(best_model.named_steps["clf"].coef_).mean(axis=0)
-        coef_norm = coef / (coef.sum() + 1e-9)
-        for col, imp in zip(FEATURE_COLS, coef_norm):
-            importances[col] = round(float(imp), 4)
+    best_row = max(comparison, key=lambda c: c["macro_f1"])
+    best_name = best_row["model"]
+    print(f"\nSelected by pooled LOPO macro F1: {best_name} ({best_row['macro_f1']:.4f})")
 
-    importances = dict(sorted(importances.items(), key=lambda kv: kv[1], reverse=True))
+    # ----- Permutation importance, averaged across held-out participants -----
+    pi_mean = np.mean(np.vstack(perm_rows[best_name]), axis=0)
+    pi_std = np.std(np.vstack(perm_rows[best_name]), axis=0)
+    importances = {
+        col: {"mean": round(float(m), 4), "std": round(float(s), 4)}
+        for col, m, s in sorted(zip(FEATURE_COLS, pi_mean, pi_std), key=lambda t: -t[1])
+    }
 
+    # ----- Final model: tune on all data, then fit -----
+    pipe, grid = candidates[best_name]
+    final = tune(pipe, grid, X, y, groups).best_estimator_
     artifact = {
-        "model": best_model,
+        "model": final,
         "model_name": best_name,
+        "target": TARGET,
+        "horizon_days": 1,
         "feature_cols": FEATURE_COLS,
-        "classes": list(best_model.classes_),
+        "classes": classes,
     }
     joblib.dump(artifact, MODELS_DIR / "readiness_model.joblib")
 
-    metrics_payload = {
+    metrics = {
+        "task": "Next-day recovery state forecast",
         "dataset_source": dataset_source,
-        "total_rows": int(len(df)),
+        "rows": int(len(df)),
+        "participants": int(len(np.unique(groups))),
+        "label_rule": "Ready if readiness>=7 and fatigue<=3; Deload Needed if readiness<=4 or fatigue>=4; else Moderate. Labels are rule-based, not clinical ground truth.",
+        "validation": "Nested leave-one-participant-out. Inner grouped 3-fold CV tunes hyperparameters per outer fold.",
         "selected_model": best_name,
+        "selection_metric": "macro_f1 (pooled out-of-fold)",
+        "class_counts": {c: int(v) for c, v in y.value_counts().reindex(classes, fill_value=0).items()},
         "comparison": comparison,
+        "baselines": baselines,
+        "selected_per_class": comparison[[c["model"] for c in comparison].index(best_name)]["per_class"],
         "feature_importances": importances,
+        "feature_importance_method": "permutation (macro F1 drop) on each held-out participant, mean and std across participants",
+        "excluded_features": ["sedentary_min", "very_active_min"],
+        "excluded_reason": "The app does not store these fields, so the model is trained only on inputs the app can supply.",
+        "calibration": "Not calibrated. Brier score is reported so probabilities can be judged.",
+        "library_versions": {
+            "python": platform.python_version(),
+            **{p: pkg_version(p) for p in ["scikit-learn", "pandas", "numpy", "joblib"]},
+        },
     }
     with open(MODELS_DIR / "model_metrics.json", "w", encoding="utf-8") as f:
-        json.dump(metrics_payload, f, indent=2)
+        json.dump(metrics, f, indent=2)
 
     print(f"Saved model to {MODELS_DIR / 'readiness_model.joblib'}")
+    print(f"Saved metrics to {MODELS_DIR / 'model_metrics.json'}")
 
 
 if __name__ == "__main__":

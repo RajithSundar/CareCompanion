@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Longitudinal Fitbit biometric telemetry, supervised recovery classification, and persistent multi-session health coaching." />
+  <meta name="theme-color" content="#FFFFFF" />
+  <meta name="description" content="Longitudinal Fitbit biometric telemetry, a supervised next-day recovery forecast, and persistent multi-session coaching. Demo project." />
   <title>CareCompanion: Longitudinal Biometric Health Coach</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Host+Grotesk:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/fonts/fonts.css" />
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
   <script>
     tailwind.config = {
+      future: { hoverOnlyWhenSupported: true },
       theme: {
         extend: {
           fontFamily: {
@@ -20,23 +20,23 @@
             mono: ['"Atkinson Hyperlegible Mono"', 'ui-monospace', 'monospace']
           },
           colors: {
-            paper: '#090C08',
-            'paper-2': '#121710',
-            'paper-3': '#060805',
-            ink: '#F4F6F3',
-            'ink-2': '#D5DDD2',
-            muted: '#98A494',
-            rule: '#222B1F',
-            'rule-2': '#344230',
-            accent: '#F1D246',
-            'accent-ink': '#090C08',
-            'accent-soft': '#24200C',
-            cool: '#3E92CC',
-            'cool-soft': '#0F2230',
-            ok: '#68B984',
-            'ok-soft': '#102116',
-            bad: '#DF6D5A',
-            'bad-soft': '#261411'
+            'paper': 'var(--color-paper)',
+            'paper-2': 'var(--color-paper-2)',
+            'paper-3': 'var(--color-paper-3)',
+            'ink': 'var(--color-ink)',
+            'ink-2': 'var(--color-ink-2)',
+            'muted': 'var(--color-muted)',
+            'rule': 'var(--color-rule)',
+            'rule-2': 'var(--color-rule-2)',
+            'accent': 'var(--color-accent)',
+            'accent-ink': 'var(--color-accent-ink)',
+            'accent-soft': 'var(--color-accent-soft)',
+            'cool': 'var(--color-cool)',
+            'cool-soft': 'var(--color-cool-soft)',
+            'ok': 'var(--color-ok)',
+            'ok-soft': 'var(--color-ok-soft)',
+            'bad': 'var(--color-bad)',
+            'bad-soft': 'var(--color-bad-soft)'
           }
         }
       }
@@ -46,20 +46,24 @@
     /* Hallmark · shape: Workbench · genre: modern-minimal · theme: console · console: graphite · hero: Stage · posture: restrained · surface: absolute · nav: edge-aligned · footer: colophon · v2.0.0 */
     /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, multi-panel clinical system; unified all surfaces into 1px hairline Console grids with zero floating cards */
     :root {
-      --color-paper: #090C08;
-      --color-paper-2: #121710;
-      --color-paper-3: #060805;
-      --color-ink: #F4F6F3;
-      --color-ink-2: #D5DDD2;
-      --color-muted: #98A494;
-      --color-rule: #222B1F;
-      --color-rule-2: #344230;
-      --color-accent: #F1D246;
-      --color-accent-ink: #090C08;
-      --color-accent-soft: #24200C;
-      --color-cool: #3E92CC;
-      --color-cool-soft: #0F2230;
-      --color-focus: #F1D246;
+      --color-paper: #FFFFFF;
+      --color-paper-2: #F7F5F4;
+      --color-paper-3: #FBFAF9;
+      --color-ink: #1B1B1D;
+      --color-ink-2: #3A3A3E;
+      --color-muted: #6B6B70;
+      --color-rule: #ECE8E5;
+      --color-rule-2: #D6CFCA;
+      --color-accent: #C62828;
+      --color-accent-ink: #FFFFFF;
+      --color-accent-soft: #FBE9E9;
+      --color-cool: #2D5F7E;
+      --color-cool-soft: #E7EEF3;
+      --color-ok: #2E7D4F;
+      --color-ok-soft: #E7F3EC;
+      --color-bad: #C62828;
+      --color-bad-soft: #FBE9E9;
+      --color-focus: #C62828;
       --font-display: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
       --font-body: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
       --font-outlier: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
@@ -79,6 +83,27 @@
       --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
       --container: 1360px;
       --gutter: 32px;
+    }
+
+    :root[data-theme="dark"] {
+      --color-paper: #0F1011;
+      --color-paper-2: #17191B;
+      --color-paper-3: #0A0B0C;
+      --color-ink: #F5F5F4;
+      --color-ink-2: #D6D6D3;
+      --color-muted: #9A9A96;
+      --color-rule: #26282A;
+      --color-rule-2: #3A3D40;
+      --color-accent: #FF6B6B;
+      --color-accent-ink: #0F1011;
+      --color-accent-soft: #2C1516;
+      --color-cool: #7FB3D5;
+      --color-cool-soft: #13232E;
+      --color-ok: #6FC48F;
+      --color-ok-soft: #112419;
+      --color-bad: #FF8A80;
+      --color-bad-soft: #2D1614;
+      --color-focus: #FF6B6B;
     }
 
     html {
@@ -187,8 +212,15 @@
     }
 
     .btn-transition {
-      transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
+      transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), transform 120ms var(--ease-out);
     }
+    .btn-transition:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+
+    html { -webkit-tap-highlight-color: transparent; }
+    a, button, select, [role="button"] { touch-action: manipulation; }
+    button, [role="button"] { -webkit-user-select: none; user-select: none; }
 
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
@@ -213,10 +245,11 @@
         </a>
 
         <nav aria-label="Primary sections" class="hidden md:flex items-center gap-5 text-sm">
-          <a href="#telemetry" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Telemetry</a>
+          <a href="#forecast" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Forecast</a>
           <a href="#coach" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Coach</a>
           <a href="#checkin" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Check-in</a>
           <a href="#memory" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Memory</a>
+          <a href="#telemetry" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Data</a>
         </nav>
       </div>
 
@@ -231,9 +264,11 @@
           </select>
         </div>
 
+        <button id="themeToggleBtn" type="button" aria-pressed="false" class="inline-flex items-center px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">Dark mode</button>
+
         <button id="openApiModalBtn" type="button" class="inline-flex items-center gap-2 px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
           <i data-lucide="key-round" class="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true"></i>
-          <span id="apiStatusLabel">Local ML Engine</span>
+          <span id="apiStatusLabel">No LLM configured</span>
         </button>
       </div>
     </div>
@@ -243,29 +278,68 @@
     <!-- =================================================================== -->
     <!-- STAGE HERO: LIVE SESSION AUDIT INSTRUMENT                           -->
     <!-- =================================================================== -->
-    <section id="hero" class="border-b border-rule py-10 lg:py-16">
-      <div class="shell grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-        <!-- Left 5 Columns: Proposition & Actions -->
-        <div class="lg:col-span-5 space-y-5">
-          <h1 class="text-4xl sm:text-5xl text-ink">Coaching that remembers your last session.</h1>
-          <p class="text-lg text-ink-2 max-w-[44ch]">
-            Fitbit telemetry and recovery classification that adapt coaching across every session.
-          </p>
-          <div class="flex flex-wrap items-center gap-3 pt-1">
-            <button type="button" id="jumpToCoachBtn" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">
-              Open live coach
-            </button>
-            <a href="#checkin" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-paper-2 border border-rule-2 hover:border-cool text-ink text-sm font-medium whitespace-nowrap btn-transition">
-              Log check-in
-            </a>
-          </div>
-          <p id="overviewAdaptation" class="text-sm text-muted max-w-[48ch]">
-            Captured half-marathon goal, morning preference, and left knee Peak HR cap.
+    <section id="hero" class="border-b border-rule py-16 lg:py-24">
+      <div class="shell max-w-3xl space-y-6">
+        <h1 class="text-4xl sm:text-5xl text-ink">A coach that remembers your last session.</h1>
+        <p class="text-lg text-ink-2 max-w-[52ch]">
+          CareCompanion turns a day of Fitbit numbers into a forecast for tomorrow, and keeps the goals you set in earlier sessions.
+        </p>
+        <div class="flex flex-wrap items-center gap-3 pt-1">
+          <button type="button" id="jumpToCoachBtn" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">
+            Talk to the coach
+          </button>
+          <a href="#checkin" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-paper-2 border border-rule-2 hover:border-accent text-ink text-sm font-medium whitespace-nowrap btn-transition">
+            Log a check-in
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="explore" class="border-b border-rule py-12 lg:py-16">
+      <div class="shell space-y-6">
+        <h2 class="text-2xl text-ink">Where to go</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <a href="#forecast" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
+            <i data-lucide="activity" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
+            <h3 class="text-base font-medium text-ink">Forecast</h3>
+            <p class="mt-1 text-sm text-muted">Tomorrow's likely recovery state for each sample athlete.</p>
+          </a>
+          <a href="#coach" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
+            <i data-lucide="message-square" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
+            <h3 class="text-base font-medium text-ink">Coach</h3>
+            <p class="mt-1 text-sm text-muted">Ask a question. Answers use the forecast and saved memories.</p>
+          </a>
+          <a href="#checkin" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
+            <i data-lucide="clipboard-list" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
+            <h3 class="text-base font-medium text-ink">Check-in</h3>
+            <p class="mt-1 text-sm text-muted">Log steps, heart rate, sleep, and how you feel today.</p>
+          </a>
+          <a href="#memory" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
+            <i data-lucide="brain" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
+            <h3 class="text-base font-medium text-ink">Memory</h3>
+            <p class="mt-1 text-sm text-muted">Goals and constraints the coach keeps across sessions.</p>
+          </a>
+          <a href="#telemetry" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
+            <i data-lucide="bar-chart-3" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
+            <h3 class="text-base font-medium text-ink">Data</h3>
+            <p class="mt-1 text-sm text-muted">Trends, the day-by-day ledger, and model comparison.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="forecast" class="border-b border-rule py-16 lg:py-24">
+      <div class="shell space-y-8">
+        <div class="max-w-2xl space-y-3">
+          <h2 class="text-3xl text-ink">Tomorrow's forecast</h2>
+          <p id="overviewAdaptation" class="text-ink-2"></p>
+          <p class="text-sm text-muted">
+            The model is a demo. It does not yet beat a simple "tomorrow equals today" baseline. The comparison is in <a href="#telemetry" class="text-cool underline underline-offset-4">Data</a>.
           </p>
         </div>
-
         <!-- Right 7 Columns: Signature Live Session Telemetry Audit Panel -->
-        <div class="lg:col-span-7">
+        <div class="space-y-3 max-w-4xl">
+          <p class="text-xs text-muted">A live example for the selected athlete. Switch athletes in the header.</p>
           <div class="panels">
             <!-- Panel Header -->
             <div class="p-4 sm:px-5 flex flex-wrap items-center justify-between gap-2">
@@ -315,8 +389,8 @@
             <!-- Classifier & Attribution Footer -->
             <div class="grid grid-cols-1 sm:grid-cols-12 divide-y sm:divide-y-0 sm:divide-x divide-rule bg-paper-3">
               <div class="sm:col-span-4 p-4">
-                <div class="text-xs text-muted mb-1">ML recovery state</div>
-                <div id="mlPredClass" class="text-base font-medium text-cool">Moderate</div>
+                <div class="text-xs text-muted mb-1">Next-day forecast</div>
+                <div id="mlPredClass" class="text-base font-medium text-muted">Loading forecast</div>
               </div>
               <div class="sm:col-span-8 p-4">
                 <div class="text-xs text-muted mb-1.5">Class probabilities</div>
@@ -335,7 +409,7 @@
       <div class="shell space-y-8">
         <div class="flex flex-wrap items-end justify-between gap-4">
           <div class="space-y-2 max-w-xl">
-            <h2 class="text-3xl sm:text-4xl text-ink">Ten days of biometrics, classified live.</h2>
+            <h2 class="text-3xl sm:text-4xl text-ink">Ten days of biometrics, with a live next-day forecast.</h2>
             <p class="text-base text-muted">Rolling 3-day sleep and step averages paired with 7-day resting heart rate deltas feed the scikit-learn recovery model.</p>
           </div>
 
@@ -374,11 +448,11 @@
             </div>
           </div>
 
-          <!-- ML Feature Drivers & Group CV Comparison -->
+          <!-- Forecast feature drivers & leave-one-participant-out comparison -->
           <div class="lg:col-span-5 panels">
             <div class="p-5 space-y-4">
               <div class="flex items-center justify-between gap-2">
-                <h3 class="text-lg text-ink">Supervised ML feature drivers</h3>
+                <h3 class="text-lg text-ink">Forecast feature drivers</h3>
                 <span id="modelNameBadge" class="px-2.5 py-1 rounded text-xs font-medium bg-cool-soft text-cool border border-rule-2">RandomForest</span>
               </div>
               <p class="text-xs text-muted">
@@ -388,7 +462,7 @@
             </div>
 
             <div class="p-5 bg-paper-3 space-y-3">
-              <div class="text-xs font-medium text-ink-2">5-Fold Group CV benchmark (grouped by participant)</div>
+              <div class="text-xs font-medium text-ink-2">Leave-one-participant-out benchmark (macro F1, out-of-fold)</div>
               <div id="modelComparisonGrid" class="grid grid-cols-3 gap-2 text-center"></div>
             </div>
           </div>
@@ -454,7 +528,7 @@
               <div id="quickPrompts" class="flex flex-wrap items-center gap-2"></div>
               <form id="chatForm" class="flex items-center gap-2.5">
                 <label for="chatInput" class="sr-only">Message CareCompanion</label>
-                <input id="chatInput" type="text" placeholder="Ask CareCompanion using live ML classification and session memory..." class="flex-1 h-10 bg-paper-2 border border-rule-2 rounded-md px-3.5 text-sm text-ink placeholder:text-muted focus:outline-none" />
+                <input id="chatInput" type="text" placeholder="Ask CareCompanion, grounded in the next-day forecast and session memory..." class="flex-1 h-10 bg-paper-2 border border-rule-2 rounded-md px-3.5 text-sm text-ink placeholder:text-muted focus:outline-none" />
                 <button id="sendChatBtn" type="submit" aria-label="Send message" class="inline-flex items-center justify-center px-4 h-10 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap shrink-0 btn-transition">
                   <i data-lucide="send" class="w-4 h-4" aria-hidden="true"></i>
                 </button>
@@ -472,7 +546,7 @@
       <div class="shell space-y-8">
         <div class="space-y-2 max-w-xl">
           <h2 class="text-3xl sm:text-4xl text-ink">Record today’s biometrics or import a block.</h2>
-          <p class="text-base text-muted">Changes persist on the backend, recompute rolling features, and update the ML recovery classifier immediately.</p>
+          <p class="text-base text-muted">Changes persist on the backend, recompute rolling features, and refresh the next-day forecast immediately.</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -594,7 +668,7 @@
             <div class="panels">
               <div class="p-5 space-y-3">
                 <h3 class="text-lg text-ink">Export clinical and coaching record</h3>
-                <p class="text-xs text-muted">Download the longitudinal biometric ledger, ML classifications, session transcripts, and memory graph.</p>
+                <p class="text-xs text-muted">Download the longitudinal biometric ledger, model forecasts, session transcripts, and memory graph.</p>
                 <div class="flex flex-wrap gap-3 pt-1">
                   <button id="exportReportBtn" type="button" class="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap btn-transition">
                     <i data-lucide="file-json" class="w-4 h-4" aria-hidden="true"></i>
@@ -616,7 +690,7 @@
   <!-- Colophon Footer -->
   <footer class="border-t border-rule py-8 bg-paper-3">
     <div class="shell flex flex-wrap items-center justify-between gap-4 text-xs text-muted">
-      <span>CareCompanion longitudinal coaching engine grounded in PMData Fitbit telemetry and scikit-learn recovery classification.</span>
+      <span>CareCompanion longitudinal coaching engine grounded in PMData-schema Fitbit telemetry and a scikit-learn next-day forecast. Demo project.</span>
       <div class="flex items-center gap-4">
         <a href="#telemetry" class="hover:text-ink whitespace-nowrap">Telemetry</a>
         <a href="#coach" class="hover:text-ink whitespace-nowrap">Coach</a>
@@ -640,14 +714,14 @@
           </button>
         </div>
         <p class="text-xs text-muted">
-          Server environment uses <code class="measured text-cool">.env</code> when configured. You may also override with an <strong class="text-ink font-medium">OpenRouter API Key</strong> (<code class="measured text-cool">sk-or-...</code>) or switch to the local ML engine.
+          Server environment uses <code class="measured text-cool">.env</code> when configured. You may also override with an <strong class="text-ink font-medium">OpenRouter API Key</strong> (<code class="measured text-cool">sk-or-...</code>) or switch to the offline reply (no LLM).
         </p>
         <div class="space-y-3">
           <div>
             <label for="apiProviderSelect" class="block text-xs text-ink-2 mb-1">Reasoning engine</label>
             <select id="apiProviderSelect" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm text-ink">
               <option value="openrouter">OpenRouter API (openai/gpt-4o-mini)</option>
-              <option value="simulated">Local ML Engine</option>
+              <option value="simulated">No LLM (offline reply)</option>
             </select>
           </div>
           <div id="apiKeyInputWrapper">
@@ -670,18 +744,18 @@
   </div>
 
   <script>
+    (function applySavedTheme() {
+      let saved = null;
+      try { saved = localStorage.getItem('carecompanion_theme'); } catch (e) {}
+      document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
+    })();
+
     function getToken(name) {
       return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     }
 
-    let FEATURE_IMPORTANCES = [
-      { name: 'sleep_score', val: 0.161 },
-      { name: 'rhr_delta', val: 0.142 },
-      { name: 'sleep_3d_avg', val: 0.141 },
-      { name: 'resting_heart_rate', val: 0.098 },
-      { name: 'cardio_min', val: 0.083 },
-      { name: 'very_active_min', val: 0.079 }
-    ];
+    // Filled from /api/model-info (permutation importance). Empty until the server responds.
+    let FEATURE_IMPORTANCES = [];
 
     const FALLBACK_PERSONA = {
       id: 'P01', name: 'Alex Rivera', role: 'Half-Marathon Prep, Morning Runner',
@@ -717,7 +791,7 @@
       chartInstance: null,
       isSending: false,
       modelInfo: null,
-      livePrediction: null
+      livePrediction: undefined // undefined = loading, null = unavailable
     };
 
     try {
@@ -737,29 +811,6 @@
       const p = getPersona();
       const s = getSession();
       return p.days[Math.min(s.dayIndex, p.days.length - 1)] || p.days[0];
-    }
-
-    function buildBiometricPayload(p, dayIdx) {
-      const idx = Math.min(dayIdx, p.days.length - 1);
-      const d = p.days[idx];
-      const winStart = Math.max(0, idx - 2);
-      const win = p.days.slice(winStart, idx + 1);
-      const sleep3d = win.reduce((acc, x) => acc + x.sleepScore, 0) / win.length;
-      const steps3d = win.reduce((acc, x) => acc + x.steps, 0) / win.length;
-      return {
-        steps: d.steps,
-        resting_heart_rate: d.rhr,
-        sleep_score: d.sleepScore,
-        deep_sleep_min: d.deepMin || 80,
-        rem_sleep_min: d.remMin || 88,
-        sedentary_min: 640,
-        very_active_min: Math.round((d.cardio || 15) * 0.9),
-        cardio_min: d.cardio || 18,
-        peak_min: d.peak || 4,
-        rhr_delta: Number((d.rhr - p.baseline.rhr).toFixed(2)),
-        sleep_3d_avg: Number(sleep3d.toFixed(2)),
-        steps_3d_avg: Number(steps3d.toFixed(1))
-      };
     }
 
     async function loadParticipantState(pid) {
@@ -797,48 +848,29 @@
           state.modelInfo = data;
           FEATURE_IMPORTANCES = Object.entries(data.feature_importances)
             .slice(0, 6)
-            .map(([name, val]) => ({ name, val }));
+            .map(([name, v]) => ({ name, val: Math.max(0, v.mean) }));
           renderOverview();
         }
       } catch (e) {}
     }
 
     async function syncPredictionFromBackend() {
+      const p = getPersona();
+      const s = getSession();
       try {
-        const p = getPersona();
-        const s = getSession();
-        const payload = buildBiometricPayload(p, s.dayIndex);
-        const res = await fetch('/api/predict', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) return;
+        const res = await fetch(`/api/predict/${encodeURIComponent(p.id.toLowerCase())}?day_index=${s.dayIndex}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         state.livePrediction = {
           label: data.predicted_recovery_state,
           probs: data.probabilities,
           modelName: data.model_name
         };
-        renderOverview();
-        renderUpdateInputs();
-      } catch (e) {}
-    }
-
-    function predictRecoveryFallback(d, base) {
-      const rhrDelta = d.rhr - base.rhr;
-      let label = 'Moderate';
-      let probs = { Ready: 0.22, Moderate: 0.64, 'Deload Needed': 0.14 };
-      if (d.readiness >= 7 && d.fatigue <= 3 && rhrDelta <= 2 && d.sleepScore >= 72) {
-        label = 'Ready';
-        const conf = Math.min(0.95, 0.78 + (d.sleepScore - 72) * 0.01);
-        probs = { Ready: conf, Moderate: (1 - conf) * 0.8, 'Deload Needed': (1 - conf) * 0.2 };
-      } else if (d.readiness <= 4 || d.fatigue >= 4 || rhrDelta >= 4 || d.sleepScore < 64) {
-        label = 'Deload Needed';
-        const conf = Math.min(0.94, 0.76 + Math.max(0, rhrDelta) * 0.025);
-        probs = { Ready: (1 - conf) * 0.15, Moderate: (1 - conf) * 0.85, 'Deload Needed': conf };
+      } catch (e) {
+        state.livePrediction = null;
       }
-      return { label, probs };
+      renderOverview();
+      renderUpdateInputs();
     }
 
     function showToast(msg) {
@@ -872,7 +904,7 @@
       const p = getPersona();
       const s = getSession();
       const d = getActiveDayRecord();
-      const pred = state.livePrediction || predictRecoveryFallback(d, p.baseline);
+      const pred = state.livePrediction;
 
       document.getElementById('overviewSessionBadge').textContent = `${s.label}, ${s.dayLabel}`;
       document.getElementById('overviewRole').textContent = p.role;
@@ -891,19 +923,19 @@
       switcherEl.querySelectorAll('.overview-sess-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           state.activeSessionIndex = Number(btn.dataset.overviewSess);
-          state.livePrediction = null;
+          state.livePrediction = undefined;
           renderAll();
           syncPredictionFromBackend();
         });
       });
 
       const clsEl = document.getElementById('mlPredClass');
-      clsEl.textContent = pred.label;
+      clsEl.textContent = pred === undefined ? 'Loading forecast' : pred === null ? 'Forecast unavailable' : `Tomorrow: ${pred.label}`;
       clsEl.className = `text-base font-medium ${
-        pred.label === 'Ready' ? 'text-cool' : pred.label === 'Deload Needed' ? 'text-accent' : 'text-ink'
+        !pred ? 'text-muted' : pred.label === 'Ready' ? 'text-cool' : pred.label === 'Deload Needed' ? 'text-accent' : 'text-ink'
       }`;
 
-      document.getElementById('mlProbPills').innerHTML = Object.entries(pred.probs).map(([k, v]) => {
+      document.getElementById('mlProbPills').innerHTML = !pred ? '' : Object.entries(pred.probs).map(([k, v]) => {
         const active = k === pred.label;
         return `<span class="px-2 py-0.5 rounded border ${
           active
@@ -916,7 +948,7 @@
         document.getElementById('modelNameBadge').textContent = state.modelInfo.selected_model;
       }
 
-      const maxImp = Math.max(...FEATURE_IMPORTANCES.map(x => x.val), 0.25);
+      const maxImp = Math.max(...FEATURE_IMPORTANCES.map(x => x.val), 0.01);
       document.getElementById('featureImportanceBars').innerHTML = FEATURE_IMPORTANCES.map((f, idx) => {
         const pct = Math.min(100, Math.round((f.val / maxImp) * 100));
         const barColor = idx === 0 ? 'bg-accent' : 'bg-cool';
@@ -926,29 +958,26 @@
             <div class="flex-1 h-2 bg-paper-3 border border-rule rounded-full overflow-hidden">
               <div class="h-full ${barColor} rounded-full" style="width: ${pct}%"></div>
             </div>
-            <span class="w-12 text-right measured text-ink">${(f.val * 100).toFixed(1)}%</span>
+            <span class="w-16 text-right measured text-ink">${f.val.toFixed(3)}</span>
           </div>
         `;
       }).join('');
 
-      const compRows = (state.modelInfo && Array.isArray(state.modelInfo.comparison) && state.modelInfo.comparison.length)
-        ? state.modelInfo.comparison
-        : [
-            { model: 'RandomForest', cv_f1_weighted: 0.7203 },
-            { model: 'GradientBoosting', cv_f1_weighted: 0.7003 },
-            { model: 'LogisticRegression', cv_f1_weighted: 0.6794 }
-          ];
-      const selected = (state.modelInfo && state.modelInfo.selected_model) || 'RandomForest';
-      document.getElementById('modelComparisonGrid').innerHTML = compRows.map(row => {
-        const isBest = row.model === selected;
-        const shortName = row.model === 'GradientBoosting' ? 'GradBoost' : row.model === 'LogisticRegression' ? 'LogReg' : row.model;
-        return `
-          <div class="p-2.5 rounded border ${isBest ? 'bg-accent-soft border-accent' : 'bg-paper-2 border-rule'}">
-            <div class="text-xs font-medium ${isBest ? 'text-accent' : 'text-muted'}">${shortName}</div>
-            <div class="text-sm measured mt-0.5 ${isBest ? 'text-ink' : 'text-ink-2'}">${(row.cv_f1_weighted * 100).toFixed(1)}%</div>
+      const compRows = state.modelInfo && Array.isArray(state.modelInfo.comparison) ? state.modelInfo.comparison : [];
+      const baselines = state.modelInfo && state.modelInfo.baselines ? state.modelInfo.baselines : {};
+      const selected = (state.modelInfo && state.modelInfo.selected_model) || '';
+      const rows = [
+        ...compRows.map(row => ({ name: row.model, f1: row.macro_f1, acc: row.accuracy, best: row.model === selected, baseline: false })),
+        ...Object.entries(baselines).map(([k, b]) => ({ name: k.replace(/_/g, ' '), f1: b.macro_f1, acc: b.accuracy, best: false, baseline: true }))
+      ];
+      document.getElementById('modelComparisonGrid').innerHTML = rows.length
+        ? rows.map(row => `
+          <div class="p-2.5 rounded border ${row.best ? 'bg-accent-soft border-accent' : 'bg-paper-2 border-rule'}">
+            <div class="text-xs font-medium ${row.best ? 'text-accent' : 'text-muted'}">${row.name}${row.baseline ? ' (baseline)' : ''}</div>
+            <div class="text-sm measured mt-0.5 ${row.best ? 'text-ink' : 'text-ink-2'}">Macro F1 ${(row.f1 * 100).toFixed(1)}%, accuracy ${(row.acc * 100).toFixed(1)}%</div>
           </div>
-        `;
-      }).join('');
+        `).join('')
+        : '<p class="text-xs text-muted">Model metrics unavailable. Run train_model.py.</p>';
     }
 
     function renderLedger() {
@@ -994,7 +1023,7 @@
       container.querySelectorAll('.session-step-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           state.activeSessionIndex = Number(btn.dataset.sessionIdx);
-          state.livePrediction = null;
+          state.livePrediction = undefined;
           renderAll();
           syncPredictionFromBackend();
         });
@@ -1028,8 +1057,8 @@
     }
 
     function renderUpdateInputs() {
+      const pred = state.livePrediction;
       const d = getActiveDayRecord();
-      const pred = state.livePrediction || predictRecoveryFallback(d, getPersona().baseline);
       document.getElementById('inputSteps').value = d.steps;
       document.getElementById('inputRhr').value = d.rhr;
       document.getElementById('inputSleep').value = d.sleepScore;
@@ -1043,9 +1072,9 @@
       document.getElementById('valStress').textContent = d.stress;
 
       const badge = document.getElementById('liveUpdateBadge');
-      badge.textContent = pred.label;
+      badge.textContent = pred ? `Forecast: ${pred.label}` : 'Forecast unavailable';
       badge.className = `px-2.5 py-1 rounded text-xs font-medium border ${
-        pred.label === 'Deload Needed'
+        pred && pred.label === 'Deload Needed'
           ? 'bg-accent-soft text-accent border-accent'
           : 'bg-cool-soft text-cool border-rule-2'
       }`;
@@ -1279,13 +1308,12 @@
       if (state.apiConfig.provider !== 'simulated' && (state.serverLlmConfigured || state.apiConfig.apiKey)) {
         label.textContent = `${state.serverLlmProvider} Connected`;
       } else {
-        label.textContent = 'Local ML Engine';
+        label.textContent = 'No LLM configured';
       }
     }
 
     async function generateCoachReply(userText) {
       const p = getPersona(); const s = getSession(); const d = getActiveDayRecord();
-      const biometrics = buildBiometricPayload(p, s.dayIndex);
       const history = s.messages.slice(-6).map(m => ({ role: m.role, text: m.text }));
 
       try {
@@ -1297,7 +1325,7 @@
             session_label: s.label,
             session_id: s.id,
             message: userText,
-            biometrics,
+            day_index: s.dayIndex,
             history,
             auto_extract_memory: true,
             groq_api_key: state.apiConfig.provider !== 'simulated' && state.apiConfig.apiKey.trim()
@@ -1324,24 +1352,23 @@
         if (Array.isArray(data.newly_extracted_memories) && data.newly_extracted_memories.length > 0) {
           showToast(`Stored ${data.newly_extracted_memories.length} new memory fact(s)`);
         }
-        const predLabel = state.livePrediction ? state.livePrediction.label : 'Moderate';
+        const predLabel = state.livePrediction ? state.livePrediction.label : 'Unavailable';
         const modeTag = data.mode === 'openrouter_live'
           ? 'OpenRouter'
           : data.mode === 'groq_live'
             ? 'Groq Llama-3.3-70B'
-            : 'Local ML Coach';
+            : 'Offline reply (no LLM)';
         return {
           text: data.reply,
-          citations: [modeTag, `ML: ${predLabel}`, `Memory: ${data.memories_used}`]
+          citations: [modeTag, `Forecast: ${predLabel}`, `Memory: ${data.memories_used}`]
         };
       } catch (err) {
         showToast(`Error: ${err.message}`);
       }
 
-      const pred = state.livePrediction || predictRecoveryFallback(d, p.baseline);
       return {
-        text: `**ML Classifier: ${pred.label}.** Current readings: ${d.steps} steps, ${d.rhr} bpm RHR, ${d.sleepScore}/100 sleep score.`,
-        citations: [`ML: ${pred.label}`]
+        text: `The coach could not reach the server. Current readings: ${d.steps} steps, ${d.rhr} bpm RHR, ${d.sleepScore}/100 sleep score.`,
+        citations: ['Offline']
       };
     }
 
@@ -1353,7 +1380,7 @@
     document.getElementById('personaSelect').addEventListener('change', (e) => {
       state.activePersonaId = e.target.value;
       state.activeSessionIndex = 0;
-      state.livePrediction = null;
+      state.livePrediction = undefined;
       loadParticipantState(state.activePersonaId);
     });
 
@@ -1361,7 +1388,7 @@
       const p = getPersona();
       if (state.activeSessionIndex < p.sessions.length - 1) {
         state.activeSessionIndex += 1;
-        state.livePrediction = null;
+        state.livePrediction = undefined;
         renderAll();
         syncPredictionFromBackend();
       }
@@ -1379,7 +1406,7 @@
         const data = await res.json();
         p.sessions = data.sessions;
         state.activeSessionIndex = p.sessions.length - 1;
-        state.livePrediction = null;
+        state.livePrediction = undefined;
         renderAll();
         syncPredictionFromBackend();
         showToast(`Opened ${data.session.label}`);
@@ -1409,7 +1436,12 @@
         readiness: Number(document.getElementById('sliderReadiness').value),
         fatigue: Number(document.getElementById('sliderFatigue').value),
         soreness: Number(document.getElementById('sliderSoreness').value),
-        stress: Number(document.getElementById('sliderStress').value)
+        stress: Number(document.getElementById('sliderStress').value),
+        // Not entered in this form: carried over from the stored day record.
+        deepMin: getActiveDayRecord().deepMin,
+        remMin: getActiveDayRecord().remMin,
+        cardio: getActiveDayRecord().cardio,
+        peak: getActiveDayRecord().peak
       };
 
       try {
@@ -1436,10 +1468,12 @@
       s.messages.push({ role: 'user', text: userPrompt });
       const reply = await generateCoachReply(userPrompt);
       s.messages.push({ role: 'coach', ...reply });
-      const pred = state.livePrediction || predictRecoveryFallback(d, p.baseline);
-      s.adaptation = `Live ML prediction: ${pred.label} (RHR ${d.rhr} bpm, Readiness ${d.readiness}/10).`;
+      const pred = state.livePrediction;
+      s.adaptation = pred
+        ? `Forecast for tomorrow: ${pred.label} (RHR ${d.rhr} bpm, Readiness ${d.readiness}/10).`
+        : `Check-in saved (RHR ${d.rhr} bpm, Readiness ${d.readiness}/10). Forecast unavailable.`;
       renderAll();
-      showToast(`Saved check-in (${pred.label})`);
+      showToast(pred ? `Saved check-in (forecast: ${pred.label})` : 'Saved check-in');
     });
 
     document.getElementById('chatForm').addEventListener('submit', async (e) => {
@@ -1483,7 +1517,7 @@
       try {
         await fetch(`/api/state/${encodeURIComponent(state.activePersonaId.toLowerCase())}/reset`, { method: 'POST' });
         state.activeSessionIndex = 0;
-        state.livePrediction = null;
+        state.livePrediction = undefined;
         await loadParticipantState(state.activePersonaId);
         showToast('Baseline restored');
       } catch (e) {}
@@ -1510,7 +1544,7 @@
     document.getElementById('clearApiBtn').addEventListener('click', () => {
       state.apiConfig = { provider: 'simulated', apiKey: '' };
       try { localStorage.removeItem('carecompanion_api_v2'); } catch (e) {}
-      renderApiStatus(); closeApiModal(); showToast('Switched to Local ML Engine');
+      renderApiStatus(); closeApiModal(); showToast('Switched to offline reply (no LLM)');
     });
     document.getElementById('saveApiBtn').addEventListener('click', () => {
       state.apiConfig = { provider: apiProviderSelect.value, apiKey: apiKeyInput.value.trim() };
@@ -1520,16 +1554,33 @@
     });
 
     document.getElementById('fillSampleImportBtn').addEventListener('click', () => {
-      document.getElementById('importTextarea').value = 'day,steps,rhr,sleepScore,readiness,fatigue,soreness,stress\nDay 1,9100,59,81,8,2,2,2\nDay 2,10400,58,83,8,2,2,2\nDay 3,6200,64,61,4,4,4,4\nDay 4,7900,60,76,7,3,2,2';
+      document.getElementById('importTextarea').value = 'day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress\nDay 1,9100,59,81,85,92,22,6,8,2,2,2\nDay 2,10400,58,83,88,95,24,7,8,2,2,2\nDay 3,6200,64,61,50,66,8,0,4,4,4,4\nDay 4,7900,60,76,70,80,14,3,7,3,2,2';
     });
     document.getElementById('confirmImportBtn').addEventListener('click', async () => {
       const raw = document.getElementById('importTextarea').value.trim();
       if (!raw) return;
       try {
-        let parsedDays = raw.startsWith('[') ? JSON.parse(raw) : raw.split(/\r?\n/).filter(Boolean).slice(1).map((line, i) => {
-          const c = line.split(',').map(x => x.trim());
-          return { day: c[0] || `Day ${i+1}`, steps: Number(c[1])||7500, rhr: Number(c[2])||60, sleepScore: Number(c[3])||75, deepMin: 75, remMin: 85, readiness: Number(c[4])||7, fatigue: Number(c[5])||3, soreness: Number(c[6])||2, stress: Number(c[7])||2, fatBurn: 30, cardio: 15, peak: 3 };
-        });
+        const REQUIRED = ['steps', 'rhr', 'sleepScore', 'deepMin', 'remMin', 'cardio', 'peak', 'readiness', 'fatigue', 'soreness', 'stress'];
+        let parsedDays;
+        if (raw.startsWith('[')) {
+          parsedDays = JSON.parse(raw);
+        } else {
+          const lines = raw.split(/\r?\n/).filter(Boolean);
+          const header = lines[0].split(',').map(h => h.trim());
+          const missing = ['day', ...REQUIRED].filter(k => !header.includes(k));
+          if (missing.length) throw new Error(`missing columns: ${missing.join(', ')}`);
+          parsedDays = lines.slice(1).map(line => {
+            const cells = line.split(',').map(x => x.trim());
+            const row = Object.fromEntries(header.map((h, i) => [h, cells[i]]));
+            const rec = { day: row.day };
+            for (const k of REQUIRED) {
+              const v = Number(row[k]);
+              if (row[k] === undefined || row[k] === '' || Number.isNaN(v)) throw new Error(`non-numeric ${k} in row "${row.day}"`);
+              rec[k] = v;
+            }
+            return rec;
+          });
+        }
         if (parsedDays.length) {
           const p = getPersona();
           const res = await fetch(`/api/import/${encodeURIComponent(p.id.toLowerCase())}`, {
@@ -1537,20 +1588,20 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ days: parsedDays })
           });
-          if (res.ok) {
-            const data = await res.json();
-            p.days = data.days;
-          } else {
-            p.days = parsedDays;
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || `HTTP ${res.status}`);
           }
+          const data = await res.json();
+          p.days = data.days;
           p.sessions[state.activeSessionIndex].dayIndex = p.days.length - 1;
-          state.livePrediction = null;
+          state.livePrediction = undefined;
           renderAll();
           syncPredictionFromBackend();
           document.getElementById('telemetry').scrollIntoView({ behavior: 'smooth' });
           showToast(`Imported ${p.days.length} biometric records`);
         }
-      } catch (err) { showToast('Invalid CSV or JSON format'); }
+      } catch (err) { showToast(`Import failed: ${err.message}`); }
     });
 
     document.getElementById('exportReportBtn').addEventListener('click', () => {
@@ -1582,6 +1633,20 @@
       loadModelInfo();
       loadParticipantState(state.activePersonaId);
     });
+    function syncThemeToggle() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      const btn = document.getElementById('themeToggleBtn');
+      btn.textContent = dark ? 'Light mode' : 'Dark mode';
+      btn.setAttribute('aria-pressed', String(dark));
+    }
+    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      try { localStorage.setItem('carecompanion_theme', next); } catch (e) {}
+      syncThemeToggle();
+      renderAll();
+    });
+    syncThemeToggle();
   </script>
 </body>
 </html>

@@ -15,7 +15,6 @@ import joblib
 import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from groq import Groq
@@ -33,12 +32,7 @@ STATE_FILE = DATA_DIR / "app_state.json"
 STATIC_DIR = BASE_DIR / "static"
 
 app = FastAPI(title="CareCompanion: Biometric Health Coach")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# No CORS middleware: the dashboard is served from this same origin.
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -333,14 +327,23 @@ def normalize_pid(participant_id: str) -> str:
     return participant_id.strip().lower()
 
 
+_BUNDLE_CACHE: Dict[str, Any] = {"mtime": None, "bundle": None, "metrics": None}
+
+
 def load_ml_bundle():
+    """Return (bundle, metrics). The joblib file is read once and reloaded only when it changes."""
     model_path = MODELS_DIR / "readiness_model.joblib"
     metrics_path = MODELS_DIR / "model_metrics.json"
     if not model_path.exists():
         return None, None
-    bundle = joblib.load(model_path)
-    metrics = json.loads(metrics_path.read_text(encoding="utf-8")) if metrics_path.exists() else {}
-    return bundle, metrics
+    mtime = model_path.stat().st_mtime
+    if _BUNDLE_CACHE["mtime"] != mtime:
+        _BUNDLE_CACHE["bundle"] = joblib.load(model_path)
+        _BUNDLE_CACHE["metrics"] = (
+            json.loads(metrics_path.read_text(encoding="utf-8")) if metrics_path.exists() else {}
+        )
+        _BUNDLE_CACHE["mtime"] = mtime
+    return _BUNDLE_CACHE["bundle"], _BUNDLE_CACHE["metrics"]
 
 
 def load_memory_store() -> Dict[str, List[Dict[str, str]]]:
@@ -383,40 +386,53 @@ def save_app_state(store: Dict[str, Any]):
     STATE_FILE.write_text(json.dumps(store, indent=2), encoding="utf-8")
 
 
-def build_biometrics_from_days(days: List[Dict[str, Any]], baseline_rhr: float, day_idx: int) -> "BiometricInput":
+def build_biometrics_from_days(days: List[Dict[str, Any]], day_idx: int) -> "BiometricInput":
+    """Features for day_idx, computed the same way as train_model.engineer_features.
+
+    Each value uses only that day and earlier days. Missing fields are an error,
+    never a default, so a forecast is never based on invented numbers.
+    """
+    if not days:
+        raise HTTPException(status_code=422, detail="No day records for this participant.")
     idx = max(0, min(day_idx, len(days) - 1))
-    d = days[idx]
-    win = days[max(0, idx - 2) : idx + 1]
-    sleep_3d = sum(float(x.get("sleepScore", 75)) for x in win) / len(win)
-    steps_3d = sum(float(x.get("steps", 7500)) for x in win) / len(win)
-    cardio = float(d.get("cardio", 18))
-    return BiometricInput(
-        steps=float(d.get("steps", 7500)),
-        resting_heart_rate=float(d.get("rhr", 60)),
-        sleep_score=float(d.get("sleepScore", 75)),
-        deep_sleep_min=float(d.get("deepMin", 80)),
-        rem_sleep_min=float(d.get("remMin", 88)),
-        sedentary_min=640.0,
-        very_active_min=round(cardio * 0.9, 1),
-        cardio_min=cardio,
-        peak_min=float(d.get("peak", 4)),
-        rhr_delta=round(float(d.get("rhr", 60)) - baseline_rhr, 2),
-        sleep_3d_avg=round(sleep_3d, 2),
-        steps_3d_avg=round(steps_3d, 1),
-    )
+    try:
+        d = days[idx]
+        rhr_window = days[max(0, idx - 6): idx + 1]
+        sleep_window = days[max(0, idx - 2): idx + 1]
+        steps_window = sleep_window
+        rhr_mean = sum(float(x["rhr"]) for x in rhr_window) / len(rhr_window)
+        sleep_3d = sum(float(x["sleepScore"]) for x in sleep_window) / len(sleep_window)
+        steps_3d = sum(float(x["steps"]) for x in steps_window) / len(steps_window)
+        return BiometricInput(
+            steps=float(d["steps"]),
+            resting_heart_rate=float(d["rhr"]),
+            sleep_score=float(d["sleepScore"]),
+            deep_sleep_min=float(d["deepMin"]),
+            rem_sleep_min=float(d["remMin"]),
+            cardio_min=float(d["cardio"]),
+            peak_min=float(d["peak"]),
+            rhr_delta=round(float(d["rhr"]) - rhr_mean, 2),
+            sleep_3d_avg=round(sleep_3d, 2),
+            steps_3d_avg=round(steps_3d, 1),
+        )
+    except KeyError as missing:
+        raise HTTPException(status_code=422, detail=f"Day record is missing field {missing}.")
 
 
 def run_ml_prediction(biometrics: "BiometricInput") -> Optional[Dict[str, Any]]:
+    """Forecast tomorrow's recovery state from today's biometrics."""
     bundle, _ = load_ml_bundle()
     if not bundle:
         return None
     cols = bundle["feature_cols"]
     row = pd.DataFrame([biometrics.model_dump()])[cols]
-    pred_class = str(bundle["model"].predict(row)[0])
-    probs = bundle["model"].predict_proba(row)[0]
+    model = bundle["model"]
+    pred_class = str(model.predict(row)[0])
+    probs = model.predict_proba(row)[0]
     return {
         "predicted_recovery_state": pred_class,
-        "probabilities": {str(c): round(float(p), 4) for c, p in zip(bundle["classes"], probs)},
+        "forecast_for": "next_day",
+        "probabilities": {str(c): round(float(p), 4) for c, p in zip(model.classes_, probs)},
         "model_name": bundle["model_name"],
     }
 
@@ -500,13 +516,13 @@ def build_offline_coach_reply(
         mem_lines = "\n".join(f"• **{m['category']}** ({m['session']}): {m['text']}" for m in memories)
         return (
             f"Active memories for **{req.participant_id.upper()}**:\n{mem_lines}\n\n"
-            f"Today's ML classifier predicts **{pred_label}{conf}** "
+            f"The ML forecast for tomorrow is **{pred_label}{conf}** "
             f"(RHR **{req.biometrics.resting_heart_rate} bpm**, Sleep **{req.biometrics.sleep_score}/100**)."
         )
 
     if pred_label == "Deload Needed":
         return (
-            f"**ML Classifier: Deload Needed{conf}.** With RHR at **{req.biometrics.resting_heart_rate} bpm** "
+            f"**ML forecast: Deload Needed tomorrow{conf}.** With RHR at **{req.biometrics.resting_heart_rate} bpm** "
             f"(delta {req.biometrics.rhr_delta:+.1f}) and sleep score **{req.biometrics.sleep_score}/100**, "
             f"protect your constraint (**{constraint}**) and **pivot to 20 min light mobility and early sleep** today "
             f"before resuming work toward **{goal}**."
@@ -514,31 +530,29 @@ def build_offline_coach_reply(
 
     if pred_label == "Ready":
         return (
-            f"**ML Classifier: Ready{conf}.** With sleep score **{req.biometrics.sleep_score}/100** and RHR at "
+            f"**ML forecast: Ready tomorrow{conf}.** With sleep score **{req.biometrics.sleep_score}/100** and RHR at "
             f"**{req.biometrics.resting_heart_rate} bpm**, you are cleared to **progress toward {goal}** today "
             f"while keeping **{constraint}** protected."
         )
 
     return (
-        f"**ML Classifier: Moderate{conf}.** Given sleep score **{req.biometrics.sleep_score}/100** and "
+        f"**ML forecast: Moderate tomorrow{conf}.** Given sleep score **{req.biometrics.sleep_score}/100** and "
         f"**{req.biometrics.steps:,.0f} steps**, stick to **steady Zone 2 and controlled volume** today so you stay "
         f"on track for **{goal}** without aggravating **{constraint}**."
     )
 
 
 class BiometricInput(BaseModel):
-    steps: float = 8500
-    resting_heart_rate: float = 59
-    sleep_score: float = 78
-    deep_sleep_min: float = 82
-    rem_sleep_min: float = 90
-    sedentary_min: float = 640
-    very_active_min: float = 24
-    cardio_min: float = 20
-    peak_min: float = 5
-    rhr_delta: float = 0.0
-    sleep_3d_avg: float = 77.0
-    steps_3d_avg: float = 8600.0
+    steps: float
+    resting_heart_rate: float
+    sleep_score: float
+    deep_sleep_min: float
+    rem_sleep_min: float
+    cardio_min: float
+    peak_min: float
+    rhr_delta: float
+    sleep_3d_avg: float
+    steps_3d_avg: float
 
 
 class CheckinInput(BaseModel):
@@ -547,6 +561,10 @@ class CheckinInput(BaseModel):
     steps: float
     rhr: float
     sleepScore: float
+    deepMin: float
+    remMin: float
+    cardio: float
+    peak: float
     readiness: int
     fatigue: int
     soreness: int
@@ -567,7 +585,9 @@ class CoachRequest(BaseModel):
     session_label: str = "Session 4"
     session_id: Optional[str] = None
     message: str
-    biometrics: BiometricInput
+    # If omitted, the server computes features from the stored day at day_index (default: latest).
+    biometrics: Optional[BiometricInput] = None
+    day_index: Optional[int] = None
     history: List[Dict[str, str]] = Field(default_factory=list)
     auto_extract_memory: bool = True
     groq_api_key: Optional[str] = None
@@ -611,6 +631,22 @@ def predict_recovery(payload: BiometricInput):
     return result
 
 
+@app.get("/api/predict/{participant_id}")
+def predict_for_day(participant_id: str, day_index: Optional[int] = None):
+    pid = normalize_pid(participant_id)
+    app_state = load_app_state()
+    pdata = app_state.get(pid)
+    if not pdata:
+        raise HTTPException(status_code=404, detail=f"Participant '{participant_id}' not found.")
+    days = pdata["days"]
+    idx = len(days) - 1 if day_index is None else max(0, min(day_index, len(days) - 1))
+    bio = build_biometrics_from_days(days, idx)
+    result = run_ml_prediction(bio)
+    if not result:
+        raise HTTPException(status_code=400, detail="Model not trained yet. Run `python train_model.py` first.")
+    return {**result, "day_index": idx, "biometrics": bio.model_dump()}
+
+
 @app.get("/api/state/{participant_id}")
 def get_participant_state(participant_id: str):
     pid = normalize_pid(participant_id)
@@ -651,6 +687,10 @@ def log_biometric_checkin(participant_id: str, payload: CheckinInput):
         existing["fatigue"] = payload.fatigue
         existing["soreness"] = payload.soreness
         existing["stress"] = payload.stress
+        existing["deepMin"] = payload.deepMin
+        existing["remMin"] = payload.remMin
+        existing["cardio"] = payload.cardio
+        existing["peak"] = payload.peak
         day_record = existing
     else:
         idx = len(days)
@@ -659,20 +699,18 @@ def log_biometric_checkin(participant_id: str, payload: CheckinInput):
             "steps": payload.steps,
             "rhr": payload.rhr,
             "sleepScore": payload.sleepScore,
-            "deepMin": 80,
-            "remMin": 88,
+            "deepMin": payload.deepMin,
+            "remMin": payload.remMin,
             "readiness": payload.readiness,
             "fatigue": payload.fatigue,
             "soreness": payload.soreness,
             "stress": payload.stress,
-            "fatBurn": 30,
-            "cardio": 18,
-            "peak": 4,
+            "cardio": payload.cardio,
+            "peak": payload.peak,
         }
         days.append(day_record)
 
-    baseline_rhr = float(pdata["baseline"]["rhr"])
-    bio = build_biometrics_from_days(days, baseline_rhr, idx)
+    bio = build_biometrics_from_days(days, idx)
     ml_result = run_ml_prediction(bio)
     save_app_state(app_state)
     return {
@@ -729,6 +767,11 @@ def import_days(participant_id: str, payload: ImportDaysInput):
         raise HTTPException(status_code=404, detail=f"Participant '{participant_id}' not found.")
     if not payload.days:
         raise HTTPException(status_code=400, detail="No biometric records provided.")
+    required = ["steps", "rhr", "sleepScore", "deepMin", "remMin", "cardio", "peak", "readiness", "fatigue", "soreness", "stress"]
+    for i, record in enumerate(payload.days):
+        missing = [k for k in required if not isinstance(record.get(k), (int, float))]
+        if missing:
+            raise HTTPException(status_code=422, detail=f"Record {i + 1} is missing or non-numeric: {', '.join(missing)}.")
 
     pdata["days"] = payload.days
     save_app_state(app_state)
@@ -794,6 +837,13 @@ def reset_memory(participant_id: str):
 @app.post("/api/coach")
 def coach_chat(req: CoachRequest):
     pid = normalize_pid(req.participant_id)
+    if req.biometrics is None:
+        pdata = load_app_state().get(pid)
+        if not pdata:
+            raise HTTPException(status_code=404, detail=f"Participant '{req.participant_id}' not found.")
+        days = pdata["days"]
+        idx = len(days) - 1 if req.day_index is None else req.day_index
+        req = req.model_copy(update={"biometrics": build_biometrics_from_days(days, idx)})
     ml_result = run_ml_prediction(req.biometrics)
 
     store = load_memory_store()
@@ -826,7 +876,7 @@ def coach_chat(req: CoachRequest):
         system_prompt = (
             "You are CareCompanion, an empathetic, evidence-based Agentic Health Coach grounded in PMData Fitbit biometrics.\n"
             f"Current Session: {req.session_label} | Participant: {pid.upper()}\n"
-            f"Supervised ML Recovery Prediction: {json.dumps(ml_result)}\n"
+            f"Supervised ML forecast of tomorrow's recovery state: {json.dumps(ml_result)}\n"
             f"Current Fitbit Biometrics: {json.dumps(req.biometrics.model_dump())}\n"
             f"Persistent Agent Memory from Past Sessions:\n{mem_text}\n\n"
             "Instructions:\n"
@@ -884,7 +934,7 @@ def coach_chat(req: CoachRequest):
         if pdata:
             for sess in pdata.get("sessions", []):
                 if sess.get("id") == req.session_id:
-                    pred_label = ml_result["predicted_recovery_state"] if ml_result else "Moderate"
+                    pred_label = ml_result["predicted_recovery_state"] if ml_result else "Unavailable"
                     if mode == "openrouter_live":
                         mode_tag = "OpenRouter"
                     elif mode == "groq_live":
@@ -895,7 +945,7 @@ def coach_chat(req: CoachRequest):
                     sess["messages"].append({
                         "role": "coach",
                         "text": reply,
-                        "citations": [mode_tag, f"ML: {pred_label}", f"Memory: {len(memories)}"],
+                        "citations": [mode_tag, f"Forecast: {pred_label}", f"Memory: {len(memories)}"],
                     })
                     save_app_state(app_state)
                     break

@@ -1,39 +1,494 @@
 {
+  "task": "Next-day recovery state forecast",
   "dataset_source": "PMData-Schema Sample (480 rows, 16 participants)",
-  "total_rows": 480,
+  "rows": 464,
+  "participants": 16,
+  "label_rule": "Ready if readiness>=7 and fatigue<=3; Deload Needed if readiness<=4 or fatigue>=4; else Moderate. Labels are rule-based, not clinical ground truth.",
+  "validation": "Nested leave-one-participant-out. Inner grouped 3-fold CV tunes hyperparameters per outer fold.",
   "selected_model": "RandomForest",
+  "selection_metric": "macro_f1 (pooled out-of-fold)",
+  "class_counts": {
+    "Deload Needed": 273,
+    "Moderate": 155,
+    "Ready": 36
+  },
   "comparison": [
     {
       "model": "RandomForest",
-      "cv_f1_weighted": 0.7203,
-      "test_accuracy": 0.8333,
-      "test_f1_weighted": 0.8265
+      "accuracy": 0.5927,
+      "macro_f1": 0.5109,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.7875,
+          "recall": 0.6923,
+          "f1": 0.7368,
+          "support": 273
+        },
+        "Moderate": {
+          "precision": 0.4846,
+          "recall": 0.4065,
+          "f1": 0.4421,
+          "support": 155
+        },
+        "Ready": {
+          "precision": 0.2447,
+          "recall": 0.6389,
+          "f1": 0.3538,
+          "support": 36
+        }
+      },
+      "confusion_matrix": [
+        [
+          189,
+          56,
+          28
+        ],
+        [
+          49,
+          63,
+          43
+        ],
+        [
+          2,
+          11,
+          23
+        ]
+      ],
+      "brier": 0.5134,
+      "per_participant_accuracy_mean": 0.5927,
+      "per_participant_accuracy_std": 0.1064,
+      "chosen_params_per_fold": [
+        {
+          "clf__max_depth": null,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": null,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 1
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 1
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 1
+        },
+        {
+          "clf__max_depth": 8,
+          "clf__min_samples_leaf": 1
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 1
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 1
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 5
+        },
+        {
+          "clf__max_depth": 4,
+          "clf__min_samples_leaf": 5
+        }
+      ]
     },
     {
       "model": "GradientBoosting",
-      "cv_f1_weighted": 0.7003,
-      "test_accuracy": 0.825,
-      "test_f1_weighted": 0.8221
+      "accuracy": 0.6358,
+      "macro_f1": 0.468,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.7235,
+          "recall": 0.8242,
+          "f1": 0.7705,
+          "support": 273
+        },
+        "Moderate": {
+          "precision": 0.4815,
+          "recall": 0.4194,
+          "f1": 0.4483,
+          "support": 155
+        },
+        "Ready": {
+          "precision": 0.2778,
+          "recall": 0.1389,
+          "f1": 0.1852,
+          "support": 36
+        }
+      },
+      "confusion_matrix": [
+        [
+          225,
+          46,
+          2
+        ],
+        [
+          79,
+          65,
+          11
+        ],
+        [
+          7,
+          24,
+          5
+        ]
+      ],
+      "brier": 0.4909,
+      "per_participant_accuracy_mean": 0.6358,
+      "per_participant_accuracy_std": 0.1124,
+      "chosen_params_per_fold": [
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 4
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 4
+        }
+      ]
     },
     {
       "model": "LogisticRegression",
-      "cv_f1_weighted": 0.6794,
-      "test_accuracy": 0.7583,
-      "test_f1_weighted": 0.7627
+      "accuracy": 0.5733,
+      "macro_f1": 0.4901,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.7773,
+          "recall": 0.6777,
+          "f1": 0.7241,
+          "support": 273
+        },
+        "Moderate": {
+          "precision": 0.4574,
+          "recall": 0.3806,
+          "f1": 0.4155,
+          "support": 155
+        },
+        "Ready": {
+          "precision": 0.2268,
+          "recall": 0.6111,
+          "f1": 0.3308,
+          "support": 36
+        }
+      },
+      "confusion_matrix": [
+        [
+          185,
+          60,
+          28
+        ],
+        [
+          49,
+          59,
+          47
+        ],
+        [
+          4,
+          10,
+          22
+        ]
+      ],
+      "brier": 0.5421,
+      "per_participant_accuracy_mean": 0.5733,
+      "per_participant_accuracy_std": 0.0935,
+      "chosen_params_per_fold": [
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 10.0
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 10.0
+        }
+      ]
     }
   ],
+  "baselines": {
+    "majority_class": {
+      "accuracy": 0.5884,
+      "macro_f1": 0.2469,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.5884,
+          "recall": 1.0,
+          "f1": 0.7408,
+          "support": 273
+        },
+        "Moderate": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 155
+        },
+        "Ready": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 36
+        }
+      },
+      "confusion_matrix": [
+        [
+          273,
+          0,
+          0
+        ],
+        [
+          155,
+          0,
+          0
+        ],
+        [
+          36,
+          0,
+          0
+        ]
+      ]
+    },
+    "persistence_today_state": {
+      "accuracy": 0.6293,
+      "macro_f1": 0.542,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.7603,
+          "recall": 0.7436,
+          "f1": 0.7519,
+          "support": 273
+        },
+        "Moderate": {
+          "precision": 0.4771,
+          "recall": 0.471,
+          "f1": 0.474,
+          "support": 155
+        },
+        "Ready": {
+          "precision": 0.3636,
+          "recall": 0.4444,
+          "f1": 0.4,
+          "support": 36
+        }
+      },
+      "confusion_matrix": [
+        [
+          203,
+          65,
+          5
+        ],
+        [
+          59,
+          73,
+          23
+        ],
+        [
+          5,
+          15,
+          16
+        ]
+      ]
+    }
+  },
+  "selected_per_class": {
+    "Deload Needed": {
+      "precision": 0.7875,
+      "recall": 0.6923,
+      "f1": 0.7368,
+      "support": 273
+    },
+    "Moderate": {
+      "precision": 0.4846,
+      "recall": 0.4065,
+      "f1": 0.4421,
+      "support": 155
+    },
+    "Ready": {
+      "precision": 0.2447,
+      "recall": 0.6389,
+      "f1": 0.3538,
+      "support": 36
+    }
+  },
   "feature_importances": {
-    "sleep_score": 0.1609,
-    "rhr_delta": 0.1421,
-    "sleep_3d_avg": 0.1409,
-    "resting_heart_rate": 0.098,
-    "cardio_min": 0.0832,
-    "very_active_min": 0.0793,
-    "deep_sleep_min": 0.0609,
-    "rem_sleep_min": 0.0597,
-    "steps": 0.0482,
-    "steps_3d_avg": 0.0453,
-    "peak_min": 0.0412,
-    "sedentary_min": 0.0401
+    "rhr_delta": {
+      "mean": 0.0519,
+      "std": 0.0665
+    },
+    "cardio_min": {
+      "mean": 0.0413,
+      "std": 0.0349
+    },
+    "deep_sleep_min": {
+      "mean": 0.0175,
+      "std": 0.0419
+    },
+    "sleep_score": {
+      "mean": 0.0153,
+      "std": 0.0506
+    },
+    "peak_min": {
+      "mean": 0.0148,
+      "std": 0.0241
+    },
+    "steps_3d_avg": {
+      "mean": 0.0068,
+      "std": 0.0273
+    },
+    "resting_heart_rate": {
+      "mean": 0.0057,
+      "std": 0.0253
+    },
+    "sleep_3d_avg": {
+      "mean": 0.003,
+      "std": 0.0652
+    },
+    "rem_sleep_min": {
+      "mean": 0.0005,
+      "std": 0.0304
+    },
+    "steps": {
+      "mean": -0.0012,
+      "std": 0.0379
+    }
+  },
+  "feature_importance_method": "permutation (macro F1 drop) on each held-out participant, mean and std across participants",
+  "excluded_features": [
+    "sedentary_min",
+    "very_active_min"
+  ],
+  "excluded_reason": "The app does not store these fields, so the model is trained only on inputs the app can supply.",
+  "calibration": "Not calibrated. Brier score is reported so probabilities can be judged.",
+  "library_versions": {
+    "python": "3.14.4",
+    "scikit-learn": "1.9.1",
+    "pandas": "3.1.1",
+    "numpy": "2.5.5",
+    "joblib": "1.6.0"
   }
 }
