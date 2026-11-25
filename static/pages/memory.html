@@ -1,0 +1,77 @@
+<!-- @head -->
+<body class="bg-paper text-ink antialiased" data-page="{{page}}">
+<!-- @header -->
+  <main id="memory">
+    <section class="page-head">
+      <div class="shell page-head-grid">
+        <div class="page-head-copy">
+          <h1 class="page-title">What the coach keeps on file</h1>
+          <p class="page-lead">Goals, constraints and rules, picked up from your messages or added by hand. The coach reads them every session.</p>
+        </div>
+        <div class="page-head-aside">
+                  <button id="resetDemoBtn" type="button" class="text-xs font-medium text-muted hover:text-accent px-2.5 h-8 rounded border border-rule-2 whitespace-nowrap btn-transition">Reset this profile</button>
+        </div>
+      </div>
+    </section>
+    <section class="page-body">
+      <div class="shell">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Persistent Agent Memory -->
+          <div class="lg:col-span-6 panels">
+            <div class="p-5 space-y-4">
+              <div class="flex items-center justify-between gap-2">
+                <h2 class="text-lg text-ink">Saved facts</h2>
+
+              </div>
+
+              <form id="addMemoryForm" class="flex flex-wrap sm:flex-nowrap gap-2">
+                <label for="newMemoryCategory" class="sr-only">Memory category</label>
+                <select id="newMemoryCategory" class="h-10 bg-paper-3 border border-rule-2 rounded-md px-2.5 text-xs font-medium text-ink">
+                  <option value="Goal">Goal</option>
+                  <option value="Constraint">Constraint</option>
+                  <option value="Baseline">Baseline</option>
+                  <option value="Adaptation">Rule</option>
+                </select>
+                <label for="newMemoryText" class="sr-only">Memory fact</label>
+                <input id="newMemoryText" type="text" placeholder="Add persistent memory fact..." class="flex-1 h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-xs text-ink placeholder:text-muted" />
+                <button type="submit" class="h-10 px-4 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap btn-transition">Add</button>
+              </form>
+
+              <div id="memoryList" class="space-y-2.5 max-h-96 overflow-y-auto thin-scroll pr-1"></div>
+            </div>
+          </div>
+
+          <!-- Evolution Trail & Export -->
+          <div class="lg:col-span-6 space-y-6">
+            <div class="panels">
+              <div class="p-5 space-y-3">
+                <h2 class="text-lg text-ink">How the plan changed</h2>
+                <div id="memoryEvolutionLog" class="divide-y divide-rule text-xs bg-paper-3 rounded-md border border-rule"></div>
+              </div>
+            </div>
+
+            <div class="panels">
+              <div class="p-5 space-y-3">
+                <h2 class="text-lg text-ink">Export the record</h2>
+                <p class="text-xs text-muted">Download this profile’s days, sessions and saved facts.</p>
+                <div class="flex flex-wrap gap-3 pt-1">
+                  <button id="exportReportBtn" type="button" class="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap btn-transition">
+                    <i data-lucide="file-json" class="w-4 h-4" aria-hidden="true"></i>
+                    <span>Export JSON</span>
+                  </button>
+                  <button id="exportMarkdownBtn" type="button" class="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-paper-3 border border-rule-2 hover:border-cool text-ink text-xs font-medium whitespace-nowrap btn-transition">
+                    <i data-lucide="file-text" class="w-4 h-4 text-cool" aria-hidden="true"></i>
+                    <span>Export Markdown</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+<!-- @footer -->
+<!-- @chrome -->
+</body>
+</html>

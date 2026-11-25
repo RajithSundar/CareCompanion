@@ -1,0 +1,77 @@
+<!-- @head -->
+<body class="bg-paper text-ink antialiased" data-page="{{page}}">
+<!-- @header -->
+  <main id="coach">
+    <section class="page-head">
+      <div class="shell page-head-grid">
+        <div class="page-head-copy">
+          <h1 class="page-title">Coach</h1>
+          <p class="page-lead">Each session reads the ones before it. Pick a session, or open a new one.</p>
+        </div>
+        <div class="page-head-aside">
+            <button id="newSessionBtn" type="button" class="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-paper-2 border border-rule-2 hover:border-accent text-ink text-xs font-medium whitespace-nowrap btn-transition">
+            <i data-lucide="plus" class="w-4 h-4 text-accent" aria-hidden="true"></i>
+            <span>New session</span>
+          </button>
+        </div>
+      </div>
+    </section>
+    <section class="page-body">
+      <div class="shell">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Session Trail & Protocol Checklist -->
+          <div class="lg:col-span-4 space-y-4 min-w-0">
+            <div class="panels">
+              <div class="px-4 py-3 flex items-center justify-between">
+                <h3 class="text-base text-ink">Session trail</h3>
+                <span class="text-xs text-muted">Select session</span>
+              </div>
+              <div id="sessionStepper" class="divide-y divide-rule bg-paper-3"></div>
+            </div>
+
+            <div class="panels">
+              <div class="px-4 py-3 flex items-center justify-between">
+                <h3 class="text-base text-ink">Training protocol</h3>
+                <span id="planAdherenceBadge" class="measured text-xs font-medium px-2 py-0.5 rounded bg-accent text-accent-ink">0%</span>
+              </div>
+              <div id="actionPlanList" class="p-3 space-y-2 bg-paper-3"></div>
+            </div>
+          </div>
+
+          <!-- Active Session Console -->
+          <div class="lg:col-span-8 panels">
+            <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-3 bg-paper-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <h2 id="sessionTitle" class="text-lg text-ink">Session 1: Baseline Intake</h2>
+                  <span id="sessionDayBadge" class="px-2 py-0.5 rounded text-xs font-medium bg-cool-soft text-cool border border-rule-2">Day 1</span>
+                </div>
+                <p id="sessionSubtitle" class="text-xs text-muted mt-1">Establishing biometric baselines and half-marathon goal</p>
+              </div>
+              <button id="nextSessionBtn" type="button" class="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap btn-transition">
+                <span>Next session</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5" aria-hidden="true"></i>
+              </button>
+            </div>
+
+            <div id="chatMessages" class="h-[58vh] min-h-[360px] overflow-y-auto thin-scroll p-5 space-y-4 bg-paper-2"></div>
+
+            <div class="p-4 bg-paper-3 space-y-3">
+              <div id="quickPrompts" class="flex flex-wrap items-center gap-2"></div>
+              <form id="chatForm" class="flex items-center gap-2.5">
+                <label for="chatInput" class="sr-only">Message CareCompanion</label>
+                <input id="chatInput" type="text" placeholder="Ask CareCompanion, grounded in the next-day forecast and session memory..." class="flex-1 h-10 bg-paper-2 border border-rule-2 rounded-md px-3.5 text-sm text-ink placeholder:text-muted focus:outline-none" />
+                <button id="sendChatBtn" type="submit" aria-label="Send message" class="inline-flex items-center justify-center px-4 h-10 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap shrink-0 btn-transition">
+                  <i data-lucide="send" class="w-4 h-4" aria-hidden="true"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+<!-- @footer -->
+<!-- @chrome -->
+</body>
+</html>

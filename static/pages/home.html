@@ -1,0 +1,105 @@
+<!-- @head -->
+<body class="bg-paper text-ink antialiased" data-page="{{page}}">
+<!-- @header -->
+  <main>
+    <section id="hero" class="hero border-b border-rule">
+      <div class="shell hero-grid">
+        <div class="hero-copy">
+          <h1 class="hero-head">A coach that remembers your last session.</h1>
+          <p class="hero-lead">Today’s Fitbit numbers in, tomorrow’s forecast out, your goals kept.</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <a href="/coach" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">
+              Talk to the coach
+            </a>
+            <a href="/checkin" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-paper-2 border border-rule-2 hover:border-accent text-ink text-sm font-medium whitespace-nowrap btn-transition">
+              Log a check-in
+            </a>
+          </div>
+        </div>
+
+        <figure class="tracker-figure">
+          <div id="trackerStage" class="tracker-stage" tabindex="0" role="group" aria-roledescription="3D tracker"
+               aria-label="Smartwatch showing today’s stats. Drag, or use the arrow keys, to turn it." aria-describedby="trackerSummary">
+            <div id="tracker" class="tracker">
+              <div class="device" aria-hidden="true">
+                <div class="case-back">
+                  <div class="sensor">
+                    <span class="led"></span><span class="led"></span><span class="led"></span>
+                    <span class="sensor-eye"></span>
+                  </div>
+                  <span class="pin"></span><span class="pin"></span><span class="pin"></span>
+                </div>
+                <span class="case-slice" style="--zf:-0.15;--s:0.86;--m:15"></span>
+                <span class="case-slice" style="--zf:-0.1324;--s:0.9127;--m:15"></span>
+                <span class="case-slice" style="--zf:-0.1147;--s:0.9398;--m:16"></span>
+                <span class="case-slice" style="--zf:-0.0971;--s:0.9618;--m:17"></span>
+                <span class="case-slice" style="--zf:-0.0794;--s:0.981;--m:19"></span>
+                <span class="case-slice" style="--zf:-0.0618;--s:0.9983;--m:21"></span>
+                <span class="case-slice" style="--zf:-0.0441;--s:1;--m:24"></span>
+                <span class="case-slice" style="--zf:-0.0265;--s:1;--m:27"></span>
+                <span class="case-slice" style="--zf:-0.0088;--s:1;--m:31"></span>
+                <span class="case-slice" style="--zf:0.0088;--s:1;--m:35"></span>
+                <span class="case-slice" style="--zf:0.0265;--s:1;--m:39"></span>
+                <span class="case-slice" style="--zf:0.0441;--s:1;--m:44"></span>
+                <span class="case-slice" style="--zf:0.0618;--s:1;--m:50"></span>
+                <span class="case-slice" style="--zf:0.0794;--s:1;--m:56"></span>
+                <span class="case-slice" style="--zf:0.0971;--s:1;--m:62"></span>
+                <span class="case-slice" style="--zf:0.1147;--s:1;--m:69"></span>
+                <span class="case-slice" style="--zf:0.1324;--s:0.9876;--m:95"></span>
+                <span class="case-slice" style="--zf:0.15;--s:0.97;--m:95"></span>
+                <span class="side-btn" style="--y:-0.3"></span>
+                <span class="side-btn" style="--y:0.28"></span>
+                <span class="side-btn side-left" style="--y:0"></span>
+                <div class="glass">
+                  <div class="screen">
+                    <div class="scr-time"><span id="trkTime">--:--</span><span id="trkDate" class="scr-date"></span></div>
+                    <div class="scr-ring">
+                      <svg class="step-ring" viewBox="0 0 100 100" aria-hidden="true">
+                        <circle class="ring-track" cx="50" cy="50" r="42" pathLength="100"></circle>
+                        <circle id="trkRing" class="ring-fill" cx="50" cy="50" r="42" pathLength="100" stroke-dasharray="0 100"></circle>
+                      </svg>
+                      <div class="ring-center">
+                        <span class="ico ico-steps"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 3c1.7 0 2.6 1.8 2.4 4.2-.2 2.2-1.1 3.8-2.7 3.8S5.6 9.6 5.8 7.2C6 4.9 7 3 8.5 3Zm-1 9.6 3 .6-.5 3.1c-.2 1.2-1.2 1.9-2.3 1.7-1.1-.2-1.7-1.3-1.4-2.4l1.2-3Zm8-6.6c1.5 0 2.5 1.9 2.7 4.2.2 2.4-.7 4-2.4 4s-2.5-1.6-2.7-3.8C12.9 7.8 13.8 6 15.5 6Zm1 9.6.9 3.1c.3 1.1-.3 2.2-1.4 2.4-1.1.2-2.1-.5-2.3-1.7l-.5-3.1 3.3-.7Z"/></svg></span>
+                        <span id="trkSteps" class="scr-big">--</span>
+                        <span class="scr-unit">steps</span>
+                      </div>
+                    </div>
+                    <div class="scr-stats">
+                      <div><span class="ico ico-heart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.6 3.8 4.5 7 4.5c2 0 3.7 1.1 5 2.9 1.3-1.8 3-2.9 5-2.9 3.2 0 5.4 3.1 4.2 6.6-1.7 4.8-9.2 9.4-9.2 9.4Z"/></svg></span><span id="trkRhr" class="scr-num">--</span><span class="scr-unit">bpm</span></div>
+                      <div><span class="ico ico-sleep"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg></span><span id="trkSleep" class="scr-num">--</span><span class="scr-unit">sleep</span></div>
+                      <div><span class="ico ico-ready"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 5 13.5h5.5L9.5 22 19 9.5h-5.6L13.5 2Z"/></svg></span><span id="trkReadyVal" class="scr-num">--</span><span class="scr-unit">ready</span></div>
+                    </div>
+                    <div id="trkForecast" class="scr-forecast" data-state="none"><span class="scr-unit">tomorrow</span><span id="trkForecastVal">--</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <figcaption class="tracker-cap">
+            <span id="trackerSummary">Waiting for today’s stats.</span>
+            <span class="tracker-hint">Hover to tilt it, drag to turn it.</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- What it does: one numbered row per page -->
+    <section class="does">
+      <div class="shell does-grid">
+        <div class="does-head">
+          <h2 class="does-title">What it does</h2>
+          <p class="does-lead">Five steps, one page each. Start with a check-in, or open any step.</p>
+        </div>
+        <ol class="index-list">
+          <li><a href="/checkin" class="index-row"><span class="index-num">01</span><span class="index-name">Check-in</span><span class="index-line">Log steps, heart rate, sleep and how you feel today.</span></a></li>
+          <li><a href="/forecast" class="index-row"><span class="index-num">02</span><span class="index-name">Forecast</span><span class="index-line">A model trained on Fitbit and PMSys records predicts tomorrow’s recovery state.</span></a></li>
+          <li><a href="/coach" class="index-row"><span class="index-num">03</span><span class="index-name">Coach</span><span class="index-line">Ask what to do today. Answers draw on the forecast and your past sessions.</span></a></li>
+          <li><a href="/memory" class="index-row"><span class="index-num">04</span><span class="index-name">Memory</span><span class="index-line">Goals and injuries you mention are saved and brought up next time.</span></a></li>
+          <li><a href="/data" class="index-row"><span class="index-num">05</span><span class="index-name">Data</span><span class="index-line">Your trends, the day-by-day ledger, and how the model scores against simple baselines.</span></a></li>
+        </ol>
+      </div>
+    </section>
+  </main>
+<!-- @chrome -->
+</body>
+</html>

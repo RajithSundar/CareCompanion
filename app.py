@@ -21,7 +21,7 @@ import joblib
 import pandas as pd
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field
@@ -502,9 +502,55 @@ def day_record(payload: DayRecordIn, label: str) -> Dict[str, Any]:
 
 # --------------------------------------------------------------------------- routes
 
-@app.api_route("/", methods=["GET", "HEAD"])
-def serve_root():
-    return FileResponse(str(STATIC_DIR / "index.html"))
+PAGES: Dict[str, Dict[str, str]] = {
+    "home": {"title": "CareCompanion: a coach that remembers your last session",
+             "description": "Log a day of Fitbit-style biometrics, see tomorrow's recovery forecast, and talk to a coach that keeps your goals across sessions."},
+    "forecast": {"title": "Forecast: CareCompanion", "description": "Tomorrow's recovery forecast from today's biometrics."},
+    "coach": {"title": "Coach: CareCompanion", "description": "Coaching sessions grounded in the forecast and saved memories."},
+    "checkin": {"title": "Check-in: CareCompanion", "description": "Log today's biometrics or import a block of days."},
+    "memory": {"title": "Memory: CareCompanion", "description": "The goals, constraints and rules the coach keeps on file."},
+    "data": {"title": "Data: CareCompanion", "description": "Trends, the day-by-day ledger, and how the forecast model compares with its baselines."},
+}
+PAGE_SCRIPTS = {
+    "home": '  <script defer src="/static/tracker.js"></script>\n',
+    "data": '  <script defer src="/static/vendor/chart.umd.min.js"></script>\n',
+}
+_PAGE_CACHE: Dict[str, Any] = {}
+
+
+def render_page(name: str) -> str:
+    """Assemble static/pages/<name>.html with the shared partials. Cached until any source file changes."""
+    parts = STATIC_DIR / "partials"
+    sources = [STATIC_DIR / "pages" / f"{name}.html", *(parts / f for f in ("head.html", "header.html", "footer.html", "chrome.html"))]
+    key = tuple(p.stat().st_mtime for p in sources)
+    cached = _PAGE_CACHE.get(name)
+    if cached and cached[0] == key:
+        return cached[1]
+    page, head, header, footer, chrome = (p.read_text(encoding="utf-8") for p in sources)
+    meta = PAGES[name]
+    head = (head.replace("{{title}}", meta["title"])
+                .replace("{{description}}", meta["description"])
+                .replace("{{scripts}}", PAGE_SCRIPTS.get(name, "")))
+    header = header.replace(f'data-nav="{name}" class="nav-link"', f'data-nav="{name}" class="nav-link" aria-current="page"')
+    html = (page.replace("<!-- @head -->", head)
+                .replace("<!-- @header -->", header)
+                .replace("<!-- @footer -->", footer)
+                .replace("<!-- @chrome -->", chrome)
+                .replace("{{page}}", name))
+    _PAGE_CACHE[name] = (key, html)
+    return html
+
+
+def page_route(name: str):
+    def handler():
+        return HTMLResponse(render_page(name))
+    handler.__name__ = f"page_{name}"
+    return handler
+
+
+app.add_api_route("/", page_route("home"), methods=["GET", "HEAD"], include_in_schema=False)
+for _name in ("forecast", "coach", "checkin", "memory", "data"):
+    app.add_api_route(f"/{_name}", page_route(_name), methods=["GET", "HEAD"], include_in_schema=False)
 
 
 @app.get("/favicon.ico", include_in_schema=False)

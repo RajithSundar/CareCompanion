@@ -1,0 +1,133 @@
+<!-- @head -->
+<body class="bg-paper text-ink antialiased" data-page="{{page}}">
+<!-- @header -->
+  <main id="checkin">
+    <section class="page-head">
+      <div class="shell page-head-grid">
+        <div class="page-head-copy">
+          <h1 class="page-title">Check in</h1>
+          <p class="page-lead">Record today’s numbers and how you feel, or replace the record with an imported block.</p>
+        </div>
+
+      </div>
+    </section>
+    <section class="page-body">
+      <div class="shell">
+
+        <div id="checkinResult" class="checkin-result hidden" role="status">
+          <div>
+            <div id="checkinResultTitle" class="text-lg text-ink">Saved</div>
+            <p id="checkinResultText" class="text-sm text-muted"></p>
+          </div>
+          <a id="checkinAskCoach" href="/coach" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">Ask the coach about it</a>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <!-- Check-in Form -->
+          <div class="panels">
+            <div class="p-6 space-y-5">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-lg text-ink">Daily Fitbit and PMSys check-in</h3>
+                <span id="liveUpdateBadge" class="px-2.5 py-1 rounded text-xs font-medium bg-cool-soft text-cool border border-rule-2">Moderate</span>
+              </div>
+
+              <fieldset class="space-y-2">
+                <legend class="text-xs text-muted mb-1.5">What are you logging?</legend>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <label class="flex items-center gap-2 p-2.5 rounded-md border border-rule-2 bg-paper-3 cursor-pointer">
+                    <input type="radio" name="checkinMode" value="new" checked class="range-accent" />
+                    <span class="text-ink">A new day</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2.5 rounded-md border border-rule-2 bg-paper-3 cursor-pointer">
+                    <input type="radio" name="checkinMode" value="update" class="range-accent" />
+                    <span class="text-ink">Correct <span id="checkinTargetDay" class="measured">the selected day</span></span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label for="inputSteps" class="block text-xs text-muted mb-1.5">Steps</label>
+                  <input id="inputSteps" type="number" min="0" max="100000" value="9650" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputRhr" class="block text-xs text-muted mb-1.5">Resting HR (bpm)</label>
+                  <input id="inputRhr" type="number" min="25" max="220" value="58" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputSleep" class="block text-xs text-muted mb-1.5">Sleep score (0 to 100)</label>
+                  <input id="inputSleep" type="number" min="0" max="100" value="80" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label for="inputDeep" class="block text-xs text-muted mb-1.5">Deep sleep (min)</label>
+                  <input id="inputDeep" type="number" min="0" max="720" value="80" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputRem" class="block text-xs text-muted mb-1.5">REM sleep (min)</label>
+                  <input id="inputRem" type="number" min="0" max="720" value="90" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputCardio" class="block text-xs text-muted mb-1.5">Cardio zone (min)</label>
+                  <input id="inputCardio" type="number" min="0" max="1440" value="20" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputPeak" class="block text-xs text-muted mb-1.5">Peak zone (min)</label>
+                  <input id="inputPeak" type="number" min="0" max="1440" value="5" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+              </div>
+
+              <p id="checkinError" role="alert" class="hidden text-xs text-accent"></p>
+
+              <div class="space-y-4 text-xs">
+                <div>
+                  <div class="flex justify-between mb-1"><label for="sliderReadiness" class="text-ink-2">PMSys readiness (0 to 10)</label><span id="valReadiness" class="measured text-cool">8</span></div>
+                  <input id="sliderReadiness" type="range" min="0" max="10" value="8" class="w-full range-cool cursor-pointer" />
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><label for="sliderFatigue" class="text-ink-2">PMSys fatigue (1 to 5)</label><span id="valFatigue" class="measured text-accent">2</span></div>
+                  <input id="sliderFatigue" type="range" min="1" max="5" value="2" class="w-full range-accent cursor-pointer" />
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><label for="sliderSoreness" class="text-ink-2">PMSys soreness (1 to 5)</label><span id="valSoreness" class="measured text-cool">2</span></div>
+                  <input id="sliderSoreness" type="range" min="1" max="5" value="2" class="w-full range-cool cursor-pointer" />
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><label for="sliderStress" class="text-ink-2">PMSys stress (1 to 5)</label><span id="valStress" class="measured text-accent">2</span></div>
+                  <input id="sliderStress" type="range" min="1" max="5" value="2" class="w-full range-accent cursor-pointer" />
+                </div>
+              </div>
+
+              <button id="applyCheckinBtn" type="button" class="w-full h-10 px-4 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 flex items-center justify-center gap-2 whitespace-nowrap btn-transition">
+                <i data-lucide="check" class="w-4 h-4" aria-hidden="true"></i>
+                <span>Save check-in</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Batch Import -->
+          <div class="panels min-w-0">
+            <div class="p-6 space-y-4 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-lg text-ink">Import PMData CSV or JSON</h3>
+                <button id="fillSampleImportBtn" type="button" class="text-xs font-medium text-cool hover:underline whitespace-nowrap shrink-0">Insert template</button>
+              </div>
+              <p class="text-xs text-muted">
+                Paste daily records as CSV with the header <code class="measured text-cool break-all">day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress</code> (optional columns: <code class="measured text-cool">date</code> as YYYY-MM-DD, <code class="measured text-cool">fatBurn</code>), or a JSON array of the same fields. Importing replaces this profile’s days.
+              </p>
+              <label for="importTextarea" class="sr-only">PMData CSV or JSON records</label>
+              <textarea id="importTextarea" rows="9" class="w-full bg-paper-3 border border-rule-2 rounded-md p-3 text-xs measured text-ink" placeholder="day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress&#10;Day 1,9100,59,81,85,92,22,6,8,2,2,2"></textarea>
+              <button id="confirmImportBtn" type="button" class="w-full h-10 px-4 rounded-md bg-paper-3 border border-rule-2 hover:border-cool text-ink text-sm font-medium whitespace-nowrap btn-transition">
+                Import records
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+<!-- @footer -->
+<!-- @chrome -->
+</body>
+</html>

@@ -313,12 +313,46 @@ def test_write_rate_limit(client, monkeypatch):
     assert codes[:3] == [200, 200, 200] and codes[3] == 429
 
 
-def test_page_has_no_inline_scripts_or_cdn(client):
-    html = client.get("/").text
-    assert "cdn.tailwindcss.com" not in html and "unpkg.com" not in html and "jsdelivr" not in html
+PAGES = {"/": "home", "/forecast": "forecast", "/coach": "coach", "/checkin": "checkin", "/memory": "memory", "/data": "data"}
+
+
+@pytest.mark.parametrize("path", list(PAGES))
+def test_pages_render_with_shared_chrome(client, path):
     import re
+    res = client.get(path)
+    assert res.status_code == 200
+    html = res.text
+    assert f'data-page="{PAGES[path]}"' in html
+    assert "<!-- @" not in html and "{{" not in html, "unfilled template marker"
+    for route in ("/forecast", "/coach", "/checkin", "/memory", "/data"):
+        assert f'href="{route}"' in html
+    if path != "/":
+        assert html.count('aria-current="page"') == 2  # wide and compact nav
+        assert 'class="site-footer"' in html
+    assert "cdn.tailwindcss.com" not in html and "unpkg.com" not in html and "jsdelivr" not in html
     assert not re.search(r"<script(?![^>]*\bsrc=)[^>]*>", html), "inline <script> blocks break the CSP"
     assert "apiKeyInput" not in html
+
+
+def test_landing_has_only_nav_hero_and_what_it_does(client):
+    html = client.get("/").text
+    assert 'id="trackerStage"' in html and 'class="does"' in html
+    assert html.count("<section") == 2
+    assert 'class="site-footer"' not in html
+
+
+def test_each_page_has_its_controls(client):
+    expect = {
+        "/forecast": ["mlPredClass", "overviewSessionSwitcher", "kpiSteps"],
+        "/coach": ["chatForm", "sessionStepper", "actionPlanList", "newSessionBtn"],
+        "/checkin": ["applyCheckinBtn", "importTextarea", "checkinResult"],
+        "/memory": ["addMemoryForm", "memoryList", "resetDemoBtn", "exportReportBtn"],
+        "/data": ["biometricChart", "biometricLedgerBody", "modelComparisonGrid"],
+    }
+    for path, ids in expect.items():
+        html = client.get(path).text
+        for i in ids:
+            assert f'id="{i}"' in html, (path, i)
 
 
 def test_frontend_escapes_rendered_data():

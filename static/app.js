@@ -28,6 +28,20 @@ async function api(path, { method = 'GET', body } = {}) {
 
 const pid = () => state.activePersonaId.toLowerCase();
 
+// Each page has only some of the dashboard's elements. $() returns a detached stand-in
+// for ones that are missing, so shared render code can run on every page unchanged.
+function $(id) {
+  return document.getElementById(id) || document.createElement('div');
+}
+const has = id => Boolean(document.getElementById(id));
+const PAGE = document.body.dataset.page || 'home';
+
+// The chosen profile and session follow the visitor from page to page.
+const store = {
+  get(k, fallback) { try { const v = localStorage.getItem(`cc_${k}`); return v === null ? fallback : v; } catch (e) { return fallback; } },
+  set(k, v) { try { localStorage.setItem(`cc_${k}`, String(v)); } catch (e) {} }
+};
+
 function getToken(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
@@ -60,8 +74,8 @@ const FALLBACK_PERSONA = {
 
 const state = {
   personas: { P01: JSON.parse(JSON.stringify(FALLBACK_PERSONA)) },
-  activePersonaId: 'P01',
-  activeSessionIndex: 0,
+  activePersonaId: ['P01', 'P07', 'P12'].includes(localStorage.getItem('cc_persona')) ? localStorage.getItem('cc_persona') : 'P01',
+  activeSessionIndex: null, // restored per profile once its sessions load
   chartMode: 'activity',
   serverLlm: null, // { provider, model } when the server has a key
   loadSeq: 0,
@@ -101,11 +115,14 @@ async function loadParticipantState(pid) {
       evolutionLog: data.evolutionLog || [],
       memories: (data.memories || []).map(m => ({ ...m, activeFrom: 0 }))
     };
-    if (state.activeSessionIndex >= state.personas[pid].sessions.length) {
-      state.activeSessionIndex = 0;
+    const count = state.personas[pid].sessions.length;
+    const saved = Number(store.get(`session_${pid}`, NaN));
+    if (state.activeSessionIndex === null || state.activeSessionIndex >= count) {
+      state.activeSessionIndex = Number.isInteger(saved) && saved >= 0 && saved < count ? saved : count - 1;
     }
     renderAll();
     syncPredictionFromBackend();
+    sendPendingPrompt();
   } catch (e) {
     if (seq === state.loadSeq) {
       showToast(`Could not load profile: ${e.message}`);
@@ -152,8 +169,8 @@ async function syncPredictionFromBackend() {
 }
 
 function showToast(msg) {
-  const toast = document.getElementById('toast');
-  document.getElementById('toastText').textContent = msg;
+  const toast = $('toast');
+  $('toastText').textContent = msg;
   toast.classList.remove('hidden'); toast.classList.add('flex');
   clearTimeout(showToast.timer);
   showToast.timer = setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 3200);
@@ -203,12 +220,12 @@ function renderOverview() {
   const d = getActiveDayRecord();
   const pred = state.livePrediction;
 
-  document.getElementById('overviewSessionBadge').textContent = `${s.label}, ${s.dayLabel}`;
-  document.getElementById('overviewRole').textContent = p.role;
-  document.getElementById('overviewGreeting').textContent = p.name;
-  document.getElementById('overviewAdaptation').textContent = s.adaptation;
+  $('overviewSessionBadge').textContent = `${s.label}, ${s.dayLabel}`;
+  $('overviewRole').textContent = p.role;
+  $('overviewGreeting').textContent = p.name;
+  $('overviewAdaptation').textContent = s.adaptation;
 
-  const switcherEl = document.getElementById('overviewSessionSwitcher');
+  const switcherEl = $('overviewSessionSwitcher');
   switcherEl.innerHTML = p.sessions.map((sess, idx) => {
     const active = idx === state.activeSessionIndex;
     return `<button type="button" data-overview-sess="${idx}" class="overview-sess-btn flex-1 min-w-[96px] py-2 px-2 text-xs font-medium text-center whitespace-nowrap btn-transition ${
@@ -223,27 +240,27 @@ function renderOverview() {
     });
   });
 
-  const clsEl = document.getElementById('mlPredClass');
-  clsEl.textContent = pred === undefined ? 'Loading forecast' : pred === null ? 'Forecast unavailable' : `Tomorrow: ${pred.label}`;
-  clsEl.className = `text-base font-medium ${
+  const clsEl = $('mlPredClass');
+  clsEl.textContent = pred === undefined ? 'Loading…' : pred === null ? 'Unavailable' : pred.label;
+  clsEl.className = `forecast-label ${
     !pred ? 'text-muted' : pred.label === 'Ready' ? 'text-cool' : pred.label === 'Deload Needed' ? 'text-accent' : 'text-ink'
   }`;
 
-  document.getElementById('mlProbPills').innerHTML = !pred ? '' : Object.entries(pred.probs).map(([k, v]) => {
-    const active = k === pred.label;
-    return `<span class="px-2 py-0.5 rounded border ${
-      active
-        ? 'bg-cool text-accent-ink border-cool font-medium'
-        : 'bg-paper-2 text-muted border-rule-2'
-    }">${esc(k)}: ${Math.round(v * 100)}%</span>`;
+  $('mlProbPills').innerHTML = !pred ? '' : ['Ready', 'Moderate', 'Deload Needed'].filter(k => k in pred.probs).map(k => {
+    const pct = Math.round(pred.probs[k] * 100);
+    return `<div class="prob-row${k === pred.label ? ' is-top' : ''}">
+      <span class="prob-name">${esc(k)}</span>
+      <span class="prob-track"><span class="prob-fill" style="transform: scaleX(${(pct / 100).toFixed(3)})"></span></span>
+      <span class="prob-pct">${pct}%</span>
+    </div>`;
   }).join('');
 
   if (state.modelInfo && state.modelInfo.selected_model) {
-    document.getElementById('modelNameBadge').textContent = state.modelInfo.selected_model;
+    $('modelNameBadge').textContent = state.modelInfo.selected_model;
   }
 
   const maxImp = Math.max(...FEATURE_IMPORTANCES.map(x => x.val), 0.01);
-  document.getElementById('featureImportanceBars').innerHTML = FEATURE_IMPORTANCES.map((f, idx) => {
+  $('featureImportanceBars').innerHTML = FEATURE_IMPORTANCES.map((f, idx) => {
     const pct = Math.min(100, Math.round((f.val / maxImp) * 100));
     const barColor = idx === 0 ? 'bg-accent' : 'bg-cool';
     return `
@@ -264,7 +281,7 @@ function renderOverview() {
     ...compRows.map(row => ({ name: row.model, f1: row.macro_f1, acc: row.accuracy, best: row.model === selected, baseline: false })),
     ...Object.entries(baselines).map(([k, b]) => ({ name: k.replace(/_/g, ' '), f1: b.macro_f1, acc: b.accuracy, best: false, baseline: true }))
   ];
-  document.getElementById('modelComparisonGrid').innerHTML = rows.length
+  $('modelComparisonGrid').innerHTML = rows.length
     ? rows.map(row => `
       <div class="p-2.5 rounded border ${row.best ? 'bg-accent-soft border-accent' : 'bg-paper-2 border-rule'}">
         <div class="text-xs font-medium ${row.best ? 'text-accent' : 'text-muted'}">${esc(row.name)}${row.baseline ? ' (baseline)' : ''}</div>
@@ -277,7 +294,7 @@ function renderOverview() {
 function renderLedger() {
   const p = getPersona();
   const s = getSession();
-  const body = document.getElementById('biometricLedgerBody');
+  const body = $('biometricLedgerBody');
   body.innerHTML = p.days.map((d, idx) => {
     const isSelected = idx === s.dayIndex;
     return `
@@ -297,7 +314,7 @@ function renderLedger() {
 
 function renderSessionStepper() {
   const p = getPersona();
-  const container = document.getElementById('sessionStepper');
+  const container = $('sessionStepper');
   container.innerHTML = p.sessions.map((s, idx) => {
     const active = idx === state.activeSessionIndex;
     return `
@@ -323,26 +340,26 @@ function renderSessionStepper() {
 
 function renderKPIs() {
   const p = getPersona(); const d = getActiveDayRecord(); const base = p.baseline;
-  document.getElementById('kpiSteps').textContent = Number(d.steps).toLocaleString();
+  $('kpiSteps').textContent = Number(d.steps).toLocaleString();
   const stepDiff = d.steps - base.steps;
-  const stepEl = document.getElementById('kpiStepsDelta');
+  const stepEl = $('kpiStepsDelta');
   stepEl.textContent = `${stepDiff >= 0 ? '+' : ''}${stepDiff.toLocaleString()}`;
   stepEl.className = `col-span-3 text-right measured text-xs ${stepDiff >= 0 ? 'text-cool' : 'text-accent'}`;
 
-  document.getElementById('kpiRhr').textContent = `${d.rhr} bpm`;
+  $('kpiRhr').textContent = `${d.rhr} bpm`;
   const rhrDiff = d.rhr - base.rhr;
-  const rhrEl = document.getElementById('kpiRhrDelta');
+  const rhrEl = $('kpiRhrDelta');
   rhrEl.textContent = `${rhrDiff >= 0 ? '+' : ''}${rhrDiff} bpm`;
   rhrEl.className = `col-span-3 text-right measured text-xs ${rhrDiff >= 4 ? 'text-accent' : rhrDiff <= 0 ? 'text-cool' : 'text-muted'}`;
 
-  document.getElementById('kpiSleep').textContent = `${d.sleepScore}/100`;
+  $('kpiSleep').textContent = `${d.sleepScore}/100`;
   const sleepDiff = d.sleepScore - base.sleepScore;
-  const sleepEl = document.getElementById('kpiSleepDelta');
+  const sleepEl = $('kpiSleepDelta');
   sleepEl.textContent = `${sleepDiff >= 0 ? '+' : ''}${sleepDiff}`;
   sleepEl.className = `col-span-3 text-right measured text-xs ${sleepDiff >= 0 ? 'text-cool' : 'text-accent'}`;
 
-  document.getElementById('kpiReadiness').textContent = `${d.readiness}/10`;
-  const readEl = document.getElementById('kpiReadinessDelta');
+  $('kpiReadiness').textContent = `${d.readiness}/10`;
+  const readEl = $('kpiReadinessDelta');
   readEl.textContent = d.readiness >= 7 ? 'Ready' : d.readiness >= 5 ? 'Moderate' : 'Deload';
   readEl.className = `col-span-3 text-right text-xs font-medium ${d.readiness >= 7 ? 'text-cool' : 'text-accent'}`;
 }
@@ -350,24 +367,24 @@ function renderKPIs() {
 function renderUpdateInputs() {
   const pred = state.livePrediction;
   const d = getActiveDayRecord();
-  document.getElementById('inputSteps').value = d.steps;
-  document.getElementById('inputRhr').value = d.rhr;
-  document.getElementById('inputSleep').value = d.sleepScore;
-  document.getElementById('inputDeep').value = d.deepMin;
-  document.getElementById('inputRem').value = d.remMin;
-  document.getElementById('inputCardio').value = d.cardio;
-  document.getElementById('inputPeak').value = d.peak;
-  document.getElementById('checkinTargetDay').textContent = d.day;
-  document.getElementById('sliderReadiness').value = d.readiness;
-  document.getElementById('valReadiness').textContent = d.readiness;
-  document.getElementById('sliderFatigue').value = d.fatigue;
-  document.getElementById('valFatigue').textContent = d.fatigue;
-  document.getElementById('sliderSoreness').value = d.soreness;
-  document.getElementById('valSoreness').textContent = d.soreness;
-  document.getElementById('sliderStress').value = d.stress;
-  document.getElementById('valStress').textContent = d.stress;
+  $('inputSteps').value = d.steps;
+  $('inputRhr').value = d.rhr;
+  $('inputSleep').value = d.sleepScore;
+  $('inputDeep').value = d.deepMin;
+  $('inputRem').value = d.remMin;
+  $('inputCardio').value = d.cardio;
+  $('inputPeak').value = d.peak;
+  $('checkinTargetDay').textContent = d.day;
+  $('sliderReadiness').value = d.readiness;
+  $('valReadiness').textContent = d.readiness;
+  $('sliderFatigue').value = d.fatigue;
+  $('valFatigue').textContent = d.fatigue;
+  $('sliderSoreness').value = d.soreness;
+  $('valSoreness').textContent = d.soreness;
+  $('sliderStress').value = d.stress;
+  $('valStress').textContent = d.stress;
 
-  const badge = document.getElementById('liveUpdateBadge');
+  const badge = $('liveUpdateBadge');
   badge.textContent = pred ? `Forecast: ${pred.label}` : 'Forecast unavailable';
   badge.className = `px-2.5 py-1 rounded text-xs font-medium border ${
     pred && pred.label === 'Deload Needed'
@@ -377,10 +394,11 @@ function renderUpdateInputs() {
 }
 
 function renderChart() {
+  if (!has('biometricChart') || !window.Chart) return;
   const p = getPersona();
   const visibleDays = p.days;
   const labels = visibleDays.map(d => d.day);
-  const ctx = document.getElementById('biometricChart').getContext('2d');
+  const ctx = $('biometricChart').getContext('2d');
   if (state.chartInstance) state.chartInstance.destroy();
 
   const cool = getToken('--color-cool');
@@ -489,11 +507,11 @@ function renderChart() {
 
 function renderChatHeaderAndPlan() {
   const p = getPersona(); const s = getSession();
-  document.getElementById('sessionTitle').textContent = s.title;
-  document.getElementById('sessionDayBadge').textContent = s.dayLabel;
-  document.getElementById('sessionSubtitle').textContent = s.subtitle;
+  $('sessionTitle').textContent = s.title;
+  $('sessionDayBadge').textContent = s.dayLabel;
+  $('sessionSubtitle').textContent = s.subtitle;
 
-  const nextBtn = document.getElementById('nextSessionBtn');
+  const nextBtn = $('nextSessionBtn');
   if (state.activeSessionIndex < p.sessions.length - 1) {
     nextBtn.classList.remove('hidden'); nextBtn.classList.add('inline-flex');
   } else {
@@ -501,9 +519,9 @@ function renderChatHeaderAndPlan() {
   }
 
   const doneCount = s.plan.filter(item => item.done).length;
-  document.getElementById('planAdherenceBadge').textContent = `${s.plan.length ? Math.round((doneCount / s.plan.length) * 100) : 0}%`;
+  $('planAdherenceBadge').textContent = `${s.plan.length ? Math.round((doneCount / s.plan.length) * 100) : 0}%`;
 
-  const planList = document.getElementById('actionPlanList');
+  const planList = $('actionPlanList');
   planList.innerHTML = s.plan.map(item => `
     <label class="flex items-center gap-2.5 p-2.5 rounded border text-xs cursor-pointer btn-transition ${
       item.done
@@ -536,7 +554,7 @@ function renderChatHeaderAndPlan() {
 
 function renderMessages() {
   const s = getSession();
-  const container = document.getElementById('chatMessages');
+  const container = $('chatMessages');
   const all = state.pendingSessionId === s.id ? [...s.messages, { role: 'pending' }] : s.messages;
   container.innerHTML = all.map(m => {
     if (m.role === 'pending') {
@@ -566,12 +584,12 @@ function renderMessages() {
 
 function renderQuickPrompts() {
   const prompts = ['What should my workout intensity be today?', 'How is my sleep affecting recovery?', 'Summarize what you remember about me'];
-  const container = document.getElementById('quickPrompts');
+  const container = $('quickPrompts');
   container.innerHTML = prompts.map(text => `<button type="button" class="quick-prompt-btn px-3 py-1 rounded bg-paper-2 border border-rule-2 hover:border-cool text-xs text-ink-2 hover:text-ink whitespace-nowrap btn-transition">${text}</button>`).join('');
   container.querySelectorAll('.quick-prompt-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.getElementById('chatInput').value = btn.textContent.trim();
-      document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+      $('chatInput').value = btn.textContent.trim();
+      $('chatForm').dispatchEvent(new Event('submit'));
     });
   });
 }
@@ -584,7 +602,7 @@ function renderMemoryPanel() {
     Baseline: 'bg-paper-2 text-ink-2 border-rule-2',
     Adaptation: 'bg-accent text-accent-ink border-accent'
   };
-  const listEl = document.getElementById('memoryList');
+  const listEl = $('memoryList');
   listEl.innerHTML = p.memories.map(m => `
     <div class="p-3 rounded-md border border-rule bg-paper-3 hover:border-rule-2 btn-transition group">
       <div class="flex items-center justify-between gap-2 mb-1.5">
@@ -614,7 +632,7 @@ function renderMemoryPanel() {
     });
   });
 
-  document.getElementById('memoryEvolutionLog').innerHTML = p.evolutionLog.map(l => `
+  $('memoryEvolutionLog').innerHTML = p.evolutionLog.map(l => `
     <div class="flex items-start gap-3 p-3">
       <span class="px-2 py-0.5 rounded bg-cool-soft text-cool font-medium shrink-0">${esc(l.session)}</span>
       <span class="text-ink-2 leading-relaxed">${esc(l.text)}</span>
@@ -623,8 +641,8 @@ function renderMemoryPanel() {
 }
 
 function renderApiStatus() {
-  const label = document.getElementById('apiStatusLabel');
-  const detail = document.getElementById('coachStatusText');
+  const label = $('apiStatusLabel');
+  const detail = $('coachStatusText');
   if (!state.modelInfoLoaded) {
     label.textContent = 'Coach status';
     detail.textContent = 'Checking the server…';
@@ -685,9 +703,19 @@ async function sendToCoach(userText) {
   }
 }
 
+function sendPendingPrompt() {
+  if (PAGE !== 'coach') return;
+  let pending = null;
+  try { pending = JSON.parse(sessionStorage.getItem('cc_pending_prompt') || 'null'); sessionStorage.removeItem('cc_pending_prompt'); } catch (e) {}
+  if (!pending || pending.persona !== state.activePersonaId) return;
+  const idx = getPersona().sessions.findIndex(x => x.id === pending.session);
+  if (idx >= 0 && idx !== state.activeSessionIndex) selectSession(idx);
+  sendToCoach(pending.text);
+}
+
 function setChatBusy(busy) {
-  const input = document.getElementById('chatInput');
-  const btn = document.getElementById('sendChatBtn');
+  const input = $('chatInput');
+  const btn = $('sendChatBtn');
   input.disabled = busy;
   btn.disabled = busy;
   btn.classList.toggle('opacity-60', busy);
@@ -697,29 +725,27 @@ function setChatBusy(busy) {
 
 function selectSession(idx) {
   state.activeSessionIndex = idx;
+  store.set(`session_${state.activePersonaId}`, idx);
   state.livePrediction = undefined;
   renderAll();
   syncPredictionFromBackend();
 }
 
-document.getElementById('jumpToCoachBtn').addEventListener('click', () => {
-  document.getElementById('coach').scrollIntoView({ behavior: 'smooth' });
-  setTimeout(() => document.getElementById('chatInput').focus({ preventScroll: true }), 250);
-});
-
-document.getElementById('personaSelect').addEventListener('change', (e) => {
+$('personaSelect').value = state.activePersonaId;
+$('personaSelect').addEventListener('change', (e) => {
   state.activePersonaId = e.target.value;
-  state.activeSessionIndex = 0;
+  store.set('persona', state.activePersonaId);
+  state.activeSessionIndex = null;
   state.livePrediction = undefined;
   loadParticipantState(state.activePersonaId);
 });
 
-document.getElementById('nextSessionBtn').addEventListener('click', () => {
+$('nextSessionBtn').addEventListener('click', () => {
   const p = getPersona();
   if (state.activeSessionIndex < p.sessions.length - 1) selectSession(state.activeSessionIndex + 1);
 });
 
-document.getElementById('newSessionBtn').addEventListener('click', async (e) => {
+$('newSessionBtn').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   const p = getPersona();
   btn.disabled = true;
@@ -740,24 +766,24 @@ document.querySelectorAll('.chart-mode-btn').forEach(btn => {
 });
 
 ['Readiness', 'Fatigue', 'Soreness', 'Stress'].forEach(name => {
-  const slider = document.getElementById(`slider${name}`);
-  const valEl = document.getElementById(`val${name}`);
+  const slider = $(`slider${name}`);
+  const valEl = $(`val${name}`);
   slider.addEventListener('input', () => { valEl.textContent = slider.value; });
 });
 
 function showCheckinError(msg) {
-  const el = document.getElementById('checkinError');
+  const el = $('checkinError');
   el.textContent = msg || '';
   el.classList.toggle('hidden', !msg);
 }
 
-document.getElementById('applyCheckinBtn').addEventListener('click', async (e) => {
+$('applyCheckinBtn').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   const p = getPersona();
   const s = getSession();
   const mode = document.querySelector('input[name="checkinMode"]:checked').value;
   const num = id => {
-    const raw = document.getElementById(id).value;
+    const raw = $(id).value;
     return raw === '' ? NaN : Number(raw);
   };
   const payload = {
@@ -803,13 +829,17 @@ document.getElementById('applyCheckinBtn').addEventListener('click', async (e) =
   const d = data.day_record;
   const prompt = `I just logged ${d.day}: ${d.steps} steps, RHR ${d.rhr} bpm, sleep ${d.sleepScore}/100, readiness ${d.readiness}/10, fatigue ${d.fatigue}/5, soreness ${d.soreness}/5, stress ${d.stress}/5. How should I adjust my plan?`;
   btn.disabled = false;
-  document.getElementById('coach').scrollIntoView({ behavior: 'smooth' });
-  await sendToCoach(prompt);
+  $('checkinResultTitle').textContent = `Saved ${d.day}`;
+  $('checkinResultText').textContent = pred ? `Forecast for the next day: ${pred.label}.` : 'The forecast is unavailable right now.';
+  $('checkinResult').classList.remove('hidden');
+  $('checkinAskCoach').onclick = () => {
+    try { sessionStorage.setItem('cc_pending_prompt', JSON.stringify({ persona: p.id, session: s.id, text: prompt })); } catch (e) {}
+  };
 });
 
-document.getElementById('chatForm').addEventListener('submit', async (e) => {
+$('chatForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const input = document.getElementById('chatInput');
+  const input = $('chatInput');
   const text = input.value.trim();
   if (!text || state.pendingSessionId) return;
   if (text.length > 2000) { showToast('Keep messages under 2,000 characters.'); return; }
@@ -817,13 +847,13 @@ document.getElementById('chatForm').addEventListener('submit', async (e) => {
   await sendToCoach(text);
 });
 
-document.getElementById('addMemoryForm').addEventListener('submit', async (e) => {
+$('addMemoryForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const textInput = document.getElementById('newMemoryText');
+  const textInput = $('newMemoryText');
   const text = textInput.value.trim();
   if (!text) return;
   if (text.length > 280) { showToast('Keep memories under 280 characters.'); return; }
-  const category = document.getElementById('newMemoryCategory').value;
+  const category = $('newMemoryCategory').value;
   const session = (getSession().id || 'Live').slice(0, 20);
   try {
     const data = await api(`/api/memory/${encodeURIComponent(pid())}`, { method: 'POST', body: { category, text, session } });
@@ -837,7 +867,7 @@ document.getElementById('addMemoryForm').addEventListener('submit', async (e) =>
   }
 });
 
-document.getElementById('resetDemoBtn').addEventListener('click', async () => {
+$('resetDemoBtn').addEventListener('click', async () => {
   if (!confirm('Reset this profile to the demo data? Your check-ins, sessions and memories for it will be lost.')) return;
   try {
     await api(`/api/state/${encodeURIComponent(pid())}/reset`, { method: 'POST', body: {} });
@@ -850,14 +880,14 @@ document.getElementById('resetDemoBtn').addEventListener('click', async () => {
   }
 });
 
-const apiModal = document.getElementById('apiModal');
+const apiModal = $('apiModal');
 function closeApiModal() { apiModal.classList.add('hidden'); apiModal.classList.remove('flex'); }
-document.getElementById('openApiModalBtn').addEventListener('click', () => {
+$('openApiModalBtn').addEventListener('click', () => {
   renderApiStatus();
   apiModal.classList.remove('hidden'); apiModal.classList.add('flex');
-  document.getElementById('closeApiModalBtn').focus();
+  $('closeApiModalBtn').focus();
 });
-document.getElementById('closeApiModalBtn').addEventListener('click', closeApiModal);
+$('closeApiModalBtn').addEventListener('click', closeApiModal);
 apiModal.addEventListener('click', (e) => { if (e.target === apiModal) closeApiModal(); });
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !apiModal.classList.contains('hidden')) closeApiModal();
@@ -890,11 +920,11 @@ function parseImport(raw) {
   });
 }
 
-document.getElementById('fillSampleImportBtn').addEventListener('click', () => {
-  document.getElementById('importTextarea').value = 'day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress\nDay 1,9100,59,81,85,92,22,6,8,2,2,2\nDay 2,10400,58,83,88,95,24,7,8,2,2,2\nDay 3,6200,64,61,50,66,8,0,4,4,4,4\nDay 4,7900,60,76,70,80,14,3,7,3,2,2';
+$('fillSampleImportBtn').addEventListener('click', () => {
+  $('importTextarea').value = 'day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress\nDay 1,9100,59,81,85,92,22,6,8,2,2,2\nDay 2,10400,58,83,88,95,24,7,8,2,2,2\nDay 3,6200,64,61,50,66,8,0,4,4,4,4\nDay 4,7900,60,76,70,80,14,3,7,3,2,2';
 });
-document.getElementById('confirmImportBtn').addEventListener('click', async () => {
-  const raw = document.getElementById('importTextarea').value.trim();
+$('confirmImportBtn').addEventListener('click', async () => {
+  const raw = $('importTextarea').value.trim();
   if (!raw) return;
   let parsedDays;
   try {
@@ -914,14 +944,13 @@ document.getElementById('confirmImportBtn').addEventListener('click', async () =
     state.livePrediction = undefined;
     renderAll();
     syncPredictionFromBackend();
-    document.getElementById('telemetry').scrollIntoView({ behavior: 'smooth' });
-    showToast(`Imported ${p.days.length} days`);
+    showToast(`Imported ${p.days.length} days. See them on the Data page.`);
   } catch (err) {
     showToast(`Import failed: ${err.message}`);
   }
 });
 
-document.getElementById('exportReportBtn').addEventListener('click', () => {
+$('exportReportBtn').addEventListener('click', () => {
   const p = getPersona();
   const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), participant: p.name, days: p.days, memories: p.memories, sessions: p.sessions }, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -930,7 +959,7 @@ document.getElementById('exportReportBtn').addEventListener('click', () => {
   showToast('Exported JSON record');
 });
 
-document.getElementById('exportMarkdownBtn').addEventListener('click', () => {
+$('exportMarkdownBtn').addEventListener('click', () => {
   const p = getPersona();
   const md = [
     `# CareCompanion Longitudinal Record: ${p.name}`,
@@ -952,12 +981,12 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 function syncThemeToggle() {
   const dark = document.documentElement.dataset.theme === 'dark';
-  const btn = document.getElementById('themeToggleBtn');
-  document.getElementById('themeToggleLabel').textContent = dark ? 'Light mode' : 'Dark mode';
+  const btn = $('themeToggleBtn');
+  $('themeToggleLabel').textContent = dark ? 'Light mode' : 'Dark mode';
   btn.setAttribute('aria-label', dark ? 'Light mode' : 'Dark mode');
   btn.setAttribute('aria-pressed', String(dark));
 }
-document.getElementById('themeToggleBtn').addEventListener('click', () => {
+$('themeToggleBtn').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
   document.documentElement.dataset.theme = next;
   try { localStorage.setItem('carecompanion_theme', next); } catch (e) {}
