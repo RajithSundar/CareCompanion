@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+.hallmark
+.pytest_cache
+__pycache__
+data/pmdata_raw
+data/sandboxes
+data/*.json
+frontend/bin
+experiments

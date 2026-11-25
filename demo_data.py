@@ -56,7 +56,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "I'm training for a half-marathon in 8 weeks. My left knee sometimes feels tight after speed work, and I prefer morning workouts. What should I focus on this week?"},
-                    {"role": "coach", "text": "Today's baseline shows **9,650 steps**, **58 bpm RHR**, **80 sleep score**, and **8/10 readiness**. Aim for **35 to 40 min morning Zone 2/3 runs** and **9,500 to 10,000 steps**. Because of your left knee history, cap Peak HR zone work under **10 min/day** and log knee soreness in PMSys.", "citations": ["Baseline Recorded", "Half-Marathon Goal", "Left Knee Constraint"]},
+                    {"role": "coach", "text": "Today's baseline shows **9,650 steps**, **58 bpm RHR**, **80 sleep score**, and **8/10 readiness**. Aim for **35 to 40 min morning Zone 2/3 runs** and **9,500 to 10,000 steps**. Because of your left knee history, cap Peak HR zone work under **10 min/day** and log knee soreness in PMSys.", "citations": ["Scripted example", "Baseline Recorded", "Half-Marathon Goal", "Left Knee Constraint"]},
                 ],
             },
             {
@@ -71,7 +71,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "I feel sluggish today, but I have a tempo run on my calendar. Should I push through it?"},
-                    {"role": "coach", "text": "**Hold off on the tempo run today.** Our supervised model flagged **Deload Needed** because your Fitbit RHR jumped **+5 bpm (58 to 63 bpm)** and sleep score fell from **80 to 59**. Combined with your **left knee sensitivity** from Session 1 and **4/5 soreness**, swap the run for **20 min mobility** in the Fat Burn zone and aim for **8h sleep**.", "citations": ["ML: Deload Needed", "Recalled S1: Left Knee", "Detected: RHR +5 bpm"]},
+                    {"role": "coach", "text": "**Hold off on the tempo run today.** Our supervised model flagged **Deload Needed** because your Fitbit RHR jumped **+5 bpm (58 to 63 bpm)** and sleep score fell from **80 to 59**. Combined with your **left knee sensitivity** from Session 1 and **4/5 soreness**, swap the run for **20 min mobility** in the Fat Burn zone and aim for **8h sleep**.", "citations": ["Scripted example", "ML: Deload Needed", "Recalled S1: Left Knee", "Detected: RHR +5 bpm"]},
                 ],
             },
             {
@@ -86,7 +86,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "My legs feel much fresher after taking those lighter days. Am I ready to ramp back up toward my half-marathon?"},
-                    {"role": "coach", "text": "**Your deload worked.** RHR settled to **57 bpm**, sleep score rebounded to **84**, and soreness dropped to **2/5**. Resume with a **40 min morning run** (12 min Zone 3) and a **5 min pre-run knee warm-up**.", "citations": ["Recalled S2: Deload Worked", "Recalled S1: Morning Run"]},
+                    {"role": "coach", "text": "**Your deload worked.** RHR settled to **57 bpm**, sleep score rebounded to **84**, and soreness dropped to **2/5**. Resume with a **40 min morning run** (12 min Zone 3) and a **5 min pre-run knee warm-up**.", "citations": ["Scripted example", "Recalled S2: Deload Worked", "Recalled S1: Morning Run"]},
                 ],
             },
             {
@@ -100,7 +100,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                     {"id": "p4_4", "text": "Pre-run 5 min knee warm-up drill", "done": False},
                 ],
                 "messages": [
-                    {"role": "coach", "text": "Your PMData telemetry and persistent memory nodes from Sessions 1 to 3 are active. Ask a training question or log an updated biometric check-in to adapt today's protocol.", "citations": ["ML + Memory Active", "Window: Day 1 to Day 10"]},
+                    {"role": "coach", "text": "Your PMData telemetry and persistent memory nodes from Sessions 1 to 3 are active. Ask a training question or log an updated biometric check-in to adapt today's protocol.", "citations": ["Scripted example", "ML + Memory Active", "Window: Day 1 to Day 10"]},
                 ],
             },
         ],
@@ -140,7 +140,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "I sit in back-to-back meetings all day and feel stiff by 6 PM. I want more energy without waking up at 5 AM."},
-                    {"role": "coach", "text": "Today's metrics show **6,200 steps**, **65 bpm RHR**, and **74 sleep score**. Anchor two **10 min walking breaks** between meetings to hit **7,500 steps**, paired with **20 min evening yoga**.", "citations": ["Schedule: Evening Yoga", "Goal: 7,500 Steps"]},
+                    {"role": "coach", "text": "Today's metrics show **6,200 steps**, **65 bpm RHR**, and **74 sleep score**. Anchor two **10 min walking breaks** between meetings to hit **7,500 steps**, paired with **20 min evening yoga**.", "citations": ["Scripted example", "Schedule: Evening Yoga", "Goal: 7,500 Steps"]},
                 ],
             },
             {
@@ -155,7 +155,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "Product launch week is brutal. Should I force a hard cardio session tonight to catch up?"},
-                    {"role": "coach", "text": "**Skip hard cardio tonight.** The ML model flagged **Deload Needed**: your **RHR climbed to 70 bpm (+5)**, sleep score dropped to **57**, and stress is **5/5**. Pause the 7,500 step target and do **10 min box breathing plus restorative yoga**.", "citations": ["ML: Deload Needed", "Adjusted S1: Paused Step Goal"]},
+                    {"role": "coach", "text": "**Skip hard cardio tonight.** The ML model flagged **Deload Needed**: your **RHR climbed to 70 bpm (+5)**, sleep score dropped to **57**, and stress is **5/5**. Pause the 7,500 step target and do **10 min box breathing plus restorative yoga**.", "citations": ["Scripted example", "ML: Deload Needed", "Adjusted S1: Paused Step Goal"]},
                 ],
             },
             {
@@ -170,7 +170,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "Launch is over and I slept well the last two nights. What is my next step?"},
-                    {"role": "coach", "text": "Sleep score jumped from **57 to 83**, RHR settled to **64 bpm**, and you reached **8,450 steps**. Lock in **8,500 daily steps** and add two **25 min brisk Zone 2 walks**.", "citations": ["Rebound Verified", "Updated Goal: 8,500 Steps"]},
+                    {"role": "coach", "text": "Sleep score jumped from **57 to 83**, RHR settled to **64 bpm**, and you reached **8,450 steps**. Lock in **8,500 daily steps** and add two **25 min brisk Zone 2 walks**.", "citations": ["Scripted example", "Rebound Verified", "Updated Goal: 8,500 Steps"]},
                 ],
             },
             {
@@ -184,7 +184,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                     {"id": "m4_4", "text": "Log weekly stress trend", "done": False},
                 ],
                 "messages": [
-                    {"role": "coach", "text": "Welcome back, Maya. Your PMData history and stress-adaptation rules are active. Ask a question or record a check-in to update today's plan.", "citations": ["ML + Memory Active"]},
+                    {"role": "coach", "text": "Welcome back, Maya. Your PMData history and stress-adaptation rules are active. Ask a question or record a check-in to update today's plan.", "citations": ["Scripted example", "ML + Memory Active"]},
                 ],
             },
         ],
@@ -224,7 +224,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "Starting a 4-day hypertrophy block. My lower back sometimes fatigues after heavy deadlifts. How should I manage volume?"},
-                    {"role": "coach", "text": "Baseline biometrics show **55 bpm RHR**, **82 sleep score**, and **8/10 readiness**. Run your 4-day Upper/Lower split at RPE 7 to 8, and log lower-back soreness in PMSys after posterior-chain days.", "citations": ["Baseline Recorded", "Lower-Back Constraint"]},
+                    {"role": "coach", "text": "Baseline biometrics show **55 bpm RHR**, **82 sleep score**, and **8/10 readiness**. Run your 4-day Upper/Lower split at RPE 7 to 8, and log lower-back soreness in PMSys after posterior-chain days.", "citations": ["Scripted example", "Baseline Recorded", "Lower-Back Constraint"]},
                 ],
             },
             {
@@ -239,7 +239,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "Lower back and hamstrings are wrecked (5/5 soreness), but today is heavy squat day. Should I load up?"},
-                    {"role": "coach", "text": "**Do not load heavy axial squats today.** The ML classifier flagged **Deload Needed**: your **RHR spiked +6 bpm (55 to 61)** and soreness is **5/5**, matching your lower-back sensitivity from Session 1. Pivot to **supported machine work** at **RPE 6**.", "citations": ["ML: Deload Needed", "Recalled S1: Lower-Back"]},
+                    {"role": "coach", "text": "**Do not load heavy axial squats today.** The ML classifier flagged **Deload Needed**: your **RHR spiked +6 bpm (55 to 61)** and soreness is **5/5**, matching your lower-back sensitivity from Session 1. Pivot to **supported machine work** at **RPE 6**.", "citations": ["Scripted example", "ML: Deload Needed", "Recalled S1: Lower-Back"]},
                 ],
             },
             {
@@ -254,7 +254,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                 ],
                 "messages": [
                     {"role": "user", "text": "Soreness is completely gone today. Ready to push for a PR?"},
-                    {"role": "coach", "text": "**Green light for progressive overload.** You hit a 10-day best **54 bpm RHR** and **86 sleep score**. Hit your top sets at **RPE 8**, using **trap-bar or controlled RDLs** to protect your lower back.", "citations": ["Recalled S2: Spine-Sparing Rule"]},
+                    {"role": "coach", "text": "**Green light for progressive overload.** You hit a 10-day best **54 bpm RHR** and **86 sleep score**. Hit your top sets at **RPE 8**, using **trap-bar or controlled RDLs** to protect your lower back.", "citations": ["Scripted example", "Recalled S2: Spine-Sparing Rule"]},
                 ],
             },
             {
@@ -268,7 +268,7 @@ DEFAULT_APP_STATE: Dict[str, Dict[str, Any]] = {
                     {"id": "j4_4", "text": "Continue PMSys post-session logs", "done": True},
                 ],
                 "messages": [
-                    {"role": "coach", "text": "All 10 days of your PMData biometrics and strength-block memories are active. Ask a question or update today's check-in to adapt your next session.", "citations": ["ML + Memory Active"]},
+                    {"role": "coach", "text": "All 10 days of your PMData biometrics and strength-block memories are active. Ask a question or update today's check-in to adapt your next session.", "citations": ["Scripted example", "ML + Memory Active"]},
                 ],
             },
         ],

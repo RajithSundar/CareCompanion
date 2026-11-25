@@ -6,6 +6,21 @@ A supervised learning demo for next-day recovery forecasting, plus a small coach
 - **Model:** RandomForest, selected by nested leave-one-participant-out validation.
 - **App:** a FastAPI backend and a static dashboard. An optional LLM (OpenRouter or Groq) writes the coaching text. Without a key, a rule-based reply is used.
 
+## The brief, and where each part lives
+
+> Build a coaching agent that remembers a user's history across multiple sessions and adjusts its advice based on past interactions (not a fresh generic answer each time). Deliverable: demo on Azure AI showing advice changing across 2-3 simulated sessions. Dataset: PMData Fitbit dataset.
+
+| Requirement | Where |
+|---|---|
+| Remembers history across sessions | `coach.py`: saved facts (goals, constraints, preferences) are extracted from what the user says and stored per profile; every reply also reads what the coach advised in the previous sessions and the numbers it saw then (`prior_sessions` in `app.py`). |
+| Adjusts advice based on past interactions | The agent is told to open with what changed since the last session and whether its advice now differs, and to respect every saved goal and constraint by name. |
+| Not a fresh generic answer each time | `/demo` puts each reply next to the answer a no-memory assistant gives to the same question on the same day. |
+| Demo on Azure AI | Azure OpenAI is the first-choice provider (`AZURE_OPENAI_*` in `.env`); `docs/AZURE.md` covers the model deployment and hosting the app on Azure Container Apps (`Dockerfile`). |
+| 2-3 simulated sessions | `/demo` (`demo.py`) runs three sessions in order, starting from a blank memory, for a fictional persona or any of the 16 real PMData participants on their own recorded days. |
+| PMData Fitbit dataset | The forecast model is trained and tested on PMData (below); `data/pmdata_daily.csv` is the derived daily table the demo uses. |
+
+Without an LLM key the agent still works: replies and memory extraction fall back to rules, and the demo shows the same structure.
+
 ## Results
 
 Trained and evaluated on the real **PMData** dataset (Thambawita et al., 2020): 1,423 next-day forecast rows from 16 participants over five months. Nested leave-one-participant-out; numbers from `models/model_metrics.json`.
@@ -96,7 +111,9 @@ Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_
 ## Files
 
 - `train_model.py`: data loading, nested validation, baselines, permutation importance, and the saved model.
-- `app.py`: FastAPI routes, validation, rate limits and the coach.
+- `app.py`: FastAPI routes, pages, validation and rate limits.
+- `coach.py`: the agent: providers (Azure OpenAI first), prompts, memory extraction, offline replies.
+- `demo.py`: the three-session simulation behind `/demo`.
 - `features.py`: feature definitions shared by training and serving.
 - `sandbox.py`, `ratelimit.py`: per-visitor storage and rate limiting.
 - `demo_data.py`: the three demo personas.

@@ -589,3 +589,44 @@ textarea:disabled {
 .footer-links a:hover { color: var(--color-ink); }
 .footer-note { grid-column: 1 / -1; color: var(--color-muted); font-size: 0.8125rem; margin: 0; }
 @media (max-width: 40rem) { .footer-grid { grid-template-columns: minmax(0, 1fr); } .footer-links { justify-content: flex-start; } }
+
+
+/* ------------------------------------------------------------------ demo page */
+.demo-controls { display: grid; grid-template-columns: minmax(0, 16rem) auto; gap: var(--space-xs) var(--space-sm); align-items: end; }
+.demo-controls label { grid-column: 1 / -1; }
+@media (max-width: 48rem) { .demo-controls { grid-template-columns: minmax(0, 1fr); } }
+.demo-meta { color: var(--color-muted); font-size: 0.9375rem; margin: 0 0 var(--space-lg); max-width: 70ch; }
+.demo-sessions { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-lg); }
+.demo-session { display: grid; grid-template-columns: 3rem minmax(0, 1fr); gap: var(--space-md); }
+.demo-rail { position: relative; display: flex; justify-content: center; }
+.demo-rail::after { content: ""; position: absolute; top: 3rem; bottom: calc(var(--space-lg) * -1); width: 2px; background: var(--color-rule-2); }
+.demo-session:last-child .demo-rail::after { display: none; }
+.demo-num {
+  display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: 50%;
+  background: var(--color-accent); color: var(--color-accent-ink); font-family: var(--font-outlier); font-weight: 600;
+}
+.demo-card { min-width: 0; }
+.demo-card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--space-sm); padding: var(--space-md) var(--space-lg); }
+.demo-card-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; margin: 0; display: flex; gap: var(--space-sm); align-items: baseline; }
+.demo-day { font-family: var(--font-outlier); font-size: 0.875rem; color: var(--color-muted); font-weight: 400; }
+.demo-forecast { font-size: 0.875rem; padding: 4px 10px; border-radius: var(--radius-pill); border: 1px solid var(--color-rule-2); color: var(--color-ink-2); }
+.demo-forecast[data-state="Deload Needed"] { color: var(--color-accent); border-color: var(--color-accent); }
+.demo-forecast[data-state="Ready"] { color: var(--color-ok); border-color: var(--color-ok); }
+.demo-readings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.demo-reading { display: grid; gap: 2px; padding: var(--space-sm) var(--space-lg); background: var(--color-paper-3); }
+.demo-reading-label { font-size: 0.8125rem; color: var(--color-muted); }
+.demo-reading-value { font-family: var(--font-outlier); font-size: 1.125rem; font-variant-numeric: tabular-nums; }
+.demo-delta { font-size: 0.75rem; color: var(--color-accent); font-variant-numeric: tabular-nums; }
+@media (max-width: 40rem) { .demo-readings { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.demo-quote { margin: 0; padding: var(--space-md) var(--space-lg); color: var(--color-ink); font-size: 1rem; line-height: 1.5; display: grid; gap: var(--space-2xs); }
+.demo-quote-label, .demo-reply-label, .demo-memory-label { font-size: 0.8125rem; color: var(--color-muted); }
+.demo-replies { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+@media (max-width: 52rem) { .demo-replies { grid-template-columns: minmax(0, 1fr); } }
+.demo-reply { padding: var(--space-md) var(--space-lg); display: grid; gap: var(--space-xs); align-content: start; color: var(--color-muted); font-size: 0.9375rem; line-height: 1.55; }
+.demo-reply.is-memory { color: var(--color-ink); background: var(--color-accent-soft); box-shadow: inset 3px 0 0 var(--color-accent); }
+.demo-reply.is-memory .demo-reply-label { color: var(--color-accent); }
+.demo-memory { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-md); padding: var(--space-md) var(--space-lg); background: var(--color-paper-3); }
+@media (max-width: 52rem) { .demo-memory { grid-template-columns: minmax(0, 1fr); } }
+.demo-chips { display: flex; flex-wrap: wrap; gap: var(--space-2xs); margin-top: var(--space-2xs); font-size: 0.8125rem; }
+.demo-chip { padding: 3px 8px; border-radius: var(--radius-pill); border: 1px solid var(--color-rule-2); color: var(--color-ink-2); overflow-wrap: anywhere; }
+.demo-chip[data-cat="Constraint"] { border-color: var(--color-accent); color: var(--color-accent); }

@@ -1,0 +1,31 @@
+<!-- @head -->
+<body class="bg-paper text-ink antialiased" data-page="{{page}}">
+<!-- @header -->
+  <main id="demo">
+    <section class="page-head">
+      <div class="shell page-head-grid">
+        <div class="page-head-copy">
+          <h1 class="page-title">Three sessions, one coach</h1>
+          <p class="page-lead">The coach meets the same person three times. See what it remembers and how its advice changes, next to an assistant with no memory.</p>
+        </div>
+        <form id="demoForm" class="page-head-aside demo-controls">
+          <label for="demoProfile" class="text-xs text-muted">Who</label>
+          <select id="demoProfile" class="h-11 bg-paper-2 border border-rule-2 rounded-md px-3 text-sm text-ink min-w-0">
+            <option value="p01">Alex Rivera (fictional persona)</option>
+          </select>
+          <button id="demoRunBtn" type="submit" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">Run the 3 sessions</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="page-body">
+      <div class="shell">
+        <p id="demoMeta" class="demo-meta">Pick someone and run the demo. Real PMData participants use their own recorded days.</p>
+        <ol id="demoSessions" class="demo-sessions" aria-live="polite"></ol>
+      </div>
+    </section>
+  </main>
+<!-- @footer -->
+<!-- @chrome -->
+</body>
+</html>

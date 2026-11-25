@@ -1,5 +1,5 @@
 module.exports = {
-  content: ["../static/pages/*.html", "../static/partials/*.html", "../static/app.js", "../static/tracker.js"],
+  content: ["../static/pages/*.html", "../static/partials/*.html", "../static/app.js", "../static/tracker.js", "../static/demo.js"],
   future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
