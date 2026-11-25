@@ -74,7 +74,7 @@ Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_
 
 ## Data and limitations
 
-- `data/pmdata_sample.csv` is a synthetic 480-row sample with the PMData schema (16 participants, 30 days each). The full PMData dataset is at [datasets.simula.no/pmdata](https://datasets.simula.no/pmdata) (non-commercial licence; cite the paper). Put participant folders under `data/pmdata_raw/` and rerun `train_model.py`. The loader reads `pmsys/wellness.csv` and the Fitbit files `sleep_score.csv`, `resting_heart_rate.json`, `steps.json`, `sleep.json` and `time_in_heart_rate_zones.json`, and raises if one is missing.
+- `data/pmdata_sample.csv` is a synthetic 480-row sample with the PMData schema (16 participants, 30 days each). The full PMData dataset is at [datasets.simula.no/pmdata](https://datasets.simula.no/pmdata) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); cite Thambawita et al., "PMData: A Sports Logging Dataset", MMSys 2020, [doi:10.1145/3339825.3394926](https://dl.acm.org/doi/10.1145/3339825.3394926). Put participant folders under `data/pmdata_raw/` and rerun `train_model.py`. The loader reads `pmsys/wellness.csv` and the Fitbit files `sleep_score.csv`, `resting_heart_rate.json`, `steps.json`, `sleep.json` and `time_in_heart_rate_zones.json`, and raises if one is missing.
 - The three demo personas (`demo_data.py`) are fictional and sit at higher readiness than most of the sample, so their forecasts are illustrations.
 - Forecasts and coaching are a demo, not medical advice. Probabilities are not calibrated; the Brier score is reported so you can judge them.
 

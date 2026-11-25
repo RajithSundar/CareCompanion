@@ -1,13 +1,12 @@
-// The 3D tracker in the hero. Turns with the cursor over the hero, spins when dragged,
+// The 3D watch in the hero. Tilts toward the cursor while it is over the watch, spins when dragged,
 // and responds to the arrow keys. app.js calls CCTracker.render() with the active
 // profile's stats; until a profile loads it shows a labelled random sample.
 (function () {
   const stage = document.getElementById('trackerStage');
-  const hero = document.getElementById('hero');
-  if (!stage || !hero) return;
+  if (!stage) return;
 
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const BASE = { rx: -12, ry: -30 };
+  const BASE = { rx: -6, ry: -24 };
   let tiltX = 0;     // from cursor position over the hero
   let tiltY = 0;
   let spin = 0;      // from dragging and the arrow keys
@@ -27,18 +26,19 @@
   }
   function schedule() { if (!frame) frame = requestAnimationFrame(apply); }
 
-  // Cursor over the hero: a gentle tilt toward the pointer. Skipped under reduced motion.
-  hero.addEventListener('pointermove', (e) => {
+  // Cursor over the watch: it tilts toward the pointer. Nothing moves when the cursor is elsewhere.
+  // Skipped under reduced motion.
+  stage.addEventListener('pointermove', (e) => {
     if (reduce.matches || drag || e.pointerType === 'touch') return;
-    const r = hero.getBoundingClientRect();
+    const r = stage.getBoundingClientRect();
     const px = (e.clientX - r.left) / r.width - 0.5;
     const py = (e.clientY - r.top) / r.height - 0.5;
-    tiltX = px * 40;
-    tiltY = -py * 22;
+    tiltX = px * 50;
+    tiltY = -py * 30;
     stage.classList.add('is-live');
     schedule();
   }, { passive: true });
-  hero.addEventListener('pointerleave', () => {
+  stage.addEventListener('pointerleave', () => {
     if (drag) return;
     tiltX = 0; tiltY = 0;
     stage.classList.remove('is-live');
@@ -101,21 +101,27 @@
 
   function render(d) {
     const data = d || randomStats();
-    el('trkWho').textContent = data.who;
-    el('trkDay').textContent = data.day;
     el('trkSteps').textContent = fmt(data.steps);
     el('trkRhr').textContent = data.rhr;
     el('trkSleep').textContent = data.sleep;
-    el('trkReadyVal').textContent = `${data.readiness}/10`;
-    const bar = el('trkReadyBar');
-    if (bar.children.length !== 10) bar.innerHTML = '<span></span>'.repeat(10);
-    [...bar.children].forEach((s, i) => s.classList.toggle('on', i < Number(data.readiness)));
+    el('trkReadyVal').textContent = data.readiness;
+    const goal = 10000;
+    el('trkRing').setAttribute('stroke-dasharray', `${Math.min(100, (Number(data.steps) / goal) * 100).toFixed(1)} 100`);
     el('trkForecast').dataset.state = data.forecast || 'none';
     el('trkForecastVal').textContent = data.forecast ? data.forecast.replace(' Needed', '') : '--';
     el('trackerSummary').textContent = data.sample
       ? 'Random sample stats. No profile is loaded.'
       : `${data.who}, ${data.day}: ${fmt(data.steps)} steps, resting heart rate ${data.rhr}, sleep score ${data.sleep}, readiness ${data.readiness} of 10.${data.forecast ? ` Tomorrow: ${data.forecast}.` : ''}`;
   }
+
+  // The watch shows the visitor's own clock.
+  function tick() {
+    const now = new Date();
+    el('trkTime').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    el('trkDate').textContent = now.toLocaleDateString([], { weekday: 'short', day: 'numeric' });
+  }
+  tick();
+  setInterval(tick, 30000);
 
   let received = false;
   window.CCTracker = {
