@@ -6,230 +6,13 @@
   <meta name="theme-color" content="#FFFFFF" />
   <meta name="description" content="Longitudinal Fitbit biometric telemetry, a supervised next-day recovery forecast, and persistent multi-session coaching. Demo project." />
   <title>CareCompanion: Longitudinal Biometric Health Coach</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/static/fonts/fonts.css" />
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-  <script>
-    tailwind.config = {
-      future: { hoverOnlyWhenSupported: true },
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Host Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-            mono: ['"Atkinson Hyperlegible Mono"', 'ui-monospace', 'monospace']
-          },
-          colors: {
-            'paper': 'var(--color-paper)',
-            'paper-2': 'var(--color-paper-2)',
-            'paper-3': 'var(--color-paper-3)',
-            'ink': 'var(--color-ink)',
-            'ink-2': 'var(--color-ink-2)',
-            'muted': 'var(--color-muted)',
-            'rule': 'var(--color-rule)',
-            'rule-2': 'var(--color-rule-2)',
-            'accent': 'var(--color-accent)',
-            'accent-ink': 'var(--color-accent-ink)',
-            'accent-soft': 'var(--color-accent-soft)',
-            'cool': 'var(--color-cool)',
-            'cool-soft': 'var(--color-cool-soft)',
-            'ok': 'var(--color-ok)',
-            'ok-soft': 'var(--color-ok-soft)',
-            'bad': 'var(--color-bad)',
-            'bad-soft': 'var(--color-bad-soft)'
-          }
-        }
-      }
-    };
-  </script>
-  <style>
-    /* Hallmark · shape: Workbench · genre: modern-minimal · theme: console · console: graphite · hero: Stage · posture: restrained · surface: absolute · nav: edge-aligned · footer: colophon · v2.0.0 */
-    /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, multi-panel clinical system; unified all surfaces into 1px hairline Console grids with zero floating cards */
-    :root {
-      --color-paper: #FFFFFF;
-      --color-paper-2: #F7F5F4;
-      --color-paper-3: #FBFAF9;
-      --color-ink: #1B1B1D;
-      --color-ink-2: #3A3A3E;
-      --color-muted: #6B6B70;
-      --color-rule: #ECE8E5;
-      --color-rule-2: #D6CFCA;
-      --color-accent: #C62828;
-      --color-accent-ink: #FFFFFF;
-      --color-accent-soft: #FBE9E9;
-      --color-cool: #2D5F7E;
-      --color-cool-soft: #E7EEF3;
-      --color-ok: #2E7D4F;
-      --color-ok-soft: #E7F3EC;
-      --color-bad: #C62828;
-      --color-bad-soft: #FBE9E9;
-      --color-focus: #C62828;
-      --font-display: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
-      --font-body: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
-      --font-outlier: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
-      --space-2xs: 4px;
-      --space-xs: 8px;
-      --space-sm: 12px;
-      --space-md: 16px;
-      --space-lg: 24px;
-      --space-xl: 40px;
-      --space-2xl: 64px;
-      --space-3xl: 96px;
-      --radius-card: 10px;
-      --radius-pill: 6px;
-      --rule-hair: 1px;
-      --dur-micro: 120ms;
-      --dur-short: 220ms;
-      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-      --container: 1360px;
-      --gutter: 32px;
-    }
-
-    :root[data-theme="dark"] {
-      --color-paper: #0F1011;
-      --color-paper-2: #17191B;
-      --color-paper-3: #0A0B0C;
-      --color-ink: #F5F5F4;
-      --color-ink-2: #D6D6D3;
-      --color-muted: #9A9A96;
-      --color-rule: #26282A;
-      --color-rule-2: #3A3D40;
-      --color-accent: #FF6B6B;
-      --color-accent-ink: #0F1011;
-      --color-accent-soft: #2C1516;
-      --color-cool: #7FB3D5;
-      --color-cool-soft: #13232E;
-      --color-ok: #6FC48F;
-      --color-ok-soft: #112419;
-      --color-bad: #FF8A80;
-      --color-bad-soft: #2D1614;
-      --color-focus: #FF6B6B;
-    }
-
-    html {
-      overflow-x: clip;
-      scroll-behavior: smooth;
-      scroll-padding-top: 84px;
-      background-color: var(--color-paper);
-      color: var(--color-ink);
-      font-family: var(--font-body);
-    }
-
-    body {
-      overflow-x: clip;
-      margin: 0;
-      min-height: 100dvh;
-      background-color: var(--color-paper);
-      color: var(--color-ink);
-      font-family: var(--font-body);
-      font-size: 16px;
-      line-height: 1.55;
-      caret-color: var(--color-accent);
-      scrollbar-color: var(--color-rule-2) var(--color-paper);
-    }
-
-    ::selection {
-      background-color: var(--color-accent);
-      color: var(--color-accent-ink);
-    }
-
-    h1, h2, h3 {
-      font-family: var(--font-display);
-      font-weight: 500;
-      letter-spacing: -0.03em;
-      line-height: 1.05;
-      text-wrap: balance;
-      overflow-wrap: break-word;
-      min-width: 0;
-    }
-
-    p {
-      text-wrap: pretty;
-    }
-
-    .measured {
-      font-family: var(--font-outlier);
-      font-variant-numeric: tabular-nums slashed-zero;
-    }
-
-    .shell {
-      max-width: var(--container);
-      margin-inline: auto;
-      padding-inline: var(--gutter);
-    }
-
-    .panels {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      min-width: 0;
-      gap: var(--rule-hair);
-      background-color: var(--color-rule);
-      color: var(--color-ink);
-      border: var(--rule-hair) solid var(--color-rule);
-      border-radius: var(--radius-card);
-      overflow: hidden;
-    }
-
-    .panels > * {
-      min-width: 0;
-      background-color: var(--color-paper-2);
-      color: var(--color-ink);
-    }
-
-    .range-cool {
-      accent-color: var(--color-cool);
-    }
-
-    .range-accent {
-      accent-color: var(--color-accent);
-    }
-
-    .thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .thin-scroll::-webkit-scrollbar-track { background: transparent; }
-    .thin-scroll::-webkit-scrollbar-thumb { background: var(--color-rule-2); border-radius: 9999px; }
-    .thin-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-cool); }
-
-    a:focus-visible,
-    button:focus-visible,
-    input:focus-visible,
-    select:focus-visible,
-    textarea:focus-visible {
-      outline: 2px solid var(--color-focus);
-      outline-offset: 2px;
-    }
-
-    button:active:not(:disabled),
-    a:active {
-      transform: translateY(1px);
-    }
-
-    button:disabled,
-    input:disabled,
-    select:disabled,
-    textarea:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .btn-transition {
-      transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), transform 120ms var(--ease-out);
-    }
-    .btn-transition:active:not(:disabled) {
-      transform: scale(0.97);
-    }
-
-    html { -webkit-tap-highlight-color: transparent; }
-    a, button, select, [role="button"] { touch-action: manipulation; }
-    button, [role="button"] { -webkit-user-select: none; user-select: none; }
-
-    @media (prefers-reduced-motion: reduce) {
-      html { scroll-behavior: auto; }
-      *, *::before, *::after {
-        animation-duration: 0.01ms !important;
-        transition-duration: 0.01ms !important;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/static/app.css" />
+  <script src="/static/theme.js"></script>
+  <script defer src="/static/vendor/chart.umd.min.js"></script>
+  <script defer src="/static/vendor/lucide.min.js"></script>
+  <script defer src="/static/app.js"></script>
 </head>
 <body class="bg-paper text-ink antialiased">
 
@@ -267,8 +50,8 @@
         <button id="themeToggleBtn" type="button" aria-pressed="false" class="inline-flex items-center px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">Dark mode</button>
 
         <button id="openApiModalBtn" type="button" class="inline-flex items-center gap-2 px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
-          <i data-lucide="key-round" class="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true"></i>
-          <span id="apiStatusLabel">No LLM configured</span>
+          <i data-lucide="bot" class="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true"></i>
+          <span id="apiStatusLabel">Coach status</span>
         </button>
       </div>
     </div>
@@ -351,7 +134,7 @@
             </div>
 
             <!-- Session Version Switcher Tabs -->
-            <div id="overviewSessionSwitcher" class="bg-paper-3 grid grid-cols-4 divide-x divide-rule"></div>
+            <div id="overviewSessionSwitcher" class="bg-paper-3 flex overflow-x-auto divide-x divide-rule"></div>
 
             <!-- Telemetry Diff & Readout Rows -->
             <div class="bg-paper-2 divide-y divide-rule text-sm">
@@ -546,7 +329,7 @@
       <div class="shell space-y-8">
         <div class="space-y-2 max-w-xl">
           <h2 class="text-3xl sm:text-4xl text-ink">Record today’s biometrics or import a block.</h2>
-          <p class="text-base text-muted">Changes persist on the backend, recompute rolling features, and refresh the next-day forecast immediately.</p>
+          <p class="text-base text-muted">Changes are saved to your private sandbox, recompute the rolling features, and refresh the next-day forecast.</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -558,20 +341,55 @@
                 <span id="liveUpdateBadge" class="px-2.5 py-1 rounded text-xs font-medium bg-cool-soft text-cool border border-rule-2">Moderate</span>
               </div>
 
+              <fieldset class="space-y-2">
+                <legend class="text-xs text-muted mb-1.5">What are you logging?</legend>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <label class="flex items-center gap-2 p-2.5 rounded-md border border-rule-2 bg-paper-3 cursor-pointer">
+                    <input type="radio" name="checkinMode" value="new" checked class="range-accent" />
+                    <span class="text-ink">A new day</span>
+                  </label>
+                  <label class="flex items-center gap-2 p-2.5 rounded-md border border-rule-2 bg-paper-3 cursor-pointer">
+                    <input type="radio" name="checkinMode" value="update" class="range-accent" />
+                    <span class="text-ink">Correct <span id="checkinTargetDay" class="measured">the selected day</span></span>
+                  </label>
+                </div>
+              </fieldset>
+
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label for="inputSteps" class="block text-xs text-muted mb-1.5">Steps</label>
-                  <input id="inputSteps" type="number" min="0" max="40000" value="9650" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                  <input id="inputSteps" type="number" min="0" max="100000" value="9650" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
                 </div>
                 <div>
                   <label for="inputRhr" class="block text-xs text-muted mb-1.5">Resting HR (bpm)</label>
-                  <input id="inputRhr" type="number" min="35" max="120" value="58" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                  <input id="inputRhr" type="number" min="25" max="220" value="58" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
                 </div>
                 <div>
                   <label for="inputSleep" class="block text-xs text-muted mb-1.5">Sleep score (0 to 100)</label>
-                  <input id="inputSleep" type="number" min="20" max="100" value="80" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                  <input id="inputSleep" type="number" min="0" max="100" value="80" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
                 </div>
               </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label for="inputDeep" class="block text-xs text-muted mb-1.5">Deep sleep (min)</label>
+                  <input id="inputDeep" type="number" min="0" max="720" value="80" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputRem" class="block text-xs text-muted mb-1.5">REM sleep (min)</label>
+                  <input id="inputRem" type="number" min="0" max="720" value="90" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputCardio" class="block text-xs text-muted mb-1.5">Cardio zone (min)</label>
+                  <input id="inputCardio" type="number" min="0" max="1440" value="20" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputPeak" class="block text-xs text-muted mb-1.5">Peak zone (min)</label>
+                  <input id="inputPeak" type="number" min="0" max="1440" value="5" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+              </div>
+
+              <p id="checkinError" role="alert" class="hidden text-xs text-accent"></p>
 
               <div class="space-y-4 text-xs">
                 <div>
@@ -607,10 +425,10 @@
                 <button id="fillSampleImportBtn" type="button" class="text-xs font-medium text-cool hover:underline whitespace-nowrap shrink-0">Insert template</button>
               </div>
               <p class="text-xs text-muted">
-                Paste daily records (<code class="measured text-cool break-all">day,steps,rhr,sleepScore,readiness,fatigue,soreness,stress</code>) or a JSON array.
+                Paste daily records as CSV with the header <code class="measured text-cool break-all">day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress</code> (optional columns: <code class="measured text-cool">date</code> as YYYY-MM-DD, <code class="measured text-cool">fatBurn</code>), or a JSON array of the same fields. Importing replaces this profile's days.
               </p>
               <label for="importTextarea" class="sr-only">PMData CSV or JSON records</label>
-              <textarea id="importTextarea" rows="9" class="w-full bg-paper-3 border border-rule-2 rounded-md p-3 text-xs measured text-ink" placeholder="day,steps,rhr,sleepScore,readiness,fatigue,soreness,stress&#10;Day 1,9100,59,81,8,2,2,2"></textarea>
+              <textarea id="importTextarea" rows="9" class="w-full bg-paper-3 border border-rule-2 rounded-md p-3 text-xs measured text-ink" placeholder="day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress&#10;Day 1,9100,59,81,85,92,22,6,8,2,2,2"></textarea>
               <button id="confirmImportBtn" type="button" class="w-full h-10 px-4 rounded-md bg-paper-3 border border-rule-2 hover:border-cool text-ink text-sm font-medium whitespace-nowrap btn-transition">
                 Import records
               </button>
@@ -627,7 +445,7 @@
       <div class="shell space-y-8">
         <div class="space-y-2 max-w-xl">
           <h2 class="text-3xl sm:text-4xl text-ink">What the coach keeps on file.</h2>
-          <p class="text-base text-muted">Goals, physical constraints, and adaptation rules extracted across sessions and stored in <code class="measured text-cool">agent_memory.json</code>.</p>
+          <p class="text-base text-muted">Goals, physical constraints, and adaptation rules extracted across sessions and saved in your private sandbox.</p>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -700,39 +518,25 @@
     </div>
   </footer>
 
-  <!-- API Key Settings Modal -->
+  <!-- Coach status dialog (read-only; keys live on the server) -->
   <div id="apiModal" role="dialog" aria-modal="true" aria-labelledby="apiModalTitle" class="fixed inset-0 z-50 hidden items-center justify-center bg-paper-3/85 p-4">
     <div class="panels max-w-md w-full">
       <div class="p-5 space-y-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <i data-lucide="key-round" class="w-4 h-4 text-accent" aria-hidden="true"></i>
-            <h3 id="apiModalTitle" class="text-base text-ink">OpenRouter API Configuration</h3>
+            <i data-lucide="bot" class="w-4 h-4 text-accent" aria-hidden="true"></i>
+            <h3 id="apiModalTitle" class="text-base text-ink">Coach status</h3>
           </div>
-          <button id="closeApiModalBtn" type="button" aria-label="Close modal" class="text-muted hover:text-ink p-1 rounded">
+          <button id="closeApiModalBtn" type="button" aria-label="Close" class="text-muted hover:text-ink p-1 rounded">
             <i data-lucide="x" class="w-4 h-4" aria-hidden="true"></i>
           </button>
         </div>
-        <p class="text-xs text-muted">
-          Server environment uses <code class="measured text-cool">.env</code> when configured. You may also override with an <strong class="text-ink font-medium">OpenRouter API Key</strong> (<code class="measured text-cool">sk-or-...</code>) or switch to the offline reply (no LLM).
-        </p>
-        <div class="space-y-3">
-          <div>
-            <label for="apiProviderSelect" class="block text-xs text-ink-2 mb-1">Reasoning engine</label>
-            <select id="apiProviderSelect" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm text-ink">
-              <option value="openrouter">OpenRouter API (openai/gpt-4o-mini)</option>
-              <option value="simulated">No LLM (offline reply)</option>
-            </select>
-          </div>
-          <div id="apiKeyInputWrapper">
-            <label for="apiKeyInput" class="block text-xs text-ink-2 mb-1">OpenRouter API key override</label>
-            <input id="apiKeyInput" type="password" placeholder="Optional override (sk-or-...)" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
-          </div>
-        </div>
-        <div class="pt-2 flex items-center justify-end gap-2">
-          <button id="clearApiBtn" type="button" class="px-3 h-9 rounded-md text-xs font-medium text-muted hover:text-ink whitespace-nowrap">Use Local Engine</button>
-          <button id="saveApiBtn" type="button" class="px-4 h-9 rounded-md text-xs font-medium bg-accent text-accent-ink hover:opacity-90 whitespace-nowrap">Save settings</button>
-        </div>
+        <p id="coachStatusText" class="text-sm text-ink-2">Checking the server…</p>
+        <ul class="text-xs text-muted space-y-1.5 list-disc pl-4">
+          <li>The language model key is kept on the server. This page never asks for or stores a key.</li>
+          <li>Your check-ins, sessions and memories live in a private sandbox tied to this browser. Other visitors cannot see or change them, and they are deleted after 14 days without a visit.</li>
+          <li>Forecasts and coaching are a demo. They are not medical advice.</li>
+        </ul>
       </div>
     </div>
   </div>
@@ -743,910 +547,5 @@
     <span id="toastText">Saved</span>
   </div>
 
-  <script>
-    (function applySavedTheme() {
-      let saved = null;
-      try { saved = localStorage.getItem('carecompanion_theme'); } catch (e) {}
-      document.documentElement.dataset.theme = saved === 'dark' ? 'dark' : 'light';
-    })();
-
-    function getToken(name) {
-      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    }
-
-    // Filled from /api/model-info (permutation importance). Empty until the server responds.
-    let FEATURE_IMPORTANCES = [];
-
-    const FALLBACK_PERSONA = {
-      id: 'P01', name: 'Alex Rivera', role: 'Half-Marathon Prep, Morning Runner',
-      baseline: { steps: 9400, rhr: 58, sleepScore: 79, readiness: 7 },
-      days: [
-        { day: 'Day 1', steps: 9650, rhr: 58, sleepScore: 80, deepMin: 88, remMin: 95, readiness: 8, fatigue: 2, soreness: 2, stress: 2, fatBurn: 38, cardio: 26, peak: 8 }
-      ],
-      sessions: [
-        {
-          id: 'S1', label: 'Session 1', dayIndex: 0, dayLabel: 'Day 1',
-          title: 'Session 1: Baseline Intake', subtitle: 'Establishing biometric baselines and half-marathon goal',
-          adaptation: 'Captured half-marathon goal, morning preference, and left knee Peak HR cap.',
-          plan: [{ id: 'p1_1', text: '35 min Zone 2/3 morning run', done: true }],
-          messages: [{ role: 'coach', text: 'Baseline metrics loaded.', citations: ['Baseline Recorded'] }]
-        }
-      ],
-      memories: [
-        { id: 'm1', category: 'Goal', text: 'Training for half-marathon in 8 weeks', session: 'S1', activeFrom: 0 }
-      ],
-      evolutionLog: [
-        { session: 'S1', text: 'Captured half-marathon goal and baseline.' }
-      ]
-    };
-
-    const state = {
-      personas: { P01: JSON.parse(JSON.stringify(FALLBACK_PERSONA)) },
-      activePersonaId: 'P01',
-      activeSessionIndex: 0,
-      chartMode: 'activity',
-      apiConfig: { provider: 'openrouter', apiKey: '' },
-      serverLlmConfigured: false,
-      serverLlmProvider: 'OpenRouter',
-      chartInstance: null,
-      isSending: false,
-      modelInfo: null,
-      livePrediction: undefined // undefined = loading, null = unavailable
-    };
-
-    try {
-      const saved = localStorage.getItem('carecompanion_api_v2');
-      if (saved) {
-        const p = JSON.parse(saved);
-        if (p && (p.provider === 'openrouter' || p.provider === 'groq' || p.provider === 'simulated')) state.apiConfig = p;
-      }
-    } catch (e) {}
-
-    function getPersona() { return state.personas[state.activePersonaId] || FALLBACK_PERSONA; }
-    function getSession() {
-      const p = getPersona();
-      return p.sessions[Math.min(state.activeSessionIndex, p.sessions.length - 1)] || p.sessions[0];
-    }
-    function getActiveDayRecord() {
-      const p = getPersona();
-      const s = getSession();
-      return p.days[Math.min(s.dayIndex, p.days.length - 1)] || p.days[0];
-    }
-
-    async function loadParticipantState(pid) {
-      try {
-        const res = await fetch(`/api/state/${encodeURIComponent(pid.toLowerCase())}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        state.personas[pid] = {
-          id: data.id,
-          name: data.name,
-          role: data.role,
-          baseline: data.baseline,
-          days: data.days,
-          sessions: data.sessions,
-          evolutionLog: data.evolutionLog || [],
-          memories: (data.memories || []).map(m => ({ ...m, activeFrom: 0 }))
-        };
-        if (state.activeSessionIndex >= state.personas[pid].sessions.length) {
-          state.activeSessionIndex = 0;
-        }
-        renderAll();
-        syncPredictionFromBackend();
-      } catch (e) {}
-    }
-
-    async function loadModelInfo() {
-      try {
-        const res = await fetch('/api/model-info');
-        if (!res.ok) return;
-        const data = await res.json();
-        state.serverLlmConfigured = Boolean(data.llm_configured);
-        state.serverLlmProvider = data.llm_provider || 'OpenRouter';
-        renderApiStatus();
-        if (data.trained && data.feature_importances) {
-          state.modelInfo = data;
-          FEATURE_IMPORTANCES = Object.entries(data.feature_importances)
-            .slice(0, 6)
-            .map(([name, v]) => ({ name, val: Math.max(0, v.mean) }));
-          renderOverview();
-        }
-      } catch (e) {}
-    }
-
-    async function syncPredictionFromBackend() {
-      const p = getPersona();
-      const s = getSession();
-      try {
-        const res = await fetch(`/api/predict/${encodeURIComponent(p.id.toLowerCase())}?day_index=${s.dayIndex}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        state.livePrediction = {
-          label: data.predicted_recovery_state,
-          probs: data.probabilities,
-          modelName: data.model_name
-        };
-      } catch (e) {
-        state.livePrediction = null;
-      }
-      renderOverview();
-      renderUpdateInputs();
-    }
-
-    function showToast(msg) {
-      const toast = document.getElementById('toast');
-      document.getElementById('toastText').textContent = msg;
-      toast.classList.remove('hidden'); toast.classList.add('flex');
-      setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 2600);
-    }
-
-    function formatMarkdownSimple(text) {
-      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/\*\*(.+?)\*\*/g, '<strong class="font-medium text-accent">$1</strong>').replace(/\n/g, '<br>');
-    }
-
-    function renderAll() {
-      renderOverview();
-      renderLedger();
-      renderSessionStepper();
-      renderKPIs();
-      renderUpdateInputs();
-      renderChart();
-      renderChatHeaderAndPlan();
-      renderMessages();
-      renderQuickPrompts();
-      renderMemoryPanel();
-      renderApiStatus();
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function renderOverview() {
-      const p = getPersona();
-      const s = getSession();
-      const d = getActiveDayRecord();
-      const pred = state.livePrediction;
-
-      document.getElementById('overviewSessionBadge').textContent = `${s.label}, ${s.dayLabel}`;
-      document.getElementById('overviewRole').textContent = p.role;
-      document.getElementById('overviewGreeting').textContent = p.name;
-      document.getElementById('overviewAdaptation').textContent = s.adaptation;
-
-      const switcherEl = document.getElementById('overviewSessionSwitcher');
-      switcherEl.innerHTML = p.sessions.slice(0, 4).map((sess, idx) => {
-        const active = idx === state.activeSessionIndex;
-        return `<button type="button" data-overview-sess="${idx}" class="overview-sess-btn py-2 px-2 text-xs font-medium text-center whitespace-nowrap btn-transition ${
-          active
-            ? 'bg-cool-soft text-cool'
-            : 'bg-paper-3 text-muted hover:text-ink'
-        }">${sess.id}: ${sess.dayLabel}</button>`;
-      }).join('');
-      switcherEl.querySelectorAll('.overview-sess-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state.activeSessionIndex = Number(btn.dataset.overviewSess);
-          state.livePrediction = undefined;
-          renderAll();
-          syncPredictionFromBackend();
-        });
-      });
-
-      const clsEl = document.getElementById('mlPredClass');
-      clsEl.textContent = pred === undefined ? 'Loading forecast' : pred === null ? 'Forecast unavailable' : `Tomorrow: ${pred.label}`;
-      clsEl.className = `text-base font-medium ${
-        !pred ? 'text-muted' : pred.label === 'Ready' ? 'text-cool' : pred.label === 'Deload Needed' ? 'text-accent' : 'text-ink'
-      }`;
-
-      document.getElementById('mlProbPills').innerHTML = !pred ? '' : Object.entries(pred.probs).map(([k, v]) => {
-        const active = k === pred.label;
-        return `<span class="px-2 py-0.5 rounded border ${
-          active
-            ? 'bg-cool text-accent-ink border-cool font-medium'
-            : 'bg-paper-2 text-muted border-rule-2'
-        }">${k}: ${Math.round(v * 100)}%</span>`;
-      }).join('');
-
-      if (state.modelInfo && state.modelInfo.selected_model) {
-        document.getElementById('modelNameBadge').textContent = state.modelInfo.selected_model;
-      }
-
-      const maxImp = Math.max(...FEATURE_IMPORTANCES.map(x => x.val), 0.01);
-      document.getElementById('featureImportanceBars').innerHTML = FEATURE_IMPORTANCES.map((f, idx) => {
-        const pct = Math.min(100, Math.round((f.val / maxImp) * 100));
-        const barColor = idx === 0 ? 'bg-accent' : 'bg-cool';
-        return `
-          <div class="flex items-center gap-3 text-xs">
-            <span class="w-36 truncate text-ink-2">${f.name}</span>
-            <div class="flex-1 h-2 bg-paper-3 border border-rule rounded-full overflow-hidden">
-              <div class="h-full ${barColor} rounded-full" style="width: ${pct}%"></div>
-            </div>
-            <span class="w-16 text-right measured text-ink">${f.val.toFixed(3)}</span>
-          </div>
-        `;
-      }).join('');
-
-      const compRows = state.modelInfo && Array.isArray(state.modelInfo.comparison) ? state.modelInfo.comparison : [];
-      const baselines = state.modelInfo && state.modelInfo.baselines ? state.modelInfo.baselines : {};
-      const selected = (state.modelInfo && state.modelInfo.selected_model) || '';
-      const rows = [
-        ...compRows.map(row => ({ name: row.model, f1: row.macro_f1, acc: row.accuracy, best: row.model === selected, baseline: false })),
-        ...Object.entries(baselines).map(([k, b]) => ({ name: k.replace(/_/g, ' '), f1: b.macro_f1, acc: b.accuracy, best: false, baseline: true }))
-      ];
-      document.getElementById('modelComparisonGrid').innerHTML = rows.length
-        ? rows.map(row => `
-          <div class="p-2.5 rounded border ${row.best ? 'bg-accent-soft border-accent' : 'bg-paper-2 border-rule'}">
-            <div class="text-xs font-medium ${row.best ? 'text-accent' : 'text-muted'}">${row.name}${row.baseline ? ' (baseline)' : ''}</div>
-            <div class="text-sm measured mt-0.5 ${row.best ? 'text-ink' : 'text-ink-2'}">Macro F1 ${(row.f1 * 100).toFixed(1)}%, accuracy ${(row.acc * 100).toFixed(1)}%</div>
-          </div>
-        `).join('')
-        : '<p class="text-xs text-muted">Model metrics unavailable. Run train_model.py.</p>';
-    }
-
-    function renderLedger() {
-      const p = getPersona();
-      const s = getSession();
-      const body = document.getElementById('biometricLedgerBody');
-      body.innerHTML = p.days.map((d, idx) => {
-        const isSelected = idx === s.dayIndex;
-        return `
-          <tr class="${isSelected ? 'bg-cool-soft text-ink' : 'hover:bg-paper-2'}">
-            <td class="py-2 px-3 font-sans font-medium whitespace-nowrap ${isSelected ? 'text-cool' : 'text-ink'}">${d.day}</td>
-            <td class="py-2 px-2.5 whitespace-nowrap">${Number(d.steps).toLocaleString()}</td>
-            <td class="py-2 px-2.5 whitespace-nowrap">${d.rhr} bpm</td>
-            <td class="py-2 px-2.5 whitespace-nowrap">${d.sleepScore}</td>
-            <td class="py-2 px-2.5 whitespace-nowrap">${d.readiness}/10</td>
-            <td class="py-2 px-2.5 whitespace-nowrap">${d.fatigue}/5</td>
-            <td class="py-2 px-2.5 whitespace-nowrap">${d.soreness}/5</td>
-            <td class="py-2 px-3 whitespace-nowrap">${d.stress}/5</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function renderSessionStepper() {
-      const p = getPersona();
-      const container = document.getElementById('sessionStepper');
-      container.innerHTML = p.sessions.map((s, idx) => {
-        const active = idx === state.activeSessionIndex;
-        return `
-          <button type="button" data-session-idx="${idx}" class="session-step-btn w-full flex items-center justify-between px-4 py-3 text-left btn-transition ${
-            active ? 'bg-accent-soft text-ink' : 'bg-paper-3 text-muted hover:text-ink hover:bg-paper-2'
-          }">
-            <div class="flex-1 min-w-0 pr-2">
-              <div class="text-xs font-medium ${active ? 'text-accent' : 'text-ink'}">${s.label}: ${s.dayLabel}</div>
-              <div class="text-xs truncate text-muted mt-0.5">${s.subtitle}</div>
-            </div>
-            <span class="measured text-xs px-2 py-0.5 rounded shrink-0 ${
-              active ? 'bg-accent text-accent-ink font-medium' : 'bg-paper-2 text-muted border border-rule'
-            }">${idx + 1}</span>
-          </button>
-        `;
-      }).join('');
-      container.querySelectorAll('.session-step-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          state.activeSessionIndex = Number(btn.dataset.sessionIdx);
-          state.livePrediction = undefined;
-          renderAll();
-          syncPredictionFromBackend();
-        });
-      });
-    }
-
-    function renderKPIs() {
-      const p = getPersona(); const d = getActiveDayRecord(); const base = p.baseline;
-      document.getElementById('kpiSteps').textContent = Number(d.steps).toLocaleString();
-      const stepDiff = d.steps - base.steps;
-      const stepEl = document.getElementById('kpiStepsDelta');
-      stepEl.textContent = `${stepDiff >= 0 ? '+' : ''}${stepDiff.toLocaleString()}`;
-      stepEl.className = `col-span-3 text-right measured text-xs ${stepDiff >= 0 ? 'text-cool' : 'text-accent'}`;
-
-      document.getElementById('kpiRhr').textContent = `${d.rhr} bpm`;
-      const rhrDiff = d.rhr - base.rhr;
-      const rhrEl = document.getElementById('kpiRhrDelta');
-      rhrEl.textContent = `${rhrDiff >= 0 ? '+' : ''}${rhrDiff} bpm`;
-      rhrEl.className = `col-span-3 text-right measured text-xs ${rhrDiff >= 4 ? 'text-accent' : rhrDiff <= 0 ? 'text-cool' : 'text-muted'}`;
-
-      document.getElementById('kpiSleep').textContent = `${d.sleepScore}/100`;
-      const sleepDiff = d.sleepScore - base.sleepScore;
-      const sleepEl = document.getElementById('kpiSleepDelta');
-      sleepEl.textContent = `${sleepDiff >= 0 ? '+' : ''}${sleepDiff}`;
-      sleepEl.className = `col-span-3 text-right measured text-xs ${sleepDiff >= 0 ? 'text-cool' : 'text-accent'}`;
-
-      document.getElementById('kpiReadiness').textContent = `${d.readiness}/10`;
-      const readEl = document.getElementById('kpiReadinessDelta');
-      readEl.textContent = d.readiness >= 7 ? 'Ready' : d.readiness >= 5 ? 'Moderate' : 'Deload';
-      readEl.className = `col-span-3 text-right text-xs font-medium ${d.readiness >= 7 ? 'text-cool' : 'text-accent'}`;
-    }
-
-    function renderUpdateInputs() {
-      const pred = state.livePrediction;
-      const d = getActiveDayRecord();
-      document.getElementById('inputSteps').value = d.steps;
-      document.getElementById('inputRhr').value = d.rhr;
-      document.getElementById('inputSleep').value = d.sleepScore;
-      document.getElementById('sliderReadiness').value = d.readiness;
-      document.getElementById('valReadiness').textContent = d.readiness;
-      document.getElementById('sliderFatigue').value = d.fatigue;
-      document.getElementById('valFatigue').textContent = d.fatigue;
-      document.getElementById('sliderSoreness').value = d.soreness;
-      document.getElementById('valSoreness').textContent = d.soreness;
-      document.getElementById('sliderStress').value = d.stress;
-      document.getElementById('valStress').textContent = d.stress;
-
-      const badge = document.getElementById('liveUpdateBadge');
-      badge.textContent = pred ? `Forecast: ${pred.label}` : 'Forecast unavailable';
-      badge.className = `px-2.5 py-1 rounded text-xs font-medium border ${
-        pred && pred.label === 'Deload Needed'
-          ? 'bg-accent-soft text-accent border-accent'
-          : 'bg-cool-soft text-cool border-rule-2'
-      }`;
-    }
-
-    function renderChart() {
-      const p = getPersona();
-      const visibleDays = p.days;
-      const labels = visibleDays.map(d => d.day);
-      const ctx = document.getElementById('biometricChart').getContext('2d');
-      if (state.chartInstance) state.chartInstance.destroy();
-
-      const cool = getToken('--color-cool');
-      const accent = getToken('--color-accent');
-      const ink = getToken('--color-ink');
-      const muted = getToken('--color-muted');
-      const rule = getToken('--color-rule');
-      const paper = getToken('--color-paper');
-
-      let datasets = [], scales = {};
-      if (state.chartMode === 'activity') {
-        datasets = [
-          {
-            label: 'Steps',
-            data: visibleDays.map(d => d.steps),
-            backgroundColor: cool,
-            borderColor: cool,
-            borderWidth: 1,
-            type: 'bar',
-            borderRadius: 4,
-            yAxisID: 'y'
-          },
-          {
-            label: 'Sleep score',
-            data: visibleDays.map(d => d.sleepScore),
-            borderColor: accent,
-            backgroundColor: accent,
-            pointBackgroundColor: accent,
-            pointBorderColor: paper,
-            pointBorderWidth: 1.5,
-            borderWidth: 2,
-            tension: 0.25,
-            pointRadius: 3.5,
-            type: 'line',
-            yAxisID: 'y1'
-          }
-        ];
-        scales = {
-          y: { position: 'left', beginAtZero: true, grid: { color: rule }, ticks: { color: muted } },
-          y1: { position: 'right', min: 40, max: 100, grid: { drawOnChartArea: false }, ticks: { color: accent } },
-          x: { grid: { display: false }, ticks: { color: muted } }
-        };
-      } else if (state.chartMode === 'recovery') {
-        datasets = [
-          {
-            label: 'Resting HR (bpm)',
-            data: visibleDays.map(d => d.rhr),
-            borderColor: accent,
-            backgroundColor: accent,
-            pointBackgroundColor: accent,
-            borderWidth: 2,
-            tension: 0.25,
-            yAxisID: 'y'
-          },
-          {
-            label: 'PMSys readiness',
-            data: visibleDays.map(d => d.readiness),
-            borderColor: cool,
-            backgroundColor: cool,
-            pointBackgroundColor: cool,
-            borderWidth: 2,
-            tension: 0.25,
-            yAxisID: 'y1'
-          }
-        ];
-        scales = {
-          y: { position: 'left', min: 45, max: 80, grid: { color: rule }, ticks: { color: accent } },
-          y1: { position: 'right', min: 0, max: 10, grid: { drawOnChartArea: false }, ticks: { color: cool } },
-          x: { grid: { display: false }, ticks: { color: muted } }
-        };
-      } else {
-        datasets = [
-          { label: 'Fat burn (min)', data: visibleDays.map(d => d.fatBurn), backgroundColor: cool, stack: 'hr' },
-          { label: 'Cardio (min)', data: visibleDays.map(d => d.cardio), backgroundColor: accent, stack: 'hr' },
-          { label: 'Peak (min)', data: visibleDays.map(d => d.peak), backgroundColor: ink, stack: 'hr' }
-        ];
-        scales = {
-          y: { stacked: true, beginAtZero: true, grid: { color: rule }, ticks: { color: muted } },
-          x: { stacked: true, grid: { display: false }, ticks: { color: muted } }
-        };
-      }
-
-      state.chartInstance = new Chart(ctx, {
-        type: state.chartMode === 'zones' ? 'bar' : 'line',
-        data: { labels, datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: { boxWidth: 10, color: ink, font: { size: 11 } }
-            }
-          },
-          scales
-        }
-      });
-
-      document.querySelectorAll('.chart-mode-btn').forEach(btn => {
-        const active = btn.dataset.chartMode === state.chartMode;
-        btn.className = `chart-mode-btn px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap btn-transition ${
-          active ? 'bg-accent text-accent-ink' : 'text-muted hover:text-ink'
-        }`;
-      });
-    }
-
-    function renderChatHeaderAndPlan() {
-      const p = getPersona(); const s = getSession();
-      document.getElementById('sessionTitle').textContent = s.title;
-      document.getElementById('sessionDayBadge').textContent = s.dayLabel;
-      document.getElementById('sessionSubtitle').textContent = s.subtitle;
-
-      const nextBtn = document.getElementById('nextSessionBtn');
-      if (state.activeSessionIndex < p.sessions.length - 1) {
-        nextBtn.classList.remove('hidden'); nextBtn.classList.add('inline-flex');
-      } else {
-        nextBtn.classList.add('hidden'); nextBtn.classList.remove('inline-flex');
-      }
-
-      const doneCount = s.plan.filter(item => item.done).length;
-      document.getElementById('planAdherenceBadge').textContent = `${s.plan.length ? Math.round((doneCount / s.plan.length) * 100) : 0}%`;
-
-      const planList = document.getElementById('actionPlanList');
-      planList.innerHTML = s.plan.map(item => `
-        <label class="flex items-center gap-2.5 p-2.5 rounded border text-xs cursor-pointer btn-transition ${
-          item.done
-            ? 'bg-cool-soft border-rule-2 text-ink'
-            : 'bg-paper-2 border-rule text-ink-2 hover:border-cool'
-        }">
-          <input type="checkbox" data-plan-id="${item.id}" ${item.done ? 'checked' : ''} class="plan-checkbox rounded range-cool cursor-pointer" />
-          <span class="${item.done ? 'line-through text-muted' : ''}">${item.text}</span>
-        </label>
-      `).join('');
-
-      planList.querySelectorAll('.plan-checkbox').forEach(cb => {
-        cb.addEventListener('change', () => {
-          const target = s.plan.find(x => x.id === cb.dataset.planId);
-          if (target) { target.done = cb.checked; renderChatHeaderAndPlan(); }
-        });
-      });
-    }
-
-    function renderMessages() {
-      const s = getSession();
-      const container = document.getElementById('chatMessages');
-      container.innerHTML = s.messages.map(m => {
-        if (m.role === 'user') {
-          return `<div class="flex justify-end"><div class="max-w-[82%] rounded-md bg-paper-3 border border-accent text-ink px-4 py-2.5 text-sm">${formatMarkdownSimple(m.text)}</div></div>`;
-        }
-        const citationsHtml = (m.citations && m.citations.length)
-          ? `<div class="mt-2.5 flex flex-wrap gap-1.5">${m.citations.map(c => `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-cool-soft text-cool border border-rule-2">${c}</span>`).join('')}</div>`
-          : '';
-        return `
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-md bg-cool text-accent-ink flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true"><i data-lucide="activity" class="w-4 h-4"></i></div>
-            <div class="flex-1 min-w-0">
-              <div class="rounded-md bg-paper-3 border border-rule-2 px-4 py-3 text-sm text-ink-2 leading-relaxed">${formatMarkdownSimple(m.text)}${citationsHtml}</div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      container.scrollTop = container.scrollHeight;
-      if (window.lucide) lucide.createIcons();
-    }
-
-    function renderQuickPrompts() {
-      const prompts = ['What should my workout intensity be today?', 'How is my sleep affecting recovery?', 'Summarize what you remember about me'];
-      const container = document.getElementById('quickPrompts');
-      container.innerHTML = prompts.map(text => `<button type="button" class="quick-prompt-btn px-3 py-1 rounded bg-paper-2 border border-rule-2 hover:border-cool text-xs text-ink-2 hover:text-ink whitespace-nowrap btn-transition">${text}</button>`).join('');
-      container.querySelectorAll('.quick-prompt-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.getElementById('chatInput').value = btn.textContent.trim();
-          document.getElementById('chatForm').dispatchEvent(new Event('submit'));
-        });
-      });
-    }
-
-    function renderMemoryPanel() {
-      const p = getPersona();
-      const catColors = {
-        Goal: 'bg-cool-soft text-cool border-rule-2',
-        Constraint: 'bg-accent-soft text-accent border-accent',
-        Baseline: 'bg-paper-2 text-ink-2 border-rule-2',
-        Adaptation: 'bg-accent text-accent-ink border-accent'
-      };
-      const listEl = document.getElementById('memoryList');
-      listEl.innerHTML = p.memories.map(m => `
-        <div class="p-3 rounded-md border border-rule bg-paper-3 hover:border-rule-2 btn-transition group">
-          <div class="flex items-center justify-between gap-2 mb-1.5">
-            <span class="px-2 py-0.5 rounded text-xs font-medium border ${catColors[m.category] || catColors.Baseline}">${m.category}</span>
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-muted">${m.session}</span>
-              <button type="button" data-del-mem="${m.id}" aria-label="Delete memory" class="del-mem-btn opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted hover:text-accent"><i data-lucide="trash-2" class="w-3.5 h-3.5" aria-hidden="true"></i></button>
-            </div>
-          </div>
-          <p class="text-xs text-ink-2 leading-relaxed">${m.text}</p>
-        </div>
-      `).join('');
-      listEl.querySelectorAll('.del-mem-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const memId = btn.dataset.delMem;
-          p.memories = p.memories.filter(m => m.id !== memId);
-          renderMemoryPanel();
-          try {
-            await fetch(`/api/memory/${encodeURIComponent(p.id.toLowerCase())}/${encodeURIComponent(memId)}`, { method: 'DELETE' });
-          } catch (e) {}
-          showToast('Memory removed');
-        });
-      });
-
-      document.getElementById('memoryEvolutionLog').innerHTML = p.evolutionLog.map(l => `
-        <div class="flex items-start gap-3 p-3">
-          <span class="px-2 py-0.5 rounded bg-cool-soft text-cool font-medium shrink-0">${l.session}</span>
-          <span class="text-ink-2 leading-relaxed">${l.text}</span>
-        </div>
-      `).join('');
-    }
-
-    function renderApiStatus() {
-      const label = document.getElementById('apiStatusLabel');
-      if (state.apiConfig.provider !== 'simulated' && (state.serverLlmConfigured || state.apiConfig.apiKey)) {
-        label.textContent = `${state.serverLlmProvider} Connected`;
-      } else {
-        label.textContent = 'No LLM configured';
-      }
-    }
-
-    async function generateCoachReply(userText) {
-      const p = getPersona(); const s = getSession(); const d = getActiveDayRecord();
-      const history = s.messages.slice(-6).map(m => ({ role: m.role, text: m.text }));
-
-      try {
-        const res = await fetch('/api/coach', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            participant_id: p.id.toLowerCase(),
-            session_label: s.label,
-            session_id: s.id,
-            message: userText,
-            day_index: s.dayIndex,
-            history,
-            auto_extract_memory: true,
-            groq_api_key: state.apiConfig.provider !== 'simulated' && state.apiConfig.apiKey.trim()
-              ? state.apiConfig.apiKey.trim()
-              : null
-          })
-        });
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.detail || `Backend HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        if (data.ml_prediction) {
-          state.livePrediction = {
-            label: data.ml_prediction.predicted_recovery_state,
-            probs: data.ml_prediction.probabilities,
-            modelName: data.ml_prediction.model_name
-          };
-        }
-        if (Array.isArray(data.memories)) {
-          p.memories = data.memories.map(m => ({ ...m, activeFrom: 0 }));
-          renderMemoryPanel();
-        }
-        if (Array.isArray(data.newly_extracted_memories) && data.newly_extracted_memories.length > 0) {
-          showToast(`Stored ${data.newly_extracted_memories.length} new memory fact(s)`);
-        }
-        const predLabel = state.livePrediction ? state.livePrediction.label : 'Unavailable';
-        const modeTag = data.mode === 'openrouter_live'
-          ? 'OpenRouter'
-          : data.mode === 'groq_live'
-            ? 'Groq Llama-3.3-70B'
-            : 'Offline reply (no LLM)';
-        return {
-          text: data.reply,
-          citations: [modeTag, `Forecast: ${predLabel}`, `Memory: ${data.memories_used}`]
-        };
-      } catch (err) {
-        showToast(`Error: ${err.message}`);
-      }
-
-      return {
-        text: `The coach could not reach the server. Current readings: ${d.steps} steps, ${d.rhr} bpm RHR, ${d.sleepScore}/100 sleep score.`,
-        citations: ['Offline']
-      };
-    }
-
-    document.getElementById('jumpToCoachBtn').addEventListener('click', () => {
-      document.getElementById('coach').scrollIntoView({ behavior: 'smooth' });
-      setTimeout(() => document.getElementById('chatInput').focus({ preventScroll: true }), 250);
-    });
-
-    document.getElementById('personaSelect').addEventListener('change', (e) => {
-      state.activePersonaId = e.target.value;
-      state.activeSessionIndex = 0;
-      state.livePrediction = undefined;
-      loadParticipantState(state.activePersonaId);
-    });
-
-    document.getElementById('nextSessionBtn').addEventListener('click', () => {
-      const p = getPersona();
-      if (state.activeSessionIndex < p.sessions.length - 1) {
-        state.activeSessionIndex += 1;
-        state.livePrediction = undefined;
-        renderAll();
-        syncPredictionFromBackend();
-      }
-    });
-
-    document.getElementById('newSessionBtn').addEventListener('click', async () => {
-      const p = getPersona();
-      try {
-        const res = await fetch(`/api/sessions/${encodeURIComponent(p.id.toLowerCase())}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
-        });
-        if (!res.ok) throw new Error('Unable to create session');
-        const data = await res.json();
-        p.sessions = data.sessions;
-        state.activeSessionIndex = p.sessions.length - 1;
-        state.livePrediction = undefined;
-        renderAll();
-        syncPredictionFromBackend();
-        showToast(`Opened ${data.session.label}`);
-      } catch (err) {
-        showToast(err.message);
-      }
-    });
-
-    document.querySelectorAll('.chart-mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => { state.chartMode = btn.dataset.chartMode; renderChart(); });
-    });
-
-    ['Readiness', 'Fatigue', 'Soreness', 'Stress'].forEach(name => {
-      const slider = document.getElementById(`slider${name}`);
-      const valEl = document.getElementById(`val${name}`);
-      slider.addEventListener('input', () => { valEl.textContent = slider.value; });
-    });
-
-    document.getElementById('applyCheckinBtn').addEventListener('click', async () => {
-      const p = getPersona();
-      const s = getSession();
-      const payload = {
-        dayIndex: s.dayIndex,
-        steps: Number(document.getElementById('inputSteps').value),
-        rhr: Number(document.getElementById('inputRhr').value),
-        sleepScore: Number(document.getElementById('inputSleep').value),
-        readiness: Number(document.getElementById('sliderReadiness').value),
-        fatigue: Number(document.getElementById('sliderFatigue').value),
-        soreness: Number(document.getElementById('sliderSoreness').value),
-        stress: Number(document.getElementById('sliderStress').value),
-        // Not entered in this form: carried over from the stored day record.
-        deepMin: getActiveDayRecord().deepMin,
-        remMin: getActiveDayRecord().remMin,
-        cardio: getActiveDayRecord().cardio,
-        peak: getActiveDayRecord().peak
-      };
-
-      try {
-        const res = await fetch(`/api/checkin/${encodeURIComponent(p.id.toLowerCase())}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-          const data = await res.json();
-          p.days = data.days;
-          if (data.ml_prediction) {
-            state.livePrediction = {
-              label: data.ml_prediction.predicted_recovery_state,
-              probs: data.ml_prediction.probabilities,
-              modelName: data.ml_prediction.model_name
-            };
-          }
-        }
-      } catch (e) {}
-
-      const d = getActiveDayRecord();
-      const userPrompt = `Updated biometrics and PMSys: Steps ${d.steps}, RHR ${d.rhr} bpm, Sleep ${d.sleepScore}/100, Readiness ${d.readiness}/10, Fatigue ${d.fatigue}/5, Soreness ${d.soreness}/5, Stress ${d.stress}/5. How should I adjust today's plan?`;
-      s.messages.push({ role: 'user', text: userPrompt });
-      const reply = await generateCoachReply(userPrompt);
-      s.messages.push({ role: 'coach', ...reply });
-      const pred = state.livePrediction;
-      s.adaptation = pred
-        ? `Forecast for tomorrow: ${pred.label} (RHR ${d.rhr} bpm, Readiness ${d.readiness}/10).`
-        : `Check-in saved (RHR ${d.rhr} bpm, Readiness ${d.readiness}/10). Forecast unavailable.`;
-      renderAll();
-      showToast(pred ? `Saved check-in (forecast: ${pred.label})` : 'Saved check-in');
-    });
-
-    document.getElementById('chatForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (state.isSending) return;
-      const input = document.getElementById('chatInput');
-      const text = input.value.trim();
-      if (!text) return;
-      state.isSending = true; input.value = '';
-      const s = getSession();
-      s.messages.push({ role: 'user', text });
-      renderMessages();
-      const reply = await generateCoachReply(text);
-      s.messages.push({ role: 'coach', ...reply });
-      renderMessages();
-      state.isSending = false;
-    });
-
-    document.getElementById('addMemoryForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const textInput = document.getElementById('newMemoryText');
-      const text = textInput.value.trim();
-      if (!text) return;
-      const category = document.getElementById('newMemoryCategory').value;
-      const session = `S${state.activeSessionIndex + 1}`;
-      try {
-        const res = await fetch(`/api/memory/${encodeURIComponent(state.activePersonaId.toLowerCase())}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ category, text, session })
-        });
-        if (res.ok) {
-          const data = await res.json();
-          getPersona().memories = data.memories.map(m => ({ ...m, activeFrom: 0 }));
-        }
-      } catch (err) {}
-      textInput.value = ''; renderMemoryPanel(); lucide.createIcons(); showToast('Memory saved');
-    });
-
-    document.getElementById('resetDemoBtn').addEventListener('click', async () => {
-      try {
-        await fetch(`/api/state/${encodeURIComponent(state.activePersonaId.toLowerCase())}/reset`, { method: 'POST' });
-        state.activeSessionIndex = 0;
-        state.livePrediction = undefined;
-        await loadParticipantState(state.activePersonaId);
-        showToast('Baseline restored');
-      } catch (e) {}
-    });
-
-    const apiModal = document.getElementById('apiModal');
-    const apiProviderSelect = document.getElementById('apiProviderSelect');
-    const apiKeyInputWrapper = document.getElementById('apiKeyInputWrapper');
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    function syncApiModalFields() { apiKeyInputWrapper.classList.toggle('hidden', apiProviderSelect.value === 'simulated'); }
-    function closeApiModal() { apiModal.classList.add('hidden'); apiModal.classList.remove('flex'); }
-    apiProviderSelect.addEventListener('change', syncApiModalFields);
-    document.getElementById('openApiModalBtn').addEventListener('click', () => {
-      apiProviderSelect.value = state.apiConfig.provider === 'simulated' ? 'simulated' : 'openrouter';
-      apiKeyInput.value = state.apiConfig.apiKey || '';
-      syncApiModalFields(); apiModal.classList.remove('hidden'); apiModal.classList.add('flex');
-      apiKeyInput.focus();
-    });
-    document.getElementById('closeApiModalBtn').addEventListener('click', closeApiModal);
-    apiModal.addEventListener('click', (e) => { if (e.target === apiModal) closeApiModal(); });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !apiModal.classList.contains('hidden')) closeApiModal();
-    });
-    document.getElementById('clearApiBtn').addEventListener('click', () => {
-      state.apiConfig = { provider: 'simulated', apiKey: '' };
-      try { localStorage.removeItem('carecompanion_api_v2'); } catch (e) {}
-      renderApiStatus(); closeApiModal(); showToast('Switched to offline reply (no LLM)');
-    });
-    document.getElementById('saveApiBtn').addEventListener('click', () => {
-      state.apiConfig = { provider: apiProviderSelect.value, apiKey: apiKeyInput.value.trim() };
-      try { localStorage.setItem('carecompanion_api_v2', JSON.stringify(state.apiConfig)); } catch (e) {}
-      renderApiStatus(); closeApiModal();
-      showToast(state.apiConfig.provider !== 'simulated' && (state.apiConfig.apiKey || state.serverLlmConfigured) ? 'OpenRouter enabled' : 'Settings updated');
-    });
-
-    document.getElementById('fillSampleImportBtn').addEventListener('click', () => {
-      document.getElementById('importTextarea').value = 'day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress\nDay 1,9100,59,81,85,92,22,6,8,2,2,2\nDay 2,10400,58,83,88,95,24,7,8,2,2,2\nDay 3,6200,64,61,50,66,8,0,4,4,4,4\nDay 4,7900,60,76,70,80,14,3,7,3,2,2';
-    });
-    document.getElementById('confirmImportBtn').addEventListener('click', async () => {
-      const raw = document.getElementById('importTextarea').value.trim();
-      if (!raw) return;
-      try {
-        const REQUIRED = ['steps', 'rhr', 'sleepScore', 'deepMin', 'remMin', 'cardio', 'peak', 'readiness', 'fatigue', 'soreness', 'stress'];
-        let parsedDays;
-        if (raw.startsWith('[')) {
-          parsedDays = JSON.parse(raw);
-        } else {
-          const lines = raw.split(/\r?\n/).filter(Boolean);
-          const header = lines[0].split(',').map(h => h.trim());
-          const missing = ['day', ...REQUIRED].filter(k => !header.includes(k));
-          if (missing.length) throw new Error(`missing columns: ${missing.join(', ')}`);
-          parsedDays = lines.slice(1).map(line => {
-            const cells = line.split(',').map(x => x.trim());
-            const row = Object.fromEntries(header.map((h, i) => [h, cells[i]]));
-            const rec = { day: row.day };
-            for (const k of REQUIRED) {
-              const v = Number(row[k]);
-              if (row[k] === undefined || row[k] === '' || Number.isNaN(v)) throw new Error(`non-numeric ${k} in row "${row.day}"`);
-              rec[k] = v;
-            }
-            return rec;
-          });
-        }
-        if (parsedDays.length) {
-          const p = getPersona();
-          const res = await fetch(`/api/import/${encodeURIComponent(p.id.toLowerCase())}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ days: parsedDays })
-          });
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.detail || `HTTP ${res.status}`);
-          }
-          const data = await res.json();
-          p.days = data.days;
-          p.sessions[state.activeSessionIndex].dayIndex = p.days.length - 1;
-          state.livePrediction = undefined;
-          renderAll();
-          syncPredictionFromBackend();
-          document.getElementById('telemetry').scrollIntoView({ behavior: 'smooth' });
-          showToast(`Imported ${p.days.length} biometric records`);
-        }
-      } catch (err) { showToast(`Import failed: ${err.message}`); }
-    });
-
-    document.getElementById('exportReportBtn').addEventListener('click', () => {
-      const p = getPersona();
-      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), participant: p.name, days: p.days, memories: p.memories, sessions: p.sessions }, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `CareCompanion_${p.id}_Record.json`;
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      showToast('Exported JSON record');
-    });
-
-    document.getElementById('exportMarkdownBtn').addEventListener('click', () => {
-      const p = getPersona();
-      const md = [
-        `# CareCompanion Longitudinal Record: ${p.name}`,
-        `Profile: ${p.role}`,
-        `\n## Persistent Agent Memory\n` + p.memories.map(m => `- **[${m.category} | ${m.session}]** ${m.text}`).join('\n'),
-        `\n## Session Evolution\n` + p.sessions.map(s => `### ${s.title} (${s.dayLabel})\nAdaptation: ${s.adaptation}`).join('\n\n')
-      ].join('\n');
-      const blob = new Blob([md], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `CareCompanion_${p.id}_Summary.md`;
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      showToast('Exported Markdown summary');
-    });
-
-    window.addEventListener('DOMContentLoaded', () => {
-      renderAll();
-      loadModelInfo();
-      loadParticipantState(state.activePersonaId);
-    });
-    function syncThemeToggle() {
-      const dark = document.documentElement.dataset.theme === 'dark';
-      const btn = document.getElementById('themeToggleBtn');
-      btn.textContent = dark ? 'Light mode' : 'Dark mode';
-      btn.setAttribute('aria-pressed', String(dark));
-    }
-    document.getElementById('themeToggleBtn').addEventListener('click', () => {
-      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      try { localStorage.setItem('carecompanion_theme', next); } catch (e) {}
-      syncThemeToggle();
-      renderAll();
-    });
-    syncThemeToggle();
-  </script>
 </body>
 </html>

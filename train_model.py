@@ -28,7 +28,10 @@ Leakage controls
 ----------------
 * Rolling features use only the current and past days of the same participant.
 * Imputation sits inside the sklearn Pipeline, so it is fit on training folds only.
-* No feature is derived from readiness or fatigue, which define the labels.
+* Today's readiness and fatigue define today's label, not tomorrow's, so they are
+  valid inputs for a next-day forecast. The persistence baseline uses them too,
+  which makes the comparison fair.
+* Rolling windows are calendar-based (see features.py), shared with serving.
 * Features the app does not store (sedentary and very-active minutes) are excluded,
   so the trained model sees exactly the inputs the app can supply.
 """
@@ -56,6 +59,8 @@ from sklearn.model_selection import GridSearchCV, GroupKFold, LeaveOneGroupOut
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
+from features import BASE_COLS, FEATURE_COLS, engineer_features
+
 BASE_DIR = Path(__file__).resolve().parent
 RAW_DIR = BASE_DIR / "data" / "pmdata_raw"
 SAMPLE_CSV = BASE_DIR / "data" / "pmdata_sample.csv"
@@ -65,20 +70,7 @@ MODELS_DIR.mkdir(parents=True, exist_ok=True)
 TARGET = "next_day_recovery_state"
 CLASSES = ["Deload Needed", "Moderate", "Ready"]
 
-# Only features the app stores and can recompute from its day records.
-FEATURE_COLS = [
-    "steps",
-    "resting_heart_rate",
-    "sleep_score",
-    "deep_sleep_min",
-    "rem_sleep_min",
-    "cardio_min",
-    "peak_min",
-    "rhr_delta",
-    "sleep_3d_avg",
-    "steps_3d_avg",
-]
-RAW_REQUIRED = ["steps", "rem_sleep_min", "cardio_min", "peak_min"]
+# FEATURE_COLS and engineer_features live in features.py so serving uses the same code.
 
 
 def label_recovery_state(df: pd.DataFrame) -> pd.Series:
@@ -93,75 +85,112 @@ def label_recovery_state(df: pd.DataFrame) -> pd.Series:
     )
 
 
-def load_raw_pmdata_if_available() -> pd.DataFrame | None:
-    """Ingest raw Kaggle PMData participant folders (p01..p16) if present.
+def _read_json(path: Path):
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
-    Raises instead of filling missing columns with constants, because a constant
-    fill would silently train the model on values that were never measured.
+
+def _fitbit_date(value) -> str:
+    return pd.to_datetime(value, format="mixed").date().isoformat()
+
+
+def _load_participant(pdir: Path) -> pd.DataFrame | None:
+    """One PMData participant folder -> one row per day with the canonical columns.
+
+    Files used (PMData layout):
+      pmsys/wellness.csv                     readiness, fatigue, soreness, stress (labels + inputs)
+      fitbit/sleep_score.csv                 overall_score, deep_sleep_in_minutes
+      fitbit/resting_heart_rate.json         daily resting heart rate (0 means missing)
+      fitbit/steps.json                      per-minute steps, summed per day
+      fitbit/sleep.json                      REM minutes from the main sleep's stage summary
+      fitbit/time_in_heart_rate_zones.json   zone 2 (cardio) and zone 3 (peak) minutes
+    Missing measurements stay NaN and are imputed inside the model pipeline.
+    A missing required file raises, so the loader never invents a column.
     """
+    wellness_csv = pdir / "pmsys" / "wellness.csv"
+    fitbit = pdir / "fitbit"
+    required = {
+        "wellness": wellness_csv,
+        "sleep_score": fitbit / "sleep_score.csv",
+        "rhr": fitbit / "resting_heart_rate.json",
+        "steps": fitbit / "steps.json",
+        "sleep": fitbit / "sleep.json",
+        "zones": fitbit / "time_in_heart_rate_zones.json",
+    }
+    missing = [str(p.relative_to(pdir)) for p in required.values() if not p.exists()]
+    if missing:
+        raise FileNotFoundError(f"{pdir.name}: missing {', '.join(missing)}")
+
+    wellness = pd.read_csv(wellness_csv)
+    wellness["date"] = pd.to_datetime(wellness["effective_time_frame"], utc=True, format="mixed").dt.date.astype(str)
+    wellness = wellness.groupby("date", as_index=False)[["readiness", "fatigue", "soreness", "stress"]].mean()
+
+    sleep_score = pd.read_csv(required["sleep_score"])
+    sleep_score["date"] = pd.to_datetime(sleep_score["timestamp"], utc=True, format="mixed").dt.date.astype(str)
+    sleep_score = sleep_score.rename(columns={"overall_score": "sleep_score", "deep_sleep_in_minutes": "deep_sleep_min"})
+    sleep_score = sleep_score.groupby("date", as_index=False)[["sleep_score", "deep_sleep_min"]].mean()
+
+    rhr = pd.DataFrame([
+        {"date": _fitbit_date(item["dateTime"]), "resting_heart_rate": item["value"].get("value")}
+        for item in _read_json(required["rhr"]) if isinstance(item.get("value"), dict)
+    ])
+    if not rhr.empty:
+        rhr["resting_heart_rate"] = pd.to_numeric(rhr["resting_heart_rate"], errors="coerce").replace(0, np.nan)
+        rhr = rhr.groupby("date", as_index=False)["resting_heart_rate"].mean()
+
+    steps = pd.DataFrame(_read_json(required["steps"]))
+    if not steps.empty:
+        steps["date"] = pd.to_datetime(steps["dateTime"], format="mixed").dt.date.astype(str)
+        steps["value"] = pd.to_numeric(steps["value"], errors="coerce")
+        steps = steps.groupby("date", as_index=False)["value"].sum().rename(columns={"value": "steps"})
+
+    rem_rows = []
+    for log in _read_json(required["sleep"]):
+        if not log.get("mainSleep", True):
+            continue
+        summary = (log.get("levels") or {}).get("summary") or {}
+        rem = (summary.get("rem") or {}).get("minutes")
+        rem_rows.append({"date": str(log.get("dateOfSleep")), "rem_sleep_min": rem})
+    rem = pd.DataFrame(rem_rows)
+    if not rem.empty:
+        rem = rem.groupby("date", as_index=False)["rem_sleep_min"].max()
+
+    zone_rows = []
+    for item in _read_json(required["zones"]):
+        zones = (item.get("value") or {}).get("valuesInZones") or {}
+        zone_rows.append({
+            "date": _fitbit_date(item["dateTime"]),
+            "cardio_min": zones.get("IN_DEFAULT_ZONE_2"),
+            "peak_min": zones.get("IN_DEFAULT_ZONE_3"),
+        })
+    zones = pd.DataFrame(zone_rows)
+    if not zones.empty:
+        zones = zones.groupby("date", as_index=False)[["cardio_min", "peak_min"]].sum()
+
+    merged = wellness
+    for part in (sleep_score, rhr, steps, rem, zones):
+        if not part.empty:
+            merged = merged.merge(part, on="date", how="left")
+    for col in BASE_COLS:
+        if col not in merged.columns:
+            merged[col] = np.nan
+    merged = merged.dropna(subset=["readiness", "fatigue"])
+    if merged.empty:
+        return None
+    merged["participant_id"] = pdir.name
+    merged["recovery_state"] = label_recovery_state(merged)
+    return merged
+
+
+def load_raw_pmdata_if_available() -> pd.DataFrame | None:
+    """Ingest raw PMData participant folders (p01..p16) from data/pmdata_raw/ if present."""
     if not RAW_DIR.exists():
         return None
     participant_dirs = sorted(d for d in RAW_DIR.iterdir() if d.is_dir() and d.name.startswith("p"))
-    if not participant_dirs:
-        return None
-
-    records = []
-    for pdir in participant_dirs:
-        fitbit_dir = pdir / "fitbit"
-        pmsys_wellness = pdir / "pmsys" / "wellness.csv"
-        sleep_csv = fitbit_dir / "sleep_score.csv"
-        rhr_json = fitbit_dir / "resting_heart_rate.json"
-        if not (pmsys_wellness.exists() and sleep_csv.exists() and rhr_json.exists()):
-            continue
-
-        wellness_df = pd.read_csv(pmsys_wellness)
-        wellness_df["date"] = pd.to_datetime(wellness_df["effective_time_frame"]).dt.date.astype(str)
-
-        sleep_df = pd.read_csv(sleep_csv)
-        sleep_df["date"] = pd.to_datetime(sleep_df["timestamp"]).dt.date.astype(str)
-        sleep_df = sleep_df.rename(columns={"overall_score": "sleep_score", "deep_sleep_in_minutes": "deep_sleep_min"})
-
-        with open(rhr_json, "r", encoding="utf-8") as f:
-            rhr_raw = json.load(f)
-        rhr_rows = [
-            {
-                "date": pd.to_datetime(item["dateTime"]).date().isoformat(),
-                "resting_heart_rate": item["value"].get("value", np.nan),
-            }
-            for item in rhr_raw
-            if isinstance(item.get("value"), dict)
-        ]
-        rhr_df = pd.DataFrame(rhr_rows).dropna()
-
-        merged = wellness_df.merge(sleep_df[["date", "sleep_score", "deep_sleep_min"]], on="date", how="inner")
-        merged = merged.merge(rhr_df, on="date", how="inner")
-        merged["participant_id"] = pdir.name
-
-        missing = [c for c in RAW_REQUIRED if c not in merged.columns]
-        if missing:
-            raise ValueError(
-                f"{pdir.name}: columns {missing} are not in the raw PMData export. "
-                "Add them to the loader from the matching Fitbit file, or drop them from FEATURE_COLS."
-            )
-
-        merged["recovery_state"] = label_recovery_state(merged)
-        records.append(merged)
-
+    records = [r for r in (_load_participant(p) for p in participant_dirs) if r is not None]
     if not records:
         return None
     return pd.concat(records, ignore_index=True)
-
-
-def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
-    """Per-participant rolling features. Each row uses only that day and earlier days."""
-    df = df.sort_values(["participant_id", "date"]).reset_index(drop=True)
-    grouped = df.groupby("participant_id")
-    # Same definitions as the app's build_biometrics_from_days, so training and serving agree.
-    df["rhr_7d_mean"] = grouped["resting_heart_rate"].transform(lambda s: s.rolling(7, min_periods=1).mean())
-    df["rhr_delta"] = df["resting_heart_rate"] - df["rhr_7d_mean"]
-    df["sleep_3d_avg"] = grouped["sleep_score"].transform(lambda s: s.rolling(3, min_periods=1).mean())
-    df["steps_3d_avg"] = grouped["steps"].transform(lambda s: s.rolling(3, min_periods=1).mean())
-    return df
 
 
 def add_next_day_target(df: pd.DataFrame) -> pd.DataFrame:
@@ -173,7 +202,7 @@ def add_next_day_target(df: pd.DataFrame) -> pd.DataFrame:
     # Only keep rows where the next calendar day exists in the data.
     next_date = grouped["date"].shift(-1)
     df["next_date"] = next_date
-    consecutive = pd.to_datetime(df["next_date"]) - pd.to_datetime(df["date"]) == pd.Timedelta(days=1)
+    consecutive = (df["next_date"] - df["date"]) == pd.Timedelta(days=1)
     return df[df[TARGET].notna() & consecutive].reset_index(drop=True)
 
 
@@ -237,14 +266,14 @@ def summarise(y_true, y_pred, classes):
 def main():
     raw_df = load_raw_pmdata_if_available()
     if raw_df is not None:
-        print(f"Loaded raw Kaggle PMData: {len(raw_df)} rows")
+        print(f"Loaded raw PMData: {len(raw_df)} rows")
         df = raw_df
-        dataset_source = "Kaggle Raw PMData"
+        dataset_source = "PMData (raw participant folders)"
     else:
         print(f"Using PMData-schema sample dataset: {SAMPLE_CSV}")
         df = pd.read_csv(SAMPLE_CSV)
         df["recovery_state"] = label_recovery_state(df)
-        dataset_source = "PMData-Schema Sample (480 rows, 16 participants)"
+        dataset_source = f"PMData-schema synthetic sample ({len(df)} rows, {df['participant_id'].nunique()} participants)"
 
     df = add_next_day_target(engineer_features(df))
     X = df[FEATURE_COLS]
@@ -304,6 +333,9 @@ def main():
     }
     print(json.dumps({"comparison": [(c["model"], c["macro_f1"]) for c in comparison], "baselines": {k: v["macro_f1"] for k, v in baselines.items()}}, indent=2))
 
+    persistence_f1 = baselines["persistence_today_state"]["macro_f1"]
+    for row in comparison:
+        row["beats_persistence_macro_f1"] = bool(row["macro_f1"] > persistence_f1)
     best_row = max(comparison, key=lambda c: c["macro_f1"])
     best_name = best_row["model"]
     print(f"\nSelected by pooled LOPO macro F1: {best_name} ({best_row['macro_f1']:.4f})")

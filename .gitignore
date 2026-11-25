@@ -15,4 +15,6 @@ verify_e2e_presentation.py
 data/agent_memory.json
 data/app_state.json
 data/pmdata_raw/
+data/sandboxes/
+frontend/bin/
 
