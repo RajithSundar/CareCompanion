@@ -8,29 +8,31 @@ A supervised learning demo for next-day recovery forecasting, plus a small coach
 
 ## Results
 
-Nested leave-one-participant-out on `data/pmdata_sample.csv` (464 forecast rows, 16 participants). The numbers come from `models/model_metrics.json`.
+Trained and evaluated on the real **PMData** dataset (Thambawita et al., 2020): 1,423 next-day forecast rows from 16 participants over five months. Nested leave-one-participant-out; numbers from `models/model_metrics.json`.
 
-| Model | Accuracy | Macro F1 | Brier |
-|---|---|---|---|
-| RandomForest (selected on macro F1) | 0.591 | 0.510 | 0.506 |
-| GradientBoosting | 0.647 | 0.483 | 0.488 |
-| LogisticRegression | 0.565 | 0.488 | 0.550 |
-| Baseline: majority class | 0.588 | 0.247 | |
-| Baseline: persistence (tomorrow = today) | 0.629 | 0.542 | |
+| Model | Accuracy | Macro F1 | Brier | Accuracy per participant |
+|---|---|---|---|---|
+| RandomForest (selected on macro F1) | 0.561 | 0.550 | 0.570 | 0.556 ± 0.151 |
+| GradientBoosting | 0.569 | 0.532 | 0.567 | 0.569 ± 0.126 |
+| LogisticRegression | 0.509 | 0.494 | 0.583 | 0.516 ± 0.128 |
+| Baseline: majority class | 0.323 | 0.197 | | |
+| Baseline: persistence (tomorrow = today) | 0.579 | 0.564 | | |
 
-**No model beats the persistence baseline on macro F1.** GradientBoosting beats it on accuracy (0.647 vs 0.629) and has the best Brier score, but it rarely predicts Ready. Adding today's readiness, fatigue, soreness and stress as inputs did not close the gap. On this sample, today's state carries almost all the information about tomorrow. The sample is synthetic (see below), so the real test is the full PMData dataset.
+**The forecast does not beat the persistence baseline.** It is 0.014 macro F1 and 0.018 accuracy behind. People's recovery state is sticky from one day to the next, and today's biometrics add little on top of today's own state. A quick check of other set-ups (stronger regularisation, today's state as explicit inputs, histogram gradient boosting) did not close the gap either, and none of them replaced the model, because picking among them on the same folds would overfit the evaluation. Accuracy varies a lot between participants (standard deviation 0.15).
+
+On the synthetic sample this project started with, the gap was larger (0.510 vs 0.542 macro F1).
 
 Selected model, per class:
 
 | Class | Precision | Recall | Support |
 |---|---|---|---|
-| Deload Needed | 0.78 | 0.70 | 273 |
-| Moderate | 0.47 | 0.39 | 155 |
-| Ready | 0.26 | 0.64 | 36 |
+| Deload Needed | 0.67 | 0.56 | 610 |
+| Moderate | 0.55 | 0.55 | 580 |
+| Ready | 0.42 | 0.60 | 233 |
 
-Ready is over-predicted (class weighting), which is why its precision is low.
+Permutation importance puts the 3-day readiness average far ahead of everything else, then sleep score, stress and steps. The standard deviations are larger than the means, so only the first place is clear.
 
-Permutation importance puts `rhr_delta` first, then `fatigue`, `readiness` and `cardio_min`. The standard deviations are larger than the means, so the ranking is tentative.
+**Gaps in the data.** The release has no `resting_heart_rate.json` for p12 and p13, so resting heart rate is missing on 23% of rows; sleep fields on 12%. Missing values are imputed (median) inside the pipeline, and the metrics file lists the absent files and each feature's missing rate.
 
 ## Method
 
@@ -74,7 +76,7 @@ Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_
 
 ## Data and limitations
 
-- `data/pmdata_sample.csv` is a synthetic 480-row sample with the PMData schema (16 participants, 30 days each). The full PMData dataset is at [datasets.simula.no/pmdata](https://datasets.simula.no/pmdata) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); cite Thambawita et al., "PMData: A Sports Logging Dataset", MMSys 2020, [doi:10.1145/3339825.3394926](https://dl.acm.org/doi/10.1145/3339825.3394926). Put participant folders under `data/pmdata_raw/` and rerun `train_model.py`. The loader reads `pmsys/wellness.csv` and the Fitbit files `sleep_score.csv`, `resting_heart_rate.json`, `steps.json`, `sleep.json` and `time_in_heart_rate_zones.json`, and raises if one is missing.
+- The shipped model is trained on the real PMData dataset, which is not in the repository. `data/pmdata_sample.csv` is a synthetic 480-row sample with the same schema, used when `data/pmdata_raw/` is absent. The full PMData dataset is at [datasets.simula.no/pmdata](https://datasets.simula.no/pmdata) under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); cite Thambawita et al., "PMData: A Sports Logging Dataset", MMSys 2020, [doi:10.1145/3339825.3394926](https://dl.acm.org/doi/10.1145/3339825.3394926). To retrain, put participant folders under `data/pmdata_raw/` (only `pmsys/wellness.csv` and the Fitbit files `sleep_score.csv`, `resting_heart_rate.json`, `steps.json`, `sleep.json` and `time_in_heart_rate_zones.json` are read, about 85 MB) and run `train_model.py`. A missing wellness file raises; a missing Fitbit file leaves its columns blank for imputation and is recorded.
 - The three demo personas (`demo_data.py`) are fictional and sit at higher readiness than most of the sample, so their forecasts are illustrations.
 - Forecasts and coaching are a demo, not medical advice. Probabilities are not calibrated; the Brier score is reported so you can judge them.
 

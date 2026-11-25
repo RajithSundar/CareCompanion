@@ -68,6 +68,7 @@ MODELS_DIR = BASE_DIR / "models"
 MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 TARGET = "next_day_recovery_state"
+MISSING_FILES: list[str] = []  # Fitbit files absent from the raw export, recorded in the metrics
 CLASSES = ["Deload Needed", "Moderate", "Ready"]
 
 # FEATURE_COLS and engineer_features live in features.py so serving uses the same code.
@@ -104,48 +105,54 @@ def _load_participant(pdir: Path) -> pd.DataFrame | None:
       fitbit/steps.json                      per-minute steps, summed per day
       fitbit/sleep.json                      REM minutes from the main sleep's stage summary
       fitbit/time_in_heart_rate_zones.json   zone 2 (cardio) and zone 3 (peak) minutes
-    Missing measurements stay NaN and are imputed inside the model pipeline.
-    A missing required file raises, so the loader never invents a column.
+    wellness.csv is required: it holds the labels. A missing Fitbit file leaves its
+    columns NaN (imputed inside the model pipeline) and is recorded in
+    MISSING_FILES, so the metrics say exactly what was absent. Values are never
+    filled with constants here.
     """
     wellness_csv = pdir / "pmsys" / "wellness.csv"
     fitbit = pdir / "fitbit"
+    if not wellness_csv.exists():
+        raise FileNotFoundError(f"{pdir.name}: missing pmsys/wellness.csv")
     required = {
-        "wellness": wellness_csv,
         "sleep_score": fitbit / "sleep_score.csv",
         "rhr": fitbit / "resting_heart_rate.json",
         "steps": fitbit / "steps.json",
         "sleep": fitbit / "sleep.json",
         "zones": fitbit / "time_in_heart_rate_zones.json",
     }
-    missing = [str(p.relative_to(pdir)) for p in required.values() if not p.exists()]
-    if missing:
-        raise FileNotFoundError(f"{pdir.name}: missing {', '.join(missing)}")
+    present = {k: p.exists() for k, p in required.items()}
+    for k, p in required.items():
+        if not present[k]:
+            MISSING_FILES.append(f"{pdir.name}/{p.relative_to(pdir)}")
 
     wellness = pd.read_csv(wellness_csv)
     wellness["date"] = pd.to_datetime(wellness["effective_time_frame"], utc=True, format="mixed").dt.date.astype(str)
     wellness = wellness.groupby("date", as_index=False)[["readiness", "fatigue", "soreness", "stress"]].mean()
 
-    sleep_score = pd.read_csv(required["sleep_score"])
-    sleep_score["date"] = pd.to_datetime(sleep_score["timestamp"], utc=True, format="mixed").dt.date.astype(str)
-    sleep_score = sleep_score.rename(columns={"overall_score": "sleep_score", "deep_sleep_in_minutes": "deep_sleep_min"})
-    sleep_score = sleep_score.groupby("date", as_index=False)[["sleep_score", "deep_sleep_min"]].mean()
+    empty = pd.DataFrame()
+    sleep_score = pd.read_csv(required["sleep_score"]) if present["sleep_score"] else empty
+    if not sleep_score.empty:
+        sleep_score["date"] = pd.to_datetime(sleep_score["timestamp"], utc=True, format="mixed").dt.date.astype(str)
+        sleep_score = sleep_score.rename(columns={"overall_score": "sleep_score", "deep_sleep_in_minutes": "deep_sleep_min"})
+        sleep_score = sleep_score.groupby("date", as_index=False)[["sleep_score", "deep_sleep_min"]].mean()
 
     rhr = pd.DataFrame([
         {"date": _fitbit_date(item["dateTime"]), "resting_heart_rate": item["value"].get("value")}
-        for item in _read_json(required["rhr"]) if isinstance(item.get("value"), dict)
+        for item in (_read_json(required["rhr"]) if present["rhr"] else []) if isinstance(item.get("value"), dict)
     ])
     if not rhr.empty:
         rhr["resting_heart_rate"] = pd.to_numeric(rhr["resting_heart_rate"], errors="coerce").replace(0, np.nan)
         rhr = rhr.groupby("date", as_index=False)["resting_heart_rate"].mean()
 
-    steps = pd.DataFrame(_read_json(required["steps"]))
+    steps = pd.DataFrame(_read_json(required["steps"])) if present["steps"] else empty
     if not steps.empty:
         steps["date"] = pd.to_datetime(steps["dateTime"], format="mixed").dt.date.astype(str)
         steps["value"] = pd.to_numeric(steps["value"], errors="coerce")
         steps = steps.groupby("date", as_index=False)["value"].sum().rename(columns={"value": "steps"})
 
     rem_rows = []
-    for log in _read_json(required["sleep"]):
+    for log in (_read_json(required["sleep"]) if present["sleep"] else []):
         if not log.get("mainSleep", True):
             continue
         summary = (log.get("levels") or {}).get("summary") or {}
@@ -156,7 +163,7 @@ def _load_participant(pdir: Path) -> pd.DataFrame | None:
         rem = rem.groupby("date", as_index=False)["rem_sleep_min"].max()
 
     zone_rows = []
-    for item in _read_json(required["zones"]):
+    for item in (_read_json(required["zones"]) if present["zones"] else []):
         zones = (item.get("value") or {}).get("valuesInZones") or {}
         zone_rows.append({
             "date": _fitbit_date(item["dateTime"]),
@@ -276,6 +283,7 @@ def main():
         dataset_source = f"PMData-schema synthetic sample ({len(df)} rows, {df['participant_id'].nunique()} participants)"
 
     df = add_next_day_target(engineer_features(df))
+    raw_missing = df[FEATURE_COLS].isna().mean()
     X = df[FEATURE_COLS]
     y = df[TARGET]
     today = df["today_state"]
@@ -379,6 +387,8 @@ def main():
         "excluded_features": ["sedentary_min", "very_active_min"],
         "excluded_reason": "The app does not store these fields, so the model is trained only on inputs the app can supply.",
         "calibration": "Not calibrated. Brier score is reported so probabilities can be judged.",
+        "missing_source_files": MISSING_FILES,
+        "feature_missing_rate": {c: round(float(raw_missing[c]), 4) for c in FEATURE_COLS},
         "library_versions": {
             "python": platform.python_version(),
             **{p: pkg_version(p) for p in ["scikit-learn", "pandas", "numpy", "joblib"]},

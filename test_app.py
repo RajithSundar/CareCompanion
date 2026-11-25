@@ -133,11 +133,24 @@ def test_raw_pmdata_loader_reads_all_required_files(tmp_path, monkeypatch):
     assert np.isnan(d2["rem_sleep_min"])
 
 
-def test_raw_loader_raises_on_missing_file(tmp_path, monkeypatch):
+def test_raw_loader_raises_without_labels(tmp_path, monkeypatch):
     (tmp_path / "p01" / "pmsys").mkdir(parents=True)
     monkeypatch.setattr(train_model, "RAW_DIR", tmp_path)
     with pytest.raises(FileNotFoundError):
         train_model.load_raw_pmdata_if_available()
+
+
+def test_raw_loader_records_missing_fitbit_files(tmp_path, monkeypatch):
+    pdir = tmp_path / "p12"
+    (pdir / "pmsys").mkdir(parents=True)
+    (pdir / "fitbit").mkdir()
+    pd.DataFrame({"effective_time_frame": ["2019-11-01T08:00:00Z"], "fatigue": [2], "readiness": [8],
+                  "soreness": [2], "stress": [2]}).to_csv(pdir / "pmsys" / "wellness.csv", index=False)
+    monkeypatch.setattr(train_model, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(train_model, "MISSING_FILES", [])
+    df = train_model.load_raw_pmdata_if_available()
+    assert len(df) == 1 and np.isnan(df.iloc[0]["resting_heart_rate"]) and np.isnan(df.iloc[0]["steps"])
+    assert "p12/fitbit/resting_heart_rate.json" in train_model.MISSING_FILES
 
 
 # ----------------------------------------------------------------- sandboxes
