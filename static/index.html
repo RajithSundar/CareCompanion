@@ -13,6 +13,7 @@
   <script defer src="/static/vendor/chart.umd.min.js"></script>
   <script defer src="/static/vendor/lucide.min.js"></script>
   <script defer src="/static/app.js"></script>
+  <script defer src="/static/tracker.js"></script>
 </head>
 <body class="bg-paper text-ink antialiased">
 
@@ -24,7 +25,7 @@
           <span class="w-7 h-7 rounded-md bg-accent text-accent-ink flex items-center justify-center shrink-0" aria-hidden="true">
             <i data-lucide="activity" class="w-4 h-4"></i>
           </span>
-          <span>CareCompanion</span>
+          <span class="hidden sm:inline">CareCompanion</span>
         </a>
 
         <nav aria-label="Primary sections" class="hidden md:flex items-center gap-5 text-sm">
@@ -40,84 +41,145 @@
         <div class="flex items-center gap-2 bg-paper-2 border border-rule-2 rounded-md px-2.5 h-9">
           <i data-lucide="user" class="w-3.5 h-3.5 text-cool shrink-0" aria-hidden="true"></i>
           <label for="personaSelect" class="sr-only">Active athlete profile</label>
-          <select id="personaSelect" class="bg-paper-2 text-xs font-medium text-ink focus:outline-none cursor-pointer">
+          <select id="personaSelect" class="bg-paper-2 text-xs font-medium text-ink focus:outline-none cursor-pointer max-w-[8.5rem] sm:max-w-none text-ellipsis">
             <option value="P01">Alex Rivera (Runner)</option>
             <option value="P07">Maya Lin (Tech Lead)</option>
             <option value="P12">Jordan Patel (Strength)</option>
           </select>
         </div>
 
-        <button id="themeToggleBtn" type="button" aria-pressed="false" class="inline-flex items-center px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">Dark mode</button>
+        <button id="themeToggleBtn" type="button" aria-pressed="false" aria-label="Dark mode" class="inline-flex items-center gap-2 px-2.5 sm:px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
+          <i data-lucide="moon" class="w-3.5 h-3.5 sm:hidden" aria-hidden="true"></i>
+          <span id="themeToggleLabel" class="hidden sm:inline">Dark mode</span>
+        </button>
 
-        <button id="openApiModalBtn" type="button" class="inline-flex items-center gap-2 px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
+        <button id="openApiModalBtn" type="button" aria-label="Coach status" class="inline-flex items-center gap-2 px-2.5 sm:px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
           <i data-lucide="bot" class="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true"></i>
-          <span id="apiStatusLabel">Coach status</span>
+          <span id="apiStatusLabel" class="hidden sm:inline">Coach status</span>
         </button>
       </div>
     </div>
   </header>
 
   <main>
-    <!-- =================================================================== -->
-    <!-- STAGE HERO: LIVE SESSION AUDIT INSTRUMENT                           -->
-    <!-- =================================================================== -->
-    <section id="hero" class="border-b border-rule py-16 lg:py-24">
-      <div class="shell max-w-3xl space-y-6">
-        <h1 class="text-4xl sm:text-5xl text-ink">A coach that remembers your last session.</h1>
-        <p class="text-lg text-ink-2 max-w-[52ch]">
-          CareCompanion turns a day of Fitbit numbers into a forecast for tomorrow, and keeps the goals you set in earlier sessions.
-        </p>
-        <div class="flex flex-wrap items-center gap-3 pt-1">
-          <button type="button" id="jumpToCoachBtn" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">
-            Talk to the coach
-          </button>
-          <a href="#checkin" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-paper-2 border border-rule-2 hover:border-accent text-ink text-sm font-medium whitespace-nowrap btn-transition">
-            Log a check-in
-          </a>
+    <!-- Hero: Stage. Head on five columns, the tracker on seven. -->
+    <section id="hero" class="hero border-b border-rule">
+      <div class="shell hero-grid">
+        <div class="hero-copy">
+          <h1 class="hero-head">A coach that remembers your last session.</h1>
+          <p class="hero-lead">Today’s Fitbit numbers in, tomorrow’s forecast out, your goals kept.</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <button type="button" id="jumpToCoachBtn" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">
+              Talk to the coach
+            </button>
+            <a href="#checkin" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-paper-2 border border-rule-2 hover:border-accent text-ink text-sm font-medium whitespace-nowrap btn-transition">
+              Log a check-in
+            </a>
+          </div>
         </div>
+
+        <figure class="tracker-figure">
+          <div id="trackerStage" class="tracker-stage" tabindex="0" role="group" aria-roledescription="3D tracker"
+               aria-label="Fitbit-style tracker showing today’s stats. Drag, or use the arrow keys, to turn it." aria-describedby="trackerSummary">
+            <div id="tracker" class="tracker">
+              <div class="band" aria-hidden="true">
+              <span class="band-seg" style="--i:0"></span>
+              <span class="band-seg" style="--i:1"></span>
+              <span class="band-seg" style="--i:2"></span>
+              <span class="band-seg" style="--i:3"></span>
+              <span class="band-seg" style="--i:4"></span>
+              <span class="band-seg" style="--i:5"></span>
+              <span class="band-seg" style="--i:6"></span>
+              <span class="band-seg" style="--i:7"></span>
+              <span class="band-seg" style="--i:8"></span>
+              <span class="band-seg" style="--i:9"></span>
+              <span class="band-seg" style="--i:10"></span>
+              <span class="band-seg" style="--i:11"></span>
+              <span class="band-seg" style="--i:12"></span>
+              <span class="band-seg" style="--i:13"></span>
+              <span class="band-seg" style="--i:14"></span>
+              <span class="band-seg" style="--i:15"></span>
+              <span class="band-seg" style="--i:16"></span>
+              <span class="band-seg" style="--i:17"></span>
+              <span class="band-seg" style="--i:18"></span>
+              <span class="band-seg" style="--i:19"></span>
+              <span class="band-seg" style="--i:20"></span>
+              <span class="band-seg" style="--i:21"></span>
+              <span class="band-seg" style="--i:22"></span>
+              <span class="band-seg" style="--i:23"></span>
+              <span class="band-seg" style="--i:24"></span>
+              <span class="band-seg" style="--i:25"></span>
+              <span class="band-seg" style="--i:26"></span>
+              <span class="band-seg" style="--i:27"></span>
+              <span class="band-seg" style="--i:28"></span>
+              <span class="band-seg" style="--i:29"></span>
+              <span class="band-seg" style="--i:30"></span>
+              <span class="band-seg" style="--i:31"></span>
+              </div>
+              <div class="pod" aria-hidden="true">
+              <span class="pod-slice" style="--z:1"></span>
+              <span class="pod-slice" style="--z:2"></span>
+              <span class="pod-slice" style="--z:3"></span>
+              <span class="pod-slice" style="--z:4"></span>
+              <span class="pod-slice" style="--z:5"></span>
+              <span class="pod-slice" style="--z:6"></span>
+              <span class="pod-slice" style="--z:7"></span>
+              <span class="pod-slice" style="--z:8"></span>
+              <span class="pod-slice" style="--z:9"></span>
+              <span class="pod-slice" style="--z:10"></span>
+                <div class="pod-face">
+                  <div class="pod-glass">
+                    <div class="scr-top">
+                      <span id="trkWho" class="scr-who">--</span>
+                      <span id="trkDay" class="scr-day">Today</span>
+                    </div>
+                    <div class="scr-hero">
+                      <span id="trkSteps" class="scr-big">--</span>
+                      <span class="scr-unit">steps</span>
+                    </div>
+                    <div class="scr-pair">
+                      <div><span id="trkRhr" class="scr-num">--</span><span class="scr-unit">rhr bpm</span></div>
+                      <div><span id="trkSleep" class="scr-num">--</span><span class="scr-unit">sleep</span></div>
+                    </div>
+                    <div class="scr-ready">
+                      <div class="scr-ready-row"><span class="scr-unit">readiness</span><span id="trkReadyVal" class="scr-num-sm">--</span></div>
+                      <div id="trkReadyBar" class="scr-bar"></div>
+                    </div>
+                    <div id="trkForecast" class="scr-forecast" data-state="none"><span class="scr-unit">tomorrow</span><span id="trkForecastVal">--</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <figcaption class="tracker-cap">
+            <span id="trackerSummary">Waiting for today’s stats.</span>
+            <span class="tracker-hint">Drag to turn it.</span>
+          </figcaption>
+        </figure>
       </div>
     </section>
 
-    <section id="explore" class="border-b border-rule py-12 lg:py-16">
-      <div class="shell space-y-6">
-        <h2 class="text-2xl text-ink">Where to go</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <a href="#forecast" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
-            <i data-lucide="activity" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
-            <h3 class="text-base font-medium text-ink">Forecast</h3>
-            <p class="mt-1 text-sm text-muted">Tomorrow's likely recovery state for each sample athlete.</p>
-          </a>
-          <a href="#coach" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
-            <i data-lucide="message-square" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
-            <h3 class="text-base font-medium text-ink">Coach</h3>
-            <p class="mt-1 text-sm text-muted">Ask a question. Answers use the forecast and saved memories.</p>
-          </a>
-          <a href="#checkin" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
-            <i data-lucide="clipboard-list" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
-            <h3 class="text-base font-medium text-ink">Check-in</h3>
-            <p class="mt-1 text-sm text-muted">Log steps, heart rate, sleep, and how you feel today.</p>
-          </a>
-          <a href="#memory" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
-            <i data-lucide="brain" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
-            <h3 class="text-base font-medium text-ink">Memory</h3>
-            <p class="mt-1 text-sm text-muted">Goals and constraints the coach keeps across sessions.</p>
-          </a>
-          <a href="#telemetry" class="block p-5 rounded-md border border-rule-2 bg-paper-2 hover:border-accent btn-transition">
-            <i data-lucide="bar-chart-3" class="w-5 h-5 text-accent mb-4" aria-hidden="true"></i>
-            <h3 class="text-base font-medium text-ink">Data</h3>
-            <p class="mt-1 text-sm text-muted">Trends, the day-by-day ledger, and model comparison.</p>
-          </a>
-        </div>
+    <!-- Index of the dashboard's five places -->
+    <section id="explore" class="border-b border-rule">
+      <div class="shell">
+        <h2 class="sr-only">Where to go</h2>
+        <ol class="index-list">
+          <li><a href="#forecast" class="index-row"><span class="index-num">01</span><span class="index-name">Forecast</span><span class="index-line">Tomorrow’s likely recovery state for each sample athlete.</span></a></li>
+          <li><a href="#coach" class="index-row"><span class="index-num">02</span><span class="index-name">Coach</span><span class="index-line">Ask a question. Answers use the forecast and saved memories.</span></a></li>
+          <li><a href="#checkin" class="index-row"><span class="index-num">03</span><span class="index-name">Check-in</span><span class="index-line">Log steps, heart rate, sleep, and how you feel today.</span></a></li>
+          <li><a href="#memory" class="index-row"><span class="index-num">04</span><span class="index-name">Memory</span><span class="index-line">Goals and constraints the coach keeps across sessions.</span></a></li>
+          <li><a href="#telemetry" class="index-row"><span class="index-num">05</span><span class="index-name">Data</span><span class="index-line">Trends, the day-by-day ledger, and model comparison.</span></a></li>
+        </ol>
       </div>
     </section>
 
     <section id="forecast" class="border-b border-rule py-16 lg:py-24">
       <div class="shell space-y-8">
         <div class="max-w-2xl space-y-3">
-          <h2 class="text-3xl text-ink">Tomorrow's forecast</h2>
+          <h2 class="text-3xl text-ink">Tomorrow’s forecast</h2>
           <p id="overviewAdaptation" class="text-ink-2"></p>
           <p class="text-sm text-muted">
-            The model is a demo. It does not yet beat a simple "tomorrow equals today" baseline. The comparison is in <a href="#telemetry" class="text-cool underline underline-offset-4">Data</a>.
+            The model is a demo. It does not yet beat a simple “tomorrow equals today” baseline. The comparison is in <a href="#telemetry" class="text-cool underline underline-offset-4">Data</a>.
           </p>
         </div>
         <!-- Right 7 Columns: Signature Live Session Telemetry Audit Panel -->
@@ -425,7 +487,7 @@
                 <button id="fillSampleImportBtn" type="button" class="text-xs font-medium text-cool hover:underline whitespace-nowrap shrink-0">Insert template</button>
               </div>
               <p class="text-xs text-muted">
-                Paste daily records as CSV with the header <code class="measured text-cool break-all">day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress</code> (optional columns: <code class="measured text-cool">date</code> as YYYY-MM-DD, <code class="measured text-cool">fatBurn</code>), or a JSON array of the same fields. Importing replaces this profile's days.
+                Paste daily records as CSV with the header <code class="measured text-cool break-all">day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress</code> (optional columns: <code class="measured text-cool">date</code> as YYYY-MM-DD, <code class="measured text-cool">fatBurn</code>), or a JSON array of the same fields. Importing replaces this profile’s days.
               </p>
               <label for="importTextarea" class="sr-only">PMData CSV or JSON records</label>
               <textarea id="importTextarea" rows="9" class="w-full bg-paper-3 border border-rule-2 rounded-md p-3 text-xs measured text-ink" placeholder="day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress&#10;Day 1,9100,59,81,85,92,22,6,8,2,2,2"></textarea>

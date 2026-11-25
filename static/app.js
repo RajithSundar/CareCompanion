@@ -90,6 +90,7 @@ async function loadParticipantState(pid) {
   try {
     const data = await api(`/api/state/${encodeURIComponent(pid.toLowerCase())}`);
     if (seq !== state.loadSeq) return; // a newer persona switch won
+    state.profileLoaded = true;
     state.personas[pid] = {
       id: data.id,
       name: data.name,
@@ -106,7 +107,10 @@ async function loadParticipantState(pid) {
     renderAll();
     syncPredictionFromBackend();
   } catch (e) {
-    if (seq === state.loadSeq) showToast(`Could not load profile: ${e.message}`);
+    if (seq === state.loadSeq) {
+      showToast(`Could not load profile: ${e.message}`);
+      if (!state.profileLoaded && window.CCTracker) window.CCTracker.render(null);
+    }
   }
 }
 
@@ -175,7 +179,25 @@ function renderAll() {
   if (window.lucide) lucide.createIcons();
 }
 
+// Feeds the hero tracker (tracker.js). Until a profile loads it shows a labelled random sample.
+function renderTracker() {
+  if (!window.CCTracker) return;
+  if (!state.profileLoaded) return; // tracker.js falls back to a random sample if no profile arrives
+  const p = getPersona(); const d = getActiveDayRecord(); const pred = state.livePrediction;
+  window.CCTracker.render({
+    sample: false,
+    who: p.name.split(' ')[0],
+    day: d.day,
+    steps: d.steps,
+    rhr: d.rhr,
+    sleep: d.sleepScore,
+    readiness: d.readiness,
+    forecast: pred ? pred.label : null
+  });
+}
+
 function renderOverview() {
+  renderTracker();
   const p = getPersona();
   const s = getSession();
   const d = getActiveDayRecord();
@@ -931,7 +953,8 @@ window.addEventListener('DOMContentLoaded', () => {
 function syncThemeToggle() {
   const dark = document.documentElement.dataset.theme === 'dark';
   const btn = document.getElementById('themeToggleBtn');
-  btn.textContent = dark ? 'Light mode' : 'Dark mode';
+  document.getElementById('themeToggleLabel').textContent = dark ? 'Light mode' : 'Dark mode';
+  btn.setAttribute('aria-label', dark ? 'Light mode' : 'Dark mode');
   btn.setAttribute('aria-pressed', String(dark));
 }
 document.getElementById('themeToggleBtn').addEventListener('click', () => {
