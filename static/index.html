@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Longitudinal Fitbit biometric telemetry, supervised recovery classification, and persistent multi-session health coaching." />
+  <title>CareCompanion: Longitudinal Biometric Health Coach</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Host+Grotesk:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Host Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono: ['"Atkinson Hyperlegible Mono"', 'ui-monospace', 'monospace']
+          },
+          colors: {
+            paper: '#090C08',
+            'paper-2': '#121710',
+            'paper-3': '#060805',
+            ink: '#F4F6F3',
+            'ink-2': '#D5DDD2',
+            muted: '#98A494',
+            rule: '#222B1F',
+            'rule-2': '#344230',
+            accent: '#F1D246',
+            'accent-ink': '#090C08',
+            'accent-soft': '#24200C',
+            cool: '#3E92CC',
+            'cool-soft': '#0F2230',
+            ok: '#68B984',
+            'ok-soft': '#102116',
+            bad: '#DF6D5A',
+            'bad-soft': '#261411'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    /* Hallmark · shape: Workbench · genre: modern-minimal · theme: console · console: graphite · hero: Stage · posture: restrained · surface: absolute · nav: edge-aligned · footer: colophon · v2.0.0 */
+    /* Hallmark · pre-emit critique: P5 H5 E5 S5 R5 V5 · weakest: R, multi-panel clinical system; unified all surfaces into 1px hairline Console grids with zero floating cards */
+    :root {
+      --color-paper: #090C08;
+      --color-paper-2: #121710;
+      --color-paper-3: #060805;
+      --color-ink: #F4F6F3;
+      --color-ink-2: #D5DDD2;
+      --color-muted: #98A494;
+      --color-rule: #222B1F;
+      --color-rule-2: #344230;
+      --color-accent: #F1D246;
+      --color-accent-ink: #090C08;
+      --color-accent-soft: #24200C;
+      --color-cool: #3E92CC;
+      --color-cool-soft: #0F2230;
+      --color-focus: #F1D246;
+      --font-display: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
+      --font-body: "Host Grotesk", ui-sans-serif, system-ui, sans-serif;
+      --font-outlier: "Atkinson Hyperlegible Mono", ui-monospace, monospace;
+      --space-2xs: 4px;
+      --space-xs: 8px;
+      --space-sm: 12px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 40px;
+      --space-2xl: 64px;
+      --space-3xl: 96px;
+      --radius-card: 10px;
+      --radius-pill: 6px;
+      --rule-hair: 1px;
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      --container: 1360px;
+      --gutter: 32px;
+    }
+
+    html {
+      overflow-x: clip;
+      scroll-behavior: smooth;
+      scroll-padding-top: 84px;
+      background-color: var(--color-paper);
+      color: var(--color-ink);
+      font-family: var(--font-body);
+    }
+
+    body {
+      overflow-x: clip;
+      margin: 0;
+      min-height: 100dvh;
+      background-color: var(--color-paper);
+      color: var(--color-ink);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.55;
+      caret-color: var(--color-accent);
+      scrollbar-color: var(--color-rule-2) var(--color-paper);
+    }
+
+    ::selection {
+      background-color: var(--color-accent);
+      color: var(--color-accent-ink);
+    }
+
+    h1, h2, h3 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      text-wrap: balance;
+      overflow-wrap: break-word;
+      min-width: 0;
+    }
+
+    p {
+      text-wrap: pretty;
+    }
+
+    .measured {
+      font-family: var(--font-outlier);
+      font-variant-numeric: tabular-nums slashed-zero;
+    }
+
+    .shell {
+      max-width: var(--container);
+      margin-inline: auto;
+      padding-inline: var(--gutter);
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      min-width: 0;
+      gap: var(--rule-hair);
+      background-color: var(--color-rule);
+      color: var(--color-ink);
+      border: var(--rule-hair) solid var(--color-rule);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+    }
+
+    .panels > * {
+      min-width: 0;
+      background-color: var(--color-paper-2);
+      color: var(--color-ink);
+    }
+
+    .range-cool {
+      accent-color: var(--color-cool);
+    }
+
+    .range-accent {
+      accent-color: var(--color-accent);
+    }
+
+    .thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+    .thin-scroll::-webkit-scrollbar-thumb { background: var(--color-rule-2); border-radius: 9999px; }
+    .thin-scroll::-webkit-scrollbar-thumb:hover { background: var(--color-cool); }
+
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--color-focus);
+      outline-offset: 2px;
+    }
+
+    button:active:not(:disabled),
+    a:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled,
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-transition {
+      transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-paper text-ink antialiased">
+
+  <!-- Edge-aligned single-row navigation bar -->
+  <header class="sticky top-0 z-30 bg-paper border-b border-rule">
+    <div class="shell h-16 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-6 min-w-0">
+        <a href="#hero" class="flex items-center gap-2.5 text-ink font-medium text-base tracking-tight whitespace-nowrap shrink-0">
+          <span class="w-7 h-7 rounded-md bg-accent text-accent-ink flex items-center justify-center shrink-0" aria-hidden="true">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+          </span>
+          <span>CareCompanion</span>
+        </a>
+
+        <nav aria-label="Primary sections" class="hidden md:flex items-center gap-5 text-sm">
+          <a href="#telemetry" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Telemetry</a>
+          <a href="#coach" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Coach</a>
+          <a href="#checkin" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Check-in</a>
+          <a href="#memory" class="text-muted hover:text-ink whitespace-nowrap btn-transition">Memory</a>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-2.5 shrink-0">
+        <div class="flex items-center gap-2 bg-paper-2 border border-rule-2 rounded-md px-2.5 h-9">
+          <i data-lucide="user" class="w-3.5 h-3.5 text-cool shrink-0" aria-hidden="true"></i>
+          <label for="personaSelect" class="sr-only">Active athlete profile</label>
+          <select id="personaSelect" class="bg-paper-2 text-xs font-medium text-ink focus:outline-none cursor-pointer">
+            <option value="P01">Alex Rivera (Runner)</option>
+            <option value="P07">Maya Lin (Tech Lead)</option>
+            <option value="P12">Jordan Patel (Strength)</option>
+          </select>
+        </div>
+
+        <button id="openApiModalBtn" type="button" class="inline-flex items-center gap-2 px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
+          <i data-lucide="key-round" class="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true"></i>
+          <span id="apiStatusLabel">Local ML Engine</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- =================================================================== -->
+    <!-- STAGE HERO: LIVE SESSION AUDIT INSTRUMENT                           -->
+    <!-- =================================================================== -->
+    <section id="hero" class="border-b border-rule py-10 lg:py-16">
+      <div class="shell grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+        <!-- Left 5 Columns: Proposition & Actions -->
+        <div class="lg:col-span-5 space-y-5">
+          <h1 class="text-4xl sm:text-5xl text-ink">Coaching that remembers your last session.</h1>
+          <p class="text-lg text-ink-2 max-w-[44ch]">
+            Fitbit telemetry and recovery classification that adapt coaching across every session.
+          </p>
+          <div class="flex flex-wrap items-center gap-3 pt-1">
+            <button type="button" id="jumpToCoachBtn" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">
+              Open live coach
+            </button>
+            <a href="#checkin" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-paper-2 border border-rule-2 hover:border-cool text-ink text-sm font-medium whitespace-nowrap btn-transition">
+              Log check-in
+            </a>
+          </div>
+          <p id="overviewAdaptation" class="text-sm text-muted max-w-[48ch]">
+            Captured half-marathon goal, morning preference, and left knee Peak HR cap.
+          </p>
+        </div>
+
+        <!-- Right 7 Columns: Signature Live Session Telemetry Audit Panel -->
+        <div class="lg:col-span-7">
+          <div class="panels">
+            <!-- Panel Header -->
+            <div class="p-4 sm:px-5 flex flex-wrap items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div id="overviewGreeting" class="text-sm font-medium text-ink">Alex Rivera</div>
+                <div id="overviewRole" class="text-xs text-muted">Half-Marathon Prep, Morning Runner</div>
+              </div>
+              <span id="overviewSessionBadge" class="px-2.5 py-1 rounded text-xs font-medium bg-accent-soft text-accent border border-rule-2 whitespace-nowrap">Session 1, Day 1</span>
+            </div>
+
+            <!-- Session Version Switcher Tabs -->
+            <div id="overviewSessionSwitcher" class="bg-paper-3 grid grid-cols-4 divide-x divide-rule"></div>
+
+            <!-- Telemetry Diff & Readout Rows -->
+            <div class="bg-paper-2 divide-y divide-rule text-sm">
+              <div class="grid grid-cols-12 px-4 sm:px-5 py-2.5 text-xs text-muted bg-paper-3">
+                <span class="col-span-5">Biometric signal</span>
+                <span class="col-span-4">Reading</span>
+                <span class="col-span-3 text-right">Baseline delta</span>
+              </div>
+
+              <div class="grid grid-cols-12 items-center px-4 sm:px-5 py-3">
+                <span class="col-span-5 text-ink-2">Daily steps</span>
+                <span id="kpiSteps" class="col-span-4 measured text-sm text-ink">--</span>
+                <span id="kpiStepsDelta" class="col-span-3 text-right measured text-xs">--</span>
+              </div>
+
+              <div class="grid grid-cols-12 items-center px-4 sm:px-5 py-3">
+                <span class="col-span-5 text-ink-2">Resting heart rate</span>
+                <span id="kpiRhr" class="col-span-4 measured text-sm text-ink">--</span>
+                <span id="kpiRhrDelta" class="col-span-3 text-right measured text-xs">--</span>
+              </div>
+
+              <div class="grid grid-cols-12 items-center px-4 sm:px-5 py-3">
+                <span class="col-span-5 text-ink-2">Fitbit sleep score</span>
+                <span id="kpiSleep" class="col-span-4 measured text-sm text-ink">--</span>
+                <span id="kpiSleepDelta" class="col-span-3 text-right measured text-xs">--</span>
+              </div>
+
+              <div class="grid grid-cols-12 items-center px-4 sm:px-5 py-3">
+                <span class="col-span-5 text-ink-2">PMSys readiness</span>
+                <span id="kpiReadiness" class="col-span-4 measured text-sm text-ink">--</span>
+                <span id="kpiReadinessDelta" class="col-span-3 text-right text-xs font-medium">--</span>
+              </div>
+            </div>
+
+            <!-- Classifier & Attribution Footer -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 divide-y sm:divide-y-0 sm:divide-x divide-rule bg-paper-3">
+              <div class="sm:col-span-4 p-4">
+                <div class="text-xs text-muted mb-1">ML recovery state</div>
+                <div id="mlPredClass" class="text-base font-medium text-cool">Moderate</div>
+              </div>
+              <div class="sm:col-span-8 p-4">
+                <div class="text-xs text-muted mb-1.5">Class probabilities</div>
+                <div id="mlProbPills" class="flex flex-wrap gap-1.5 measured text-xs"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION 2: TELEMETRY TRENDS, LEDGER & SUPERVISED ML BENCHMARK       -->
+    <!-- =================================================================== -->
+    <section id="telemetry" class="border-b border-rule py-16 lg:py-24">
+      <div class="shell space-y-8">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div class="space-y-2 max-w-xl">
+            <h2 class="text-3xl sm:text-4xl text-ink">Ten days of biometrics, classified live.</h2>
+            <p class="text-base text-muted">Rolling 3-day sleep and step averages paired with 7-day resting heart rate deltas feed the scikit-learn recovery model.</p>
+          </div>
+
+          <div class="inline-flex bg-paper-2 p-1 rounded-md border border-rule">
+            <button type="button" data-chart-mode="activity" class="chart-mode-btn px-3 py-1.5 rounded text-xs font-medium bg-accent text-accent-ink whitespace-nowrap btn-transition">Steps &amp; Sleep</button>
+            <button type="button" data-chart-mode="recovery" class="chart-mode-btn px-3 py-1.5 rounded text-xs font-medium text-muted hover:text-ink whitespace-nowrap btn-transition">RHR &amp; Readiness</button>
+            <button type="button" data-chart-mode="zones" class="chart-mode-btn px-3 py-1.5 rounded text-xs font-medium text-muted hover:text-ink whitespace-nowrap btn-transition">HR Zones</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Chart + 10-day Ledger -->
+          <div class="lg:col-span-7 panels min-w-0">
+            <div class="p-5 min-w-0">
+              <div class="relative h-64 w-full min-w-0">
+                <canvas id="biometricChart" role="img" aria-label="Longitudinal Fitbit biometric trends chart"></canvas>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto bg-paper-3 min-w-0">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-rule text-muted">
+                    <th class="py-2 px-3 font-medium whitespace-nowrap">Day</th>
+                    <th class="py-2 px-2.5 font-medium whitespace-nowrap">Steps</th>
+                    <th class="py-2 px-2.5 font-medium whitespace-nowrap">RHR</th>
+                    <th class="py-2 px-2.5 font-medium whitespace-nowrap">Sleep</th>
+                    <th class="py-2 px-2.5 font-medium whitespace-nowrap">Readiness</th>
+                    <th class="py-2 px-2.5 font-medium whitespace-nowrap">Fatigue</th>
+                    <th class="py-2 px-2.5 font-medium whitespace-nowrap">Soreness</th>
+                    <th class="py-2 px-3 font-medium whitespace-nowrap">Stress</th>
+                  </tr>
+                </thead>
+                <tbody id="biometricLedgerBody" class="divide-y divide-rule measured text-ink-2"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ML Feature Drivers & Group CV Comparison -->
+          <div class="lg:col-span-5 panels">
+            <div class="p-5 space-y-4">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-lg text-ink">Supervised ML feature drivers</h3>
+                <span id="modelNameBadge" class="px-2.5 py-1 rounded text-xs font-medium bg-cool-soft text-cool border border-rule-2">RandomForest</span>
+              </div>
+              <p class="text-xs text-muted">
+                Top predictors computed by <code class="measured text-cool">train_model.py</code> on PMData Fitbit and PMSys records.
+              </p>
+              <div id="featureImportanceBars" class="space-y-3"></div>
+            </div>
+
+            <div class="p-5 bg-paper-3 space-y-3">
+              <div class="text-xs font-medium text-ink-2">5-Fold Group CV benchmark (grouped by participant)</div>
+              <div id="modelComparisonGrid" class="grid grid-cols-3 gap-2 text-center"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION 3: MULTI-SESSION AGENT COACHING WORKSPACE                   -->
+    <!-- =================================================================== -->
+    <section id="coach" class="border-b border-rule py-16 lg:py-24">
+      <div class="shell space-y-8">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div class="space-y-2 max-w-xl">
+            <h2 class="text-3xl sm:text-4xl text-ink">Every session reads the ones before it.</h2>
+            <p class="text-base text-muted">Inspect how advice evolved across sessions, or open a new check-in backed by persisted memory and OpenRouter.</p>
+          </div>
+          <button id="newSessionBtn" type="button" class="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-paper-2 border border-rule-2 hover:border-accent text-ink text-xs font-medium whitespace-nowrap btn-transition">
+            <i data-lucide="plus" class="w-4 h-4 text-accent" aria-hidden="true"></i>
+            <span>New session</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Session Trail & Protocol Checklist -->
+          <div class="lg:col-span-4 space-y-4 min-w-0">
+            <div class="panels">
+              <div class="px-4 py-3 flex items-center justify-between">
+                <h3 class="text-base text-ink">Session trail</h3>
+                <span class="text-xs text-muted">Select session</span>
+              </div>
+              <div id="sessionStepper" class="divide-y divide-rule bg-paper-3"></div>
+            </div>
+
+            <div class="panels">
+              <div class="px-4 py-3 flex items-center justify-between">
+                <h3 class="text-base text-ink">Training protocol</h3>
+                <span id="planAdherenceBadge" class="measured text-xs font-medium px-2 py-0.5 rounded bg-accent text-accent-ink">0%</span>
+              </div>
+              <div id="actionPlanList" class="p-3 space-y-2 bg-paper-3"></div>
+            </div>
+          </div>
+
+          <!-- Active Session Console -->
+          <div class="lg:col-span-8 panels">
+            <div class="px-5 py-4 flex flex-wrap items-center justify-between gap-3 bg-paper-3">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <h3 id="sessionTitle" class="text-lg text-ink">Session 1: Baseline Intake</h3>
+                  <span id="sessionDayBadge" class="px-2 py-0.5 rounded text-xs font-medium bg-cool-soft text-cool border border-rule-2">Day 1</span>
+                </div>
+                <p id="sessionSubtitle" class="text-xs text-muted mt-1">Establishing biometric baselines and half-marathon goal</p>
+              </div>
+              <button id="nextSessionBtn" type="button" class="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap btn-transition">
+                <span>Next session</span>
+                <i data-lucide="arrow-right" class="w-3.5 h-3.5" aria-hidden="true"></i>
+              </button>
+            </div>
+
+            <div id="chatMessages" class="h-[420px] overflow-y-auto thin-scroll p-5 space-y-4 bg-paper-2"></div>
+
+            <div class="p-4 bg-paper-3 space-y-3">
+              <div id="quickPrompts" class="flex flex-wrap items-center gap-2"></div>
+              <form id="chatForm" class="flex items-center gap-2.5">
+                <label for="chatInput" class="sr-only">Message CareCompanion</label>
+                <input id="chatInput" type="text" placeholder="Ask CareCompanion using live ML classification and session memory..." class="flex-1 h-10 bg-paper-2 border border-rule-2 rounded-md px-3.5 text-sm text-ink placeholder:text-muted focus:outline-none" />
+                <button id="sendChatBtn" type="submit" aria-label="Send message" class="inline-flex items-center justify-center px-4 h-10 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap shrink-0 btn-transition">
+                  <i data-lucide="send" class="w-4 h-4" aria-hidden="true"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION 4: DAILY CHECK-IN & BATCH BIOMETRIC INGESTION               -->
+    <!-- =================================================================== -->
+    <section id="checkin" class="border-b border-rule py-16 lg:py-24">
+      <div class="shell space-y-8">
+        <div class="space-y-2 max-w-xl">
+          <h2 class="text-3xl sm:text-4xl text-ink">Record today’s biometrics or import a block.</h2>
+          <p class="text-base text-muted">Changes persist on the backend, recompute rolling features, and update the ML recovery classifier immediately.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <!-- Check-in Form -->
+          <div class="panels">
+            <div class="p-6 space-y-5">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-lg text-ink">Daily Fitbit and PMSys check-in</h3>
+                <span id="liveUpdateBadge" class="px-2.5 py-1 rounded text-xs font-medium bg-cool-soft text-cool border border-rule-2">Moderate</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label for="inputSteps" class="block text-xs text-muted mb-1.5">Steps</label>
+                  <input id="inputSteps" type="number" min="0" max="40000" value="9650" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputRhr" class="block text-xs text-muted mb-1.5">Resting HR (bpm)</label>
+                  <input id="inputRhr" type="number" min="35" max="120" value="58" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+                <div>
+                  <label for="inputSleep" class="block text-xs text-muted mb-1.5">Sleep score (0 to 100)</label>
+                  <input id="inputSleep" type="number" min="20" max="100" value="80" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+                </div>
+              </div>
+
+              <div class="space-y-4 text-xs">
+                <div>
+                  <div class="flex justify-between mb-1"><label for="sliderReadiness" class="text-ink-2">PMSys readiness (0 to 10)</label><span id="valReadiness" class="measured text-cool">8</span></div>
+                  <input id="sliderReadiness" type="range" min="0" max="10" value="8" class="w-full range-cool cursor-pointer" />
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><label for="sliderFatigue" class="text-ink-2">PMSys fatigue (1 to 5)</label><span id="valFatigue" class="measured text-accent">2</span></div>
+                  <input id="sliderFatigue" type="range" min="1" max="5" value="2" class="w-full range-accent cursor-pointer" />
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><label for="sliderSoreness" class="text-ink-2">PMSys soreness (1 to 5)</label><span id="valSoreness" class="measured text-cool">2</span></div>
+                  <input id="sliderSoreness" type="range" min="1" max="5" value="2" class="w-full range-cool cursor-pointer" />
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1"><label for="sliderStress" class="text-ink-2">PMSys stress (1 to 5)</label><span id="valStress" class="measured text-accent">2</span></div>
+                  <input id="sliderStress" type="range" min="1" max="5" value="2" class="w-full range-accent cursor-pointer" />
+                </div>
+              </div>
+
+              <button id="applyCheckinBtn" type="button" class="w-full h-10 px-4 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 flex items-center justify-center gap-2 whitespace-nowrap btn-transition">
+                <i data-lucide="check" class="w-4 h-4" aria-hidden="true"></i>
+                <span>Save check-in</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Batch Import -->
+          <div class="panels min-w-0">
+            <div class="p-6 space-y-4 min-w-0">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-lg text-ink">Import PMData CSV or JSON</h3>
+                <button id="fillSampleImportBtn" type="button" class="text-xs font-medium text-cool hover:underline whitespace-nowrap shrink-0">Insert template</button>
+              </div>
+              <p class="text-xs text-muted">
+                Paste daily records (<code class="measured text-cool break-all">day,steps,rhr,sleepScore,readiness,fatigue,soreness,stress</code>) or a JSON array.
+              </p>
+              <label for="importTextarea" class="sr-only">PMData CSV or JSON records</label>
+              <textarea id="importTextarea" rows="9" class="w-full bg-paper-3 border border-rule-2 rounded-md p-3 text-xs measured text-ink" placeholder="day,steps,rhr,sleepScore,readiness,fatigue,soreness,stress&#10;Day 1,9100,59,81,8,2,2,2"></textarea>
+              <button id="confirmImportBtn" type="button" class="w-full h-10 px-4 rounded-md bg-paper-3 border border-rule-2 hover:border-cool text-ink text-sm font-medium whitespace-nowrap btn-transition">
+                Import records
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION 5: PERSISTENT MEMORY GRAPH & ADAPTATION TRAIL               -->
+    <!-- =================================================================== -->
+    <section id="memory" class="py-16 lg:py-24">
+      <div class="shell space-y-8">
+        <div class="space-y-2 max-w-xl">
+          <h2 class="text-3xl sm:text-4xl text-ink">What the coach keeps on file.</h2>
+          <p class="text-base text-muted">Goals, physical constraints, and adaptation rules extracted across sessions and stored in <code class="measured text-cool">agent_memory.json</code>.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <!-- Persistent Agent Memory -->
+          <div class="lg:col-span-6 panels">
+            <div class="p-5 space-y-4">
+              <div class="flex items-center justify-between gap-2">
+                <h3 class="text-lg text-ink">Persistent memory graph</h3>
+                <button id="resetDemoBtn" type="button" class="text-xs font-medium text-muted hover:text-accent px-2.5 h-8 rounded border border-rule-2 whitespace-nowrap btn-transition">Restore baseline</button>
+              </div>
+
+              <form id="addMemoryForm" class="flex flex-wrap sm:flex-nowrap gap-2">
+                <label for="newMemoryCategory" class="sr-only">Memory category</label>
+                <select id="newMemoryCategory" class="h-10 bg-paper-3 border border-rule-2 rounded-md px-2.5 text-xs font-medium text-ink">
+                  <option value="Goal">Goal</option>
+                  <option value="Constraint">Constraint</option>
+                  <option value="Baseline">Baseline</option>
+                  <option value="Adaptation">Rule</option>
+                </select>
+                <label for="newMemoryText" class="sr-only">Memory fact</label>
+                <input id="newMemoryText" type="text" placeholder="Add persistent memory fact..." class="flex-1 h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-xs text-ink placeholder:text-muted" />
+                <button type="submit" class="h-10 px-4 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap btn-transition">Add</button>
+              </form>
+
+              <div id="memoryList" class="space-y-2.5 max-h-96 overflow-y-auto thin-scroll pr-1"></div>
+            </div>
+          </div>
+
+          <!-- Evolution Trail & Export -->
+          <div class="lg:col-span-6 space-y-6">
+            <div class="panels">
+              <div class="p-5 space-y-3">
+                <h3 class="text-lg text-ink">Adaptation trail</h3>
+                <div id="memoryEvolutionLog" class="divide-y divide-rule text-xs bg-paper-3 rounded-md border border-rule"></div>
+              </div>
+            </div>
+
+            <div class="panels">
+              <div class="p-5 space-y-3">
+                <h3 class="text-lg text-ink">Export clinical and coaching record</h3>
+                <p class="text-xs text-muted">Download the longitudinal biometric ledger, ML classifications, session transcripts, and memory graph.</p>
+                <div class="flex flex-wrap gap-3 pt-1">
+                  <button id="exportReportBtn" type="button" class="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap btn-transition">
+                    <i data-lucide="file-json" class="w-4 h-4" aria-hidden="true"></i>
+                    <span>Export JSON</span>
+                  </button>
+                  <button id="exportMarkdownBtn" type="button" class="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-paper-3 border border-rule-2 hover:border-cool text-ink text-xs font-medium whitespace-nowrap btn-transition">
+                    <i data-lucide="file-text" class="w-4 h-4 text-cool" aria-hidden="true"></i>
+                    <span>Export Markdown</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Colophon Footer -->
+  <footer class="border-t border-rule py-8 bg-paper-3">
+    <div class="shell flex flex-wrap items-center justify-between gap-4 text-xs text-muted">
+      <span>CareCompanion longitudinal coaching engine grounded in PMData Fitbit telemetry and scikit-learn recovery classification.</span>
+      <div class="flex items-center gap-4">
+        <a href="#telemetry" class="hover:text-ink whitespace-nowrap">Telemetry</a>
+        <a href="#coach" class="hover:text-ink whitespace-nowrap">Coach</a>
+        <a href="#checkin" class="hover:text-ink whitespace-nowrap">Check-in</a>
+        <a href="#memory" class="hover:text-ink whitespace-nowrap">Memory</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- API Key Settings Modal -->
+  <div id="apiModal" role="dialog" aria-modal="true" aria-labelledby="apiModalTitle" class="fixed inset-0 z-50 hidden items-center justify-center bg-paper-3/85 p-4">
+    <div class="panels max-w-md w-full">
+      <div class="p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="key-round" class="w-4 h-4 text-accent" aria-hidden="true"></i>
+            <h3 id="apiModalTitle" class="text-base text-ink">OpenRouter API Configuration</h3>
+          </div>
+          <button id="closeApiModalBtn" type="button" aria-label="Close modal" class="text-muted hover:text-ink p-1 rounded">
+            <i data-lucide="x" class="w-4 h-4" aria-hidden="true"></i>
+          </button>
+        </div>
+        <p class="text-xs text-muted">
+          Server environment uses <code class="measured text-cool">.env</code> when configured. You may also override with an <strong class="text-ink font-medium">OpenRouter API Key</strong> (<code class="measured text-cool">sk-or-...</code>) or switch to the local ML engine.
+        </p>
+        <div class="space-y-3">
+          <div>
+            <label for="apiProviderSelect" class="block text-xs text-ink-2 mb-1">Reasoning engine</label>
+            <select id="apiProviderSelect" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm text-ink">
+              <option value="openrouter">OpenRouter API (openai/gpt-4o-mini)</option>
+              <option value="simulated">Local ML Engine</option>
+            </select>
+          </div>
+          <div id="apiKeyInputWrapper">
+            <label for="apiKeyInput" class="block text-xs text-ink-2 mb-1">OpenRouter API key override</label>
+            <input id="apiKeyInput" type="password" placeholder="Optional override (sk-or-...)" class="w-full h-10 bg-paper-3 border border-rule-2 rounded-md px-3 text-sm measured text-ink" />
+          </div>
+        </div>
+        <div class="pt-2 flex items-center justify-end gap-2">
+          <button id="clearApiBtn" type="button" class="px-3 h-9 rounded-md text-xs font-medium text-muted hover:text-ink whitespace-nowrap">Use Local Engine</button>
+          <button id="saveApiBtn" type="button" class="px-4 h-9 rounded-md text-xs font-medium bg-accent text-accent-ink hover:opacity-90 whitespace-nowrap">Save settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Toast -->
+  <div id="toast" role="status" aria-live="polite" class="fixed bottom-4 right-4 z-50 hidden items-center gap-2 px-4 py-2.5 rounded-md bg-paper-2 text-ink border border-rule-2 text-xs font-medium">
+    <i data-lucide="check-circle" class="w-4 h-4 text-accent" aria-hidden="true"></i>
+    <span id="toastText">Saved</span>
+  </div>
+
+  <script>
+    function getToken(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    let FEATURE_IMPORTANCES = [
+      { name: 'sleep_score', val: 0.161 },
+      { name: 'rhr_delta', val: 0.142 },
+      { name: 'sleep_3d_avg', val: 0.141 },
+      { name: 'resting_heart_rate', val: 0.098 },
+      { name: 'cardio_min', val: 0.083 },
+      { name: 'very_active_min', val: 0.079 }
+    ];
+
+    const FALLBACK_PERSONA = {
+      id: 'P01', name: 'Alex Rivera', role: 'Half-Marathon Prep, Morning Runner',
+      baseline: { steps: 9400, rhr: 58, sleepScore: 79, readiness: 7 },
+      days: [
+        { day: 'Day 1', steps: 9650, rhr: 58, sleepScore: 80, deepMin: 88, remMin: 95, readiness: 8, fatigue: 2, soreness: 2, stress: 2, fatBurn: 38, cardio: 26, peak: 8 }
+      ],
+      sessions: [
+        {
+          id: 'S1', label: 'Session 1', dayIndex: 0, dayLabel: 'Day 1',
+          title: 'Session 1: Baseline Intake', subtitle: 'Establishing biometric baselines and half-marathon goal',
+          adaptation: 'Captured half-marathon goal, morning preference, and left knee Peak HR cap.',
+          plan: [{ id: 'p1_1', text: '35 min Zone 2/3 morning run', done: true }],
+          messages: [{ role: 'coach', text: 'Baseline metrics loaded.', citations: ['Baseline Recorded'] }]
+        }
+      ],
+      memories: [
+        { id: 'm1', category: 'Goal', text: 'Training for half-marathon in 8 weeks', session: 'S1', activeFrom: 0 }
+      ],
+      evolutionLog: [
+        { session: 'S1', text: 'Captured half-marathon goal and baseline.' }
+      ]
+    };
+
+    const state = {
+      personas: { P01: JSON.parse(JSON.stringify(FALLBACK_PERSONA)) },
+      activePersonaId: 'P01',
+      activeSessionIndex: 0,
+      chartMode: 'activity',
+      apiConfig: { provider: 'openrouter', apiKey: '' },
+      serverLlmConfigured: false,
+      serverLlmProvider: 'OpenRouter',
+      chartInstance: null,
+      isSending: false,
+      modelInfo: null,
+      livePrediction: null
+    };
+
+    try {
+      const saved = localStorage.getItem('carecompanion_api_v2');
+      if (saved) {
+        const p = JSON.parse(saved);
+        if (p && (p.provider === 'openrouter' || p.provider === 'groq' || p.provider === 'simulated')) state.apiConfig = p;
+      }
+    } catch (e) {}
+
+    function getPersona() { return state.personas[state.activePersonaId] || FALLBACK_PERSONA; }
+    function getSession() {
+      const p = getPersona();
+      return p.sessions[Math.min(state.activeSessionIndex, p.sessions.length - 1)] || p.sessions[0];
+    }
+    function getActiveDayRecord() {
+      const p = getPersona();
+      const s = getSession();
+      return p.days[Math.min(s.dayIndex, p.days.length - 1)] || p.days[0];
+    }
+
+    function buildBiometricPayload(p, dayIdx) {
+      const idx = Math.min(dayIdx, p.days.length - 1);
+      const d = p.days[idx];
+      const winStart = Math.max(0, idx - 2);
+      const win = p.days.slice(winStart, idx + 1);
+      const sleep3d = win.reduce((acc, x) => acc + x.sleepScore, 0) / win.length;
+      const steps3d = win.reduce((acc, x) => acc + x.steps, 0) / win.length;
+      return {
+        steps: d.steps,
+        resting_heart_rate: d.rhr,
+        sleep_score: d.sleepScore,
+        deep_sleep_min: d.deepMin || 80,
+        rem_sleep_min: d.remMin || 88,
+        sedentary_min: 640,
+        very_active_min: Math.round((d.cardio || 15) * 0.9),
+        cardio_min: d.cardio || 18,
+        peak_min: d.peak || 4,
+        rhr_delta: Number((d.rhr - p.baseline.rhr).toFixed(2)),
+        sleep_3d_avg: Number(sleep3d.toFixed(2)),
+        steps_3d_avg: Number(steps3d.toFixed(1))
+      };
+    }
+
+    async function loadParticipantState(pid) {
+      try {
+        const res = await fetch(`/api/state/${encodeURIComponent(pid.toLowerCase())}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        state.personas[pid] = {
+          id: data.id,
+          name: data.name,
+          role: data.role,
+          baseline: data.baseline,
+          days: data.days,
+          sessions: data.sessions,
+          evolutionLog: data.evolutionLog || [],
+          memories: (data.memories || []).map(m => ({ ...m, activeFrom: 0 }))
+        };
+        if (state.activeSessionIndex >= state.personas[pid].sessions.length) {
+          state.activeSessionIndex = 0;
+        }
+        renderAll();
+        syncPredictionFromBackend();
+      } catch (e) {}
+    }
+
+    async function loadModelInfo() {
+      try {
+        const res = await fetch('/api/model-info');
+        if (!res.ok) return;
+        const data = await res.json();
+        state.serverLlmConfigured = Boolean(data.llm_configured);
+        state.serverLlmProvider = data.llm_provider || 'OpenRouter';
+        renderApiStatus();
+        if (data.trained && data.feature_importances) {
+          state.modelInfo = data;
+          FEATURE_IMPORTANCES = Object.entries(data.feature_importances)
+            .slice(0, 6)
+            .map(([name, val]) => ({ name, val }));
+          renderOverview();
+        }
+      } catch (e) {}
+    }
+
+    async function syncPredictionFromBackend() {
+      try {
+        const p = getPersona();
+        const s = getSession();
+        const payload = buildBiometricPayload(p, s.dayIndex);
+        const res = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        state.livePrediction = {
+          label: data.predicted_recovery_state,
+          probs: data.probabilities,
+          modelName: data.model_name
+        };
+        renderOverview();
+        renderUpdateInputs();
+      } catch (e) {}
+    }
+
+    function predictRecoveryFallback(d, base) {
+      const rhrDelta = d.rhr - base.rhr;
+      let label = 'Moderate';
+      let probs = { Ready: 0.22, Moderate: 0.64, 'Deload Needed': 0.14 };
+      if (d.readiness >= 7 && d.fatigue <= 3 && rhrDelta <= 2 && d.sleepScore >= 72) {
+        label = 'Ready';
+        const conf = Math.min(0.95, 0.78 + (d.sleepScore - 72) * 0.01);
+        probs = { Ready: conf, Moderate: (1 - conf) * 0.8, 'Deload Needed': (1 - conf) * 0.2 };
+      } else if (d.readiness <= 4 || d.fatigue >= 4 || rhrDelta >= 4 || d.sleepScore < 64) {
+        label = 'Deload Needed';
+        const conf = Math.min(0.94, 0.76 + Math.max(0, rhrDelta) * 0.025);
+        probs = { Ready: (1 - conf) * 0.15, Moderate: (1 - conf) * 0.85, 'Deload Needed': conf };
+      }
+      return { label, probs };
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastText').textContent = msg;
+      toast.classList.remove('hidden'); toast.classList.add('flex');
+      setTimeout(() => { toast.classList.add('hidden'); toast.classList.remove('flex'); }, 2600);
+    }
+
+    function formatMarkdownSimple(text) {
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/\*\*(.+?)\*\*/g, '<strong class="font-medium text-accent">$1</strong>').replace(/\n/g, '<br>');
+    }
+
+    function renderAll() {
+      renderOverview();
+      renderLedger();
+      renderSessionStepper();
+      renderKPIs();
+      renderUpdateInputs();
+      renderChart();
+      renderChatHeaderAndPlan();
+      renderMessages();
+      renderQuickPrompts();
+      renderMemoryPanel();
+      renderApiStatus();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderOverview() {
+      const p = getPersona();
+      const s = getSession();
+      const d = getActiveDayRecord();
+      const pred = state.livePrediction || predictRecoveryFallback(d, p.baseline);
+
+      document.getElementById('overviewSessionBadge').textContent = `${s.label}, ${s.dayLabel}`;
+      document.getElementById('overviewRole').textContent = p.role;
+      document.getElementById('overviewGreeting').textContent = p.name;
+      document.getElementById('overviewAdaptation').textContent = s.adaptation;
+
+      const switcherEl = document.getElementById('overviewSessionSwitcher');
+      switcherEl.innerHTML = p.sessions.slice(0, 4).map((sess, idx) => {
+        const active = idx === state.activeSessionIndex;
+        return `<button type="button" data-overview-sess="${idx}" class="overview-sess-btn py-2 px-2 text-xs font-medium text-center whitespace-nowrap btn-transition ${
+          active
+            ? 'bg-cool-soft text-cool'
+            : 'bg-paper-3 text-muted hover:text-ink'
+        }">${sess.id}: ${sess.dayLabel}</button>`;
+      }).join('');
+      switcherEl.querySelectorAll('.overview-sess-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.activeSessionIndex = Number(btn.dataset.overviewSess);
+          state.livePrediction = null;
+          renderAll();
+          syncPredictionFromBackend();
+        });
+      });
+
+      const clsEl = document.getElementById('mlPredClass');
+      clsEl.textContent = pred.label;
+      clsEl.className = `text-base font-medium ${
+        pred.label === 'Ready' ? 'text-cool' : pred.label === 'Deload Needed' ? 'text-accent' : 'text-ink'
+      }`;
+
+      document.getElementById('mlProbPills').innerHTML = Object.entries(pred.probs).map(([k, v]) => {
+        const active = k === pred.label;
+        return `<span class="px-2 py-0.5 rounded border ${
+          active
+            ? 'bg-cool text-accent-ink border-cool font-medium'
+            : 'bg-paper-2 text-muted border-rule-2'
+        }">${k}: ${Math.round(v * 100)}%</span>`;
+      }).join('');
+
+      if (state.modelInfo && state.modelInfo.selected_model) {
+        document.getElementById('modelNameBadge').textContent = state.modelInfo.selected_model;
+      }
+
+      const maxImp = Math.max(...FEATURE_IMPORTANCES.map(x => x.val), 0.25);
+      document.getElementById('featureImportanceBars').innerHTML = FEATURE_IMPORTANCES.map((f, idx) => {
+        const pct = Math.min(100, Math.round((f.val / maxImp) * 100));
+        const barColor = idx === 0 ? 'bg-accent' : 'bg-cool';
+        return `
+          <div class="flex items-center gap-3 text-xs">
+            <span class="w-36 truncate text-ink-2">${f.name}</span>
+            <div class="flex-1 h-2 bg-paper-3 border border-rule rounded-full overflow-hidden">
+              <div class="h-full ${barColor} rounded-full" style="width: ${pct}%"></div>
+            </div>
+            <span class="w-12 text-right measured text-ink">${(f.val * 100).toFixed(1)}%</span>
+          </div>
+        `;
+      }).join('');
+
+      const compRows = (state.modelInfo && Array.isArray(state.modelInfo.comparison) && state.modelInfo.comparison.length)
+        ? state.modelInfo.comparison
+        : [
+            { model: 'RandomForest', cv_f1_weighted: 0.7203 },
+            { model: 'GradientBoosting', cv_f1_weighted: 0.7003 },
+            { model: 'LogisticRegression', cv_f1_weighted: 0.6794 }
+          ];
+      const selected = (state.modelInfo && state.modelInfo.selected_model) || 'RandomForest';
+      document.getElementById('modelComparisonGrid').innerHTML = compRows.map(row => {
+        const isBest = row.model === selected;
+        const shortName = row.model === 'GradientBoosting' ? 'GradBoost' : row.model === 'LogisticRegression' ? 'LogReg' : row.model;
+        return `
+          <div class="p-2.5 rounded border ${isBest ? 'bg-accent-soft border-accent' : 'bg-paper-2 border-rule'}">
+            <div class="text-xs font-medium ${isBest ? 'text-accent' : 'text-muted'}">${shortName}</div>
+            <div class="text-sm measured mt-0.5 ${isBest ? 'text-ink' : 'text-ink-2'}">${(row.cv_f1_weighted * 100).toFixed(1)}%</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderLedger() {
+      const p = getPersona();
+      const s = getSession();
+      const body = document.getElementById('biometricLedgerBody');
+      body.innerHTML = p.days.map((d, idx) => {
+        const isSelected = idx === s.dayIndex;
+        return `
+          <tr class="${isSelected ? 'bg-cool-soft text-ink' : 'hover:bg-paper-2'}">
+            <td class="py-2 px-3 font-sans font-medium whitespace-nowrap ${isSelected ? 'text-cool' : 'text-ink'}">${d.day}</td>
+            <td class="py-2 px-2.5 whitespace-nowrap">${Number(d.steps).toLocaleString()}</td>
+            <td class="py-2 px-2.5 whitespace-nowrap">${d.rhr} bpm</td>
+            <td class="py-2 px-2.5 whitespace-nowrap">${d.sleepScore}</td>
+            <td class="py-2 px-2.5 whitespace-nowrap">${d.readiness}/10</td>
+            <td class="py-2 px-2.5 whitespace-nowrap">${d.fatigue}/5</td>
+            <td class="py-2 px-2.5 whitespace-nowrap">${d.soreness}/5</td>
+            <td class="py-2 px-3 whitespace-nowrap">${d.stress}/5</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderSessionStepper() {
+      const p = getPersona();
+      const container = document.getElementById('sessionStepper');
+      container.innerHTML = p.sessions.map((s, idx) => {
+        const active = idx === state.activeSessionIndex;
+        return `
+          <button type="button" data-session-idx="${idx}" class="session-step-btn w-full flex items-center justify-between px-4 py-3 text-left btn-transition ${
+            active ? 'bg-accent-soft text-ink' : 'bg-paper-3 text-muted hover:text-ink hover:bg-paper-2'
+          }">
+            <div class="flex-1 min-w-0 pr-2">
+              <div class="text-xs font-medium ${active ? 'text-accent' : 'text-ink'}">${s.label}: ${s.dayLabel}</div>
+              <div class="text-xs truncate text-muted mt-0.5">${s.subtitle}</div>
+            </div>
+            <span class="measured text-xs px-2 py-0.5 rounded shrink-0 ${
+              active ? 'bg-accent text-accent-ink font-medium' : 'bg-paper-2 text-muted border border-rule'
+            }">${idx + 1}</span>
+          </button>
+        `;
+      }).join('');
+      container.querySelectorAll('.session-step-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.activeSessionIndex = Number(btn.dataset.sessionIdx);
+          state.livePrediction = null;
+          renderAll();
+          syncPredictionFromBackend();
+        });
+      });
+    }
+
+    function renderKPIs() {
+      const p = getPersona(); const d = getActiveDayRecord(); const base = p.baseline;
+      document.getElementById('kpiSteps').textContent = Number(d.steps).toLocaleString();
+      const stepDiff = d.steps - base.steps;
+      const stepEl = document.getElementById('kpiStepsDelta');
+      stepEl.textContent = `${stepDiff >= 0 ? '+' : ''}${stepDiff.toLocaleString()}`;
+      stepEl.className = `col-span-3 text-right measured text-xs ${stepDiff >= 0 ? 'text-cool' : 'text-accent'}`;
+
+      document.getElementById('kpiRhr').textContent = `${d.rhr} bpm`;
+      const rhrDiff = d.rhr - base.rhr;
+      const rhrEl = document.getElementById('kpiRhrDelta');
+      rhrEl.textContent = `${rhrDiff >= 0 ? '+' : ''}${rhrDiff} bpm`;
+      rhrEl.className = `col-span-3 text-right measured text-xs ${rhrDiff >= 4 ? 'text-accent' : rhrDiff <= 0 ? 'text-cool' : 'text-muted'}`;
+
+      document.getElementById('kpiSleep').textContent = `${d.sleepScore}/100`;
+      const sleepDiff = d.sleepScore - base.sleepScore;
+      const sleepEl = document.getElementById('kpiSleepDelta');
+      sleepEl.textContent = `${sleepDiff >= 0 ? '+' : ''}${sleepDiff}`;
+      sleepEl.className = `col-span-3 text-right measured text-xs ${sleepDiff >= 0 ? 'text-cool' : 'text-accent'}`;
+
+      document.getElementById('kpiReadiness').textContent = `${d.readiness}/10`;
+      const readEl = document.getElementById('kpiReadinessDelta');
+      readEl.textContent = d.readiness >= 7 ? 'Ready' : d.readiness >= 5 ? 'Moderate' : 'Deload';
+      readEl.className = `col-span-3 text-right text-xs font-medium ${d.readiness >= 7 ? 'text-cool' : 'text-accent'}`;
+    }
+
+    function renderUpdateInputs() {
+      const d = getActiveDayRecord();
+      const pred = state.livePrediction || predictRecoveryFallback(d, getPersona().baseline);
+      document.getElementById('inputSteps').value = d.steps;
+      document.getElementById('inputRhr').value = d.rhr;
+      document.getElementById('inputSleep').value = d.sleepScore;
+      document.getElementById('sliderReadiness').value = d.readiness;
+      document.getElementById('valReadiness').textContent = d.readiness;
+      document.getElementById('sliderFatigue').value = d.fatigue;
+      document.getElementById('valFatigue').textContent = d.fatigue;
+      document.getElementById('sliderSoreness').value = d.soreness;
+      document.getElementById('valSoreness').textContent = d.soreness;
+      document.getElementById('sliderStress').value = d.stress;
+      document.getElementById('valStress').textContent = d.stress;
+
+      const badge = document.getElementById('liveUpdateBadge');
+      badge.textContent = pred.label;
+      badge.className = `px-2.5 py-1 rounded text-xs font-medium border ${
+        pred.label === 'Deload Needed'
+          ? 'bg-accent-soft text-accent border-accent'
+          : 'bg-cool-soft text-cool border-rule-2'
+      }`;
+    }
+
+    function renderChart() {
+      const p = getPersona();
+      const visibleDays = p.days;
+      const labels = visibleDays.map(d => d.day);
+      const ctx = document.getElementById('biometricChart').getContext('2d');
+      if (state.chartInstance) state.chartInstance.destroy();
+
+      const cool = getToken('--color-cool');
+      const accent = getToken('--color-accent');
+      const ink = getToken('--color-ink');
+      const muted = getToken('--color-muted');
+      const rule = getToken('--color-rule');
+      const paper = getToken('--color-paper');
+
+      let datasets = [], scales = {};
+      if (state.chartMode === 'activity') {
+        datasets = [
+          {
+            label: 'Steps',
+            data: visibleDays.map(d => d.steps),
+            backgroundColor: cool,
+            borderColor: cool,
+            borderWidth: 1,
+            type: 'bar',
+            borderRadius: 4,
+            yAxisID: 'y'
+          },
+          {
+            label: 'Sleep score',
+            data: visibleDays.map(d => d.sleepScore),
+            borderColor: accent,
+            backgroundColor: accent,
+            pointBackgroundColor: accent,
+            pointBorderColor: paper,
+            pointBorderWidth: 1.5,
+            borderWidth: 2,
+            tension: 0.25,
+            pointRadius: 3.5,
+            type: 'line',
+            yAxisID: 'y1'
+          }
+        ];
+        scales = {
+          y: { position: 'left', beginAtZero: true, grid: { color: rule }, ticks: { color: muted } },
+          y1: { position: 'right', min: 40, max: 100, grid: { drawOnChartArea: false }, ticks: { color: accent } },
+          x: { grid: { display: false }, ticks: { color: muted } }
+        };
+      } else if (state.chartMode === 'recovery') {
+        datasets = [
+          {
+            label: 'Resting HR (bpm)',
+            data: visibleDays.map(d => d.rhr),
+            borderColor: accent,
+            backgroundColor: accent,
+            pointBackgroundColor: accent,
+            borderWidth: 2,
+            tension: 0.25,
+            yAxisID: 'y'
+          },
+          {
+            label: 'PMSys readiness',
+            data: visibleDays.map(d => d.readiness),
+            borderColor: cool,
+            backgroundColor: cool,
+            pointBackgroundColor: cool,
+            borderWidth: 2,
+            tension: 0.25,
+            yAxisID: 'y1'
+          }
+        ];
+        scales = {
+          y: { position: 'left', min: 45, max: 80, grid: { color: rule }, ticks: { color: accent } },
+          y1: { position: 'right', min: 0, max: 10, grid: { drawOnChartArea: false }, ticks: { color: cool } },
+          x: { grid: { display: false }, ticks: { color: muted } }
+        };
+      } else {
+        datasets = [
+          { label: 'Fat burn (min)', data: visibleDays.map(d => d.fatBurn), backgroundColor: cool, stack: 'hr' },
+          { label: 'Cardio (min)', data: visibleDays.map(d => d.cardio), backgroundColor: accent, stack: 'hr' },
+          { label: 'Peak (min)', data: visibleDays.map(d => d.peak), backgroundColor: ink, stack: 'hr' }
+        ];
+        scales = {
+          y: { stacked: true, beginAtZero: true, grid: { color: rule }, ticks: { color: muted } },
+          x: { stacked: true, grid: { display: false }, ticks: { color: muted } }
+        };
+      }
+
+      state.chartInstance = new Chart(ctx, {
+        type: state.chartMode === 'zones' ? 'bar' : 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { boxWidth: 10, color: ink, font: { size: 11 } }
+            }
+          },
+          scales
+        }
+      });
+
+      document.querySelectorAll('.chart-mode-btn').forEach(btn => {
+        const active = btn.dataset.chartMode === state.chartMode;
+        btn.className = `chart-mode-btn px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap btn-transition ${
+          active ? 'bg-accent text-accent-ink' : 'text-muted hover:text-ink'
+        }`;
+      });
+    }
+
+    function renderChatHeaderAndPlan() {
+      const p = getPersona(); const s = getSession();
+      document.getElementById('sessionTitle').textContent = s.title;
+      document.getElementById('sessionDayBadge').textContent = s.dayLabel;
+      document.getElementById('sessionSubtitle').textContent = s.subtitle;
+
+      const nextBtn = document.getElementById('nextSessionBtn');
+      if (state.activeSessionIndex < p.sessions.length - 1) {
+        nextBtn.classList.remove('hidden'); nextBtn.classList.add('inline-flex');
+      } else {
+        nextBtn.classList.add('hidden'); nextBtn.classList.remove('inline-flex');
+      }
+
+      const doneCount = s.plan.filter(item => item.done).length;
+      document.getElementById('planAdherenceBadge').textContent = `${s.plan.length ? Math.round((doneCount / s.plan.length) * 100) : 0}%`;
+
+      const planList = document.getElementById('actionPlanList');
+      planList.innerHTML = s.plan.map(item => `
+        <label class="flex items-center gap-2.5 p-2.5 rounded border text-xs cursor-pointer btn-transition ${
+          item.done
+            ? 'bg-cool-soft border-rule-2 text-ink'
+            : 'bg-paper-2 border-rule text-ink-2 hover:border-cool'
+        }">
+          <input type="checkbox" data-plan-id="${item.id}" ${item.done ? 'checked' : ''} class="plan-checkbox rounded range-cool cursor-pointer" />
+          <span class="${item.done ? 'line-through text-muted' : ''}">${item.text}</span>
+        </label>
+      `).join('');
+
+      planList.querySelectorAll('.plan-checkbox').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const target = s.plan.find(x => x.id === cb.dataset.planId);
+          if (target) { target.done = cb.checked; renderChatHeaderAndPlan(); }
+        });
+      });
+    }
+
+    function renderMessages() {
+      const s = getSession();
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = s.messages.map(m => {
+        if (m.role === 'user') {
+          return `<div class="flex justify-end"><div class="max-w-[82%] rounded-md bg-paper-3 border border-accent text-ink px-4 py-2.5 text-sm">${formatMarkdownSimple(m.text)}</div></div>`;
+        }
+        const citationsHtml = (m.citations && m.citations.length)
+          ? `<div class="mt-2.5 flex flex-wrap gap-1.5">${m.citations.map(c => `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-cool-soft text-cool border border-rule-2">${c}</span>`).join('')}</div>`
+          : '';
+        return `
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-md bg-cool text-accent-ink flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true"><i data-lucide="activity" class="w-4 h-4"></i></div>
+            <div class="flex-1 min-w-0">
+              <div class="rounded-md bg-paper-3 border border-rule-2 px-4 py-3 text-sm text-ink-2 leading-relaxed">${formatMarkdownSimple(m.text)}${citationsHtml}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      container.scrollTop = container.scrollHeight;
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function renderQuickPrompts() {
+      const prompts = ['What should my workout intensity be today?', 'How is my sleep affecting recovery?', 'Summarize what you remember about me'];
+      const container = document.getElementById('quickPrompts');
+      container.innerHTML = prompts.map(text => `<button type="button" class="quick-prompt-btn px-3 py-1 rounded bg-paper-2 border border-rule-2 hover:border-cool text-xs text-ink-2 hover:text-ink whitespace-nowrap btn-transition">${text}</button>`).join('');
+      container.querySelectorAll('.quick-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.getElementById('chatInput').value = btn.textContent.trim();
+          document.getElementById('chatForm').dispatchEvent(new Event('submit'));
+        });
+      });
+    }
+
+    function renderMemoryPanel() {
+      const p = getPersona();
+      const catColors = {
+        Goal: 'bg-cool-soft text-cool border-rule-2',
+        Constraint: 'bg-accent-soft text-accent border-accent',
+        Baseline: 'bg-paper-2 text-ink-2 border-rule-2',
+        Adaptation: 'bg-accent text-accent-ink border-accent'
+      };
+      const listEl = document.getElementById('memoryList');
+      listEl.innerHTML = p.memories.map(m => `
+        <div class="p-3 rounded-md border border-rule bg-paper-3 hover:border-rule-2 btn-transition group">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="px-2 py-0.5 rounded text-xs font-medium border ${catColors[m.category] || catColors.Baseline}">${m.category}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-muted">${m.session}</span>
+              <button type="button" data-del-mem="${m.id}" aria-label="Delete memory" class="del-mem-btn opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted hover:text-accent"><i data-lucide="trash-2" class="w-3.5 h-3.5" aria-hidden="true"></i></button>
+            </div>
+          </div>
+          <p class="text-xs text-ink-2 leading-relaxed">${m.text}</p>
+        </div>
+      `).join('');
+      listEl.querySelectorAll('.del-mem-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const memId = btn.dataset.delMem;
+          p.memories = p.memories.filter(m => m.id !== memId);
+          renderMemoryPanel();
+          try {
+            await fetch(`/api/memory/${encodeURIComponent(p.id.toLowerCase())}/${encodeURIComponent(memId)}`, { method: 'DELETE' });
+          } catch (e) {}
+          showToast('Memory removed');
+        });
+      });
+
+      document.getElementById('memoryEvolutionLog').innerHTML = p.evolutionLog.map(l => `
+        <div class="flex items-start gap-3 p-3">
+          <span class="px-2 py-0.5 rounded bg-cool-soft text-cool font-medium shrink-0">${l.session}</span>
+          <span class="text-ink-2 leading-relaxed">${l.text}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderApiStatus() {
+      const label = document.getElementById('apiStatusLabel');
+      if (state.apiConfig.provider !== 'simulated' && (state.serverLlmConfigured || state.apiConfig.apiKey)) {
+        label.textContent = `${state.serverLlmProvider} Connected`;
+      } else {
+        label.textContent = 'Local ML Engine';
+      }
+    }
+
+    async function generateCoachReply(userText) {
+      const p = getPersona(); const s = getSession(); const d = getActiveDayRecord();
+      const biometrics = buildBiometricPayload(p, s.dayIndex);
+      const history = s.messages.slice(-6).map(m => ({ role: m.role, text: m.text }));
+
+      try {
+        const res = await fetch('/api/coach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participant_id: p.id.toLowerCase(),
+            session_label: s.label,
+            session_id: s.id,
+            message: userText,
+            biometrics,
+            history,
+            auto_extract_memory: true,
+            groq_api_key: state.apiConfig.provider !== 'simulated' && state.apiConfig.apiKey.trim()
+              ? state.apiConfig.apiKey.trim()
+              : null
+          })
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || `Backend HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        if (data.ml_prediction) {
+          state.livePrediction = {
+            label: data.ml_prediction.predicted_recovery_state,
+            probs: data.ml_prediction.probabilities,
+            modelName: data.ml_prediction.model_name
+          };
+        }
+        if (Array.isArray(data.memories)) {
+          p.memories = data.memories.map(m => ({ ...m, activeFrom: 0 }));
+          renderMemoryPanel();
+        }
+        if (Array.isArray(data.newly_extracted_memories) && data.newly_extracted_memories.length > 0) {
+          showToast(`Stored ${data.newly_extracted_memories.length} new memory fact(s)`);
+        }
+        const predLabel = state.livePrediction ? state.livePrediction.label : 'Moderate';
+        const modeTag = data.mode === 'openrouter_live'
+          ? 'OpenRouter'
+          : data.mode === 'groq_live'
+            ? 'Groq Llama-3.3-70B'
+            : 'Local ML Coach';
+        return {
+          text: data.reply,
+          citations: [modeTag, `ML: ${predLabel}`, `Memory: ${data.memories_used}`]
+        };
+      } catch (err) {
+        showToast(`Error: ${err.message}`);
+      }
+
+      const pred = state.livePrediction || predictRecoveryFallback(d, p.baseline);
+      return {
+        text: `**ML Classifier: ${pred.label}.** Current readings: ${d.steps} steps, ${d.rhr} bpm RHR, ${d.sleepScore}/100 sleep score.`,
+        citations: [`ML: ${pred.label}`]
+      };
+    }
+
+    document.getElementById('jumpToCoachBtn').addEventListener('click', () => {
+      document.getElementById('coach').scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => document.getElementById('chatInput').focus({ preventScroll: true }), 250);
+    });
+
+    document.getElementById('personaSelect').addEventListener('change', (e) => {
+      state.activePersonaId = e.target.value;
+      state.activeSessionIndex = 0;
+      state.livePrediction = null;
+      loadParticipantState(state.activePersonaId);
+    });
+
+    document.getElementById('nextSessionBtn').addEventListener('click', () => {
+      const p = getPersona();
+      if (state.activeSessionIndex < p.sessions.length - 1) {
+        state.activeSessionIndex += 1;
+        state.livePrediction = null;
+        renderAll();
+        syncPredictionFromBackend();
+      }
+    });
+
+    document.getElementById('newSessionBtn').addEventListener('click', async () => {
+      const p = getPersona();
+      try {
+        const res = await fetch(`/api/sessions/${encodeURIComponent(p.id.toLowerCase())}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        if (!res.ok) throw new Error('Unable to create session');
+        const data = await res.json();
+        p.sessions = data.sessions;
+        state.activeSessionIndex = p.sessions.length - 1;
+        state.livePrediction = null;
+        renderAll();
+        syncPredictionFromBackend();
+        showToast(`Opened ${data.session.label}`);
+      } catch (err) {
+        showToast(err.message);
+      }
+    });
+
+    document.querySelectorAll('.chart-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => { state.chartMode = btn.dataset.chartMode; renderChart(); });
+    });
+
+    ['Readiness', 'Fatigue', 'Soreness', 'Stress'].forEach(name => {
+      const slider = document.getElementById(`slider${name}`);
+      const valEl = document.getElementById(`val${name}`);
+      slider.addEventListener('input', () => { valEl.textContent = slider.value; });
+    });
+
+    document.getElementById('applyCheckinBtn').addEventListener('click', async () => {
+      const p = getPersona();
+      const s = getSession();
+      const payload = {
+        dayIndex: s.dayIndex,
+        steps: Number(document.getElementById('inputSteps').value),
+        rhr: Number(document.getElementById('inputRhr').value),
+        sleepScore: Number(document.getElementById('inputSleep').value),
+        readiness: Number(document.getElementById('sliderReadiness').value),
+        fatigue: Number(document.getElementById('sliderFatigue').value),
+        soreness: Number(document.getElementById('sliderSoreness').value),
+        stress: Number(document.getElementById('sliderStress').value)
+      };
+
+      try {
+        const res = await fetch(`/api/checkin/${encodeURIComponent(p.id.toLowerCase())}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          const data = await res.json();
+          p.days = data.days;
+          if (data.ml_prediction) {
+            state.livePrediction = {
+              label: data.ml_prediction.predicted_recovery_state,
+              probs: data.ml_prediction.probabilities,
+              modelName: data.ml_prediction.model_name
+            };
+          }
+        }
+      } catch (e) {}
+
+      const d = getActiveDayRecord();
+      const userPrompt = `Updated biometrics and PMSys: Steps ${d.steps}, RHR ${d.rhr} bpm, Sleep ${d.sleepScore}/100, Readiness ${d.readiness}/10, Fatigue ${d.fatigue}/5, Soreness ${d.soreness}/5, Stress ${d.stress}/5. How should I adjust today's plan?`;
+      s.messages.push({ role: 'user', text: userPrompt });
+      const reply = await generateCoachReply(userPrompt);
+      s.messages.push({ role: 'coach', ...reply });
+      const pred = state.livePrediction || predictRecoveryFallback(d, p.baseline);
+      s.adaptation = `Live ML prediction: ${pred.label} (RHR ${d.rhr} bpm, Readiness ${d.readiness}/10).`;
+      renderAll();
+      showToast(`Saved check-in (${pred.label})`);
+    });
+
+    document.getElementById('chatForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (state.isSending) return;
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      state.isSending = true; input.value = '';
+      const s = getSession();
+      s.messages.push({ role: 'user', text });
+      renderMessages();
+      const reply = await generateCoachReply(text);
+      s.messages.push({ role: 'coach', ...reply });
+      renderMessages();
+      state.isSending = false;
+    });
+
+    document.getElementById('addMemoryForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const textInput = document.getElementById('newMemoryText');
+      const text = textInput.value.trim();
+      if (!text) return;
+      const category = document.getElementById('newMemoryCategory').value;
+      const session = `S${state.activeSessionIndex + 1}`;
+      try {
+        const res = await fetch(`/api/memory/${encodeURIComponent(state.activePersonaId.toLowerCase())}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category, text, session })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          getPersona().memories = data.memories.map(m => ({ ...m, activeFrom: 0 }));
+        }
+      } catch (err) {}
+      textInput.value = ''; renderMemoryPanel(); lucide.createIcons(); showToast('Memory saved');
+    });
+
+    document.getElementById('resetDemoBtn').addEventListener('click', async () => {
+      try {
+        await fetch(`/api/state/${encodeURIComponent(state.activePersonaId.toLowerCase())}/reset`, { method: 'POST' });
+        state.activeSessionIndex = 0;
+        state.livePrediction = null;
+        await loadParticipantState(state.activePersonaId);
+        showToast('Baseline restored');
+      } catch (e) {}
+    });
+
+    const apiModal = document.getElementById('apiModal');
+    const apiProviderSelect = document.getElementById('apiProviderSelect');
+    const apiKeyInputWrapper = document.getElementById('apiKeyInputWrapper');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    function syncApiModalFields() { apiKeyInputWrapper.classList.toggle('hidden', apiProviderSelect.value === 'simulated'); }
+    function closeApiModal() { apiModal.classList.add('hidden'); apiModal.classList.remove('flex'); }
+    apiProviderSelect.addEventListener('change', syncApiModalFields);
+    document.getElementById('openApiModalBtn').addEventListener('click', () => {
+      apiProviderSelect.value = state.apiConfig.provider === 'simulated' ? 'simulated' : 'openrouter';
+      apiKeyInput.value = state.apiConfig.apiKey || '';
+      syncApiModalFields(); apiModal.classList.remove('hidden'); apiModal.classList.add('flex');
+      apiKeyInput.focus();
+    });
+    document.getElementById('closeApiModalBtn').addEventListener('click', closeApiModal);
+    apiModal.addEventListener('click', (e) => { if (e.target === apiModal) closeApiModal(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !apiModal.classList.contains('hidden')) closeApiModal();
+    });
+    document.getElementById('clearApiBtn').addEventListener('click', () => {
+      state.apiConfig = { provider: 'simulated', apiKey: '' };
+      try { localStorage.removeItem('carecompanion_api_v2'); } catch (e) {}
+      renderApiStatus(); closeApiModal(); showToast('Switched to Local ML Engine');
+    });
+    document.getElementById('saveApiBtn').addEventListener('click', () => {
+      state.apiConfig = { provider: apiProviderSelect.value, apiKey: apiKeyInput.value.trim() };
+      try { localStorage.setItem('carecompanion_api_v2', JSON.stringify(state.apiConfig)); } catch (e) {}
+      renderApiStatus(); closeApiModal();
+      showToast(state.apiConfig.provider !== 'simulated' && (state.apiConfig.apiKey || state.serverLlmConfigured) ? 'OpenRouter enabled' : 'Settings updated');
+    });
+
+    document.getElementById('fillSampleImportBtn').addEventListener('click', () => {
+      document.getElementById('importTextarea').value = 'day,steps,rhr,sleepScore,readiness,fatigue,soreness,stress\nDay 1,9100,59,81,8,2,2,2\nDay 2,10400,58,83,8,2,2,2\nDay 3,6200,64,61,4,4,4,4\nDay 4,7900,60,76,7,3,2,2';
+    });
+    document.getElementById('confirmImportBtn').addEventListener('click', async () => {
+      const raw = document.getElementById('importTextarea').value.trim();
+      if (!raw) return;
+      try {
+        let parsedDays = raw.startsWith('[') ? JSON.parse(raw) : raw.split(/\r?\n/).filter(Boolean).slice(1).map((line, i) => {
+          const c = line.split(',').map(x => x.trim());
+          return { day: c[0] || `Day ${i+1}`, steps: Number(c[1])||7500, rhr: Number(c[2])||60, sleepScore: Number(c[3])||75, deepMin: 75, remMin: 85, readiness: Number(c[4])||7, fatigue: Number(c[5])||3, soreness: Number(c[6])||2, stress: Number(c[7])||2, fatBurn: 30, cardio: 15, peak: 3 };
+        });
+        if (parsedDays.length) {
+          const p = getPersona();
+          const res = await fetch(`/api/import/${encodeURIComponent(p.id.toLowerCase())}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ days: parsedDays })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            p.days = data.days;
+          } else {
+            p.days = parsedDays;
+          }
+          p.sessions[state.activeSessionIndex].dayIndex = p.days.length - 1;
+          state.livePrediction = null;
+          renderAll();
+          syncPredictionFromBackend();
+          document.getElementById('telemetry').scrollIntoView({ behavior: 'smooth' });
+          showToast(`Imported ${p.days.length} biometric records`);
+        }
+      } catch (err) { showToast('Invalid CSV or JSON format'); }
+    });
+
+    document.getElementById('exportReportBtn').addEventListener('click', () => {
+      const p = getPersona();
+      const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), participant: p.name, days: p.days, memories: p.memories, sessions: p.sessions }, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `CareCompanion_${p.id}_Record.json`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      showToast('Exported JSON record');
+    });
+
+    document.getElementById('exportMarkdownBtn').addEventListener('click', () => {
+      const p = getPersona();
+      const md = [
+        `# CareCompanion Longitudinal Record: ${p.name}`,
+        `Profile: ${p.role}`,
+        `\n## Persistent Agent Memory\n` + p.memories.map(m => `- **[${m.category} | ${m.session}]** ${m.text}`).join('\n'),
+        `\n## Session Evolution\n` + p.sessions.map(s => `### ${s.title} (${s.dayLabel})\nAdaptation: ${s.adaptation}`).join('\n\n')
+      ].join('\n');
+      const blob = new Blob([md], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `CareCompanion_${p.id}_Summary.md`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      showToast('Exported Markdown summary');
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+      loadModelInfo();
+      loadParticipantState(state.activePersonaId);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "dataset_source": "PMData-Schema Sample (480 rows, 16 participants)",
+  "total_rows": 480,
+  "selected_model": "RandomForest",
+  "comparison": [
+    {
+      "model": "RandomForest",
+      "cv_f1_weighted": 0.7203,
+      "test_accuracy": 0.8333,
+      "test_f1_weighted": 0.8265
+    },
+    {
+      "model": "GradientBoosting",
+      "cv_f1_weighted": 0.7003,
+      "test_accuracy": 0.825,
+      "test_f1_weighted": 0.8221
+    },
+    {
+      "model": "LogisticRegression",
+      "cv_f1_weighted": 0.6794,
+      "test_accuracy": 0.7583,
+      "test_f1_weighted": 0.7627
+    }
+  ],
+  "feature_importances": {
+    "sleep_score": 0.1609,
+    "rhr_delta": 0.1421,
+    "sleep_3d_avg": 0.1409,
+    "resting_heart_rate": 0.098,
+    "cardio_min": 0.0832,
+    "very_active_min": 0.0793,
+    "deep_sleep_min": 0.0609,
+    "rem_sleep_min": 0.0597,
+    "steps": 0.0482,
+    "steps_3d_avg": 0.0453,
+    "peak_min": 0.0412,
+    "sedentary_min": 0.0401
+  }
+}
