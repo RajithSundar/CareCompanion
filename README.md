@@ -22,6 +22,19 @@ Trained and evaluated on the real **PMData** dataset (Thambawita et al., 2020): 
 
 On the synthetic sample this project started with, the gap was larger (0.510 vs 0.542 macro F1).
 
+### Final test on unseen future days
+
+To check the realistic setting, where the app already has some of a user's history, the last 20% of each participant's timeline (292 days) was locked away before any feature exploration (`experiments/explore_features.py` only reads the first 80%). The model was tuned on the first 80% and scored once on the locked part (`experiments/evaluate_holdout.py`, results in `models/holdout_metrics.json`).
+
+| Question | Model | Persistence |
+|---|---|---|
+| Will tomorrow need a deload? (yes/no) | **71.6% accuracy, F1 0.656, ROC AUC 0.763** | 69.9% accuracy, F1 0.627 |
+| Tomorrow's state (3 classes) | 61.3% accuracy, macro F1 0.610 | 62.0% accuracy, macro F1 0.620 |
+
+- The yes/no deload alert beats persistence, and unlike persistence it gives a probability (AUC 0.76), so the alert threshold can be tuned.
+- On the 3-class task the model ties persistence: the 95% bootstrap interval for the macro-F1 difference is [-0.072, +0.050]. During exploration the model looked 0.05 ahead in this setting; the locked test did not confirm it.
+- Training-load features from `srpe.csv` (acute:chronic workload ratio), personal-baseline deviations, recent injuries and tomorrow's weekday were tried during exploration and did not help, so they are not used.
+
 Selected model, per class:
 
 | Class | Precision | Recall | Support |
