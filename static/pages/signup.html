@@ -1,0 +1,57 @@
+<!-- @head -->
+<body class="bg-paper text-ink antialiased" data-page="{{page}}">
+<!-- @header -->
+  <main id="signup">
+    <section class="page-body login-body">
+      <div class="shell login-grid">
+        <div class="login-copy">
+          <h1 class="page-title">Create your account</h1>
+          <p class="page-lead">Your days, sessions and saved memory stay with this account, so the coach picks up where you left off.</p>
+
+          <form id="signupForm" class="login-form" novalidate>
+            <div class="login-field">
+              <label for="signupName">Your name</label>
+              <input id="signupName" name="name" type="text" autocomplete="name" required maxlength="40" class="login-input" />
+            </div>
+            <div class="login-field">
+              <label for="signupUsername">Username</label>
+              <input id="signupUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="20" pattern="[a-z0-9_]{3,20}" aria-describedby="signupUsernameHint" class="login-input" />
+              <p id="signupUsernameHint" class="login-hint">3 to 20 lowercase letters, digits or _</p>
+            </div>
+            <div class="login-field">
+              <label for="signupPassword">Password</label>
+              <input id="signupPassword" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="200" aria-describedby="signupPasswordHint" class="login-input" />
+              <p id="signupPasswordHint" class="login-hint">At least 8 characters</p>
+            </div>
+
+            <fieldset class="signup-start">
+              <legend>Start with</legend>
+              <label class="signup-option">
+                <input type="radio" name="start" value="fresh" checked />
+                <span><span class="signup-option-name">My own check-ins</span>
+                <span class="signup-option-text">Start empty and log today's numbers from your tracker or watch. You can import earlier days too.</span></span>
+              </label>
+              <label class="signup-option">
+                <input type="radio" name="start" value="sample" />
+                <span><span class="signup-option-name">Sample data</span>
+                <span class="signup-option-text">Two weeks of a real PMData participant's Fitbit days, to try the coach straight away.</span></span>
+              </label>
+              <div id="signupSampleField" class="login-field" hidden>
+                <label for="signupSample">Participant</label>
+                <select id="signupSample" class="login-input"><!-- @samples --></select>
+              </div>
+            </fieldset>
+
+            <p id="signupError" class="login-error" role="alert" hidden></p>
+            <button id="signupSubmit" type="submit" class="login-submit btn-transition">Create account</button>
+            <noscript><p class="login-error">Creating an account needs JavaScript turned on.</p></noscript>
+          </form>
+          <p class="login-switch">Already have an account? <a href="/login">Sign in</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+<!-- @footer -->
+<!-- @chrome -->
+</body>
+</html>

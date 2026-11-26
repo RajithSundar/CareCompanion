@@ -32,6 +32,7 @@ import agent
 import auth
 import coach
 import demo
+import onboarding
 import safety
 from coach import llm_config, make_llm_client
 from demo_data import DEFAULT_APP_STATE, DEFAULT_MEMORY_STORE
@@ -63,11 +64,14 @@ LIMIT_WRITES = (int(os.getenv("CC_WRITES_PER_MIN", "60")), 60)
 LIMIT_COACH_IP = (int(os.getenv("CC_COACH_PER_10MIN", "15")), 600)
 LIMIT_COACH_IP_DAY = (int(os.getenv("CC_COACH_PER_DAY", "60")), 86400)
 LIMIT_LOGIN = (int(os.getenv("CC_LOGINS_PER_5MIN", "10")), 300)
+LIMIT_SIGNUP = (int(os.getenv("CC_SIGNUPS_PER_HOUR", "5")), 3600)
 LIMIT_LLM_GLOBAL_DAY = (int(os.getenv("CC_LLM_GLOBAL_PER_DAY", "500")), 86400)
 
 
-# One data file per demo account, kept indefinitely (no age pruning).
-store = SandboxStore(Path(os.getenv("CC_ACCOUNT_DIR", str(DATA_DIR / "accounts"))), max_sandboxes=100, max_age_days=36500)
+# One data file per account, kept indefinitely (no age pruning). The count cap sits above
+# auth.MAX_USERS plus the demo accounts, so pruning never removes a live account.
+store = SandboxStore(Path(os.getenv("CC_ACCOUNT_DIR", str(DATA_DIR / "accounts"))),
+                     max_sandboxes=auth.MAX_USERS + len(auth.ACCOUNTS) + 100, max_age_days=36500)
 limiter = RateLimiter()
 
 app = FastAPI(
@@ -161,9 +165,12 @@ def current_user(request: Request) -> Account:
     return user
 
 
+REGISTERED_PID = re.compile(r"^u[0-9a-f]{8}$")
+
+
 def normalize_pid(participant_id: str) -> str:
     pid = participant_id.strip().lower()
-    if pid not in DEFAULT_APP_STATE:
+    if pid not in DEFAULT_APP_STATE and not REGISTERED_PID.match(pid):
         raise HTTPException(status_code=404, detail="Participant not found.")
     return pid
 
@@ -184,17 +191,21 @@ def find_session(pdata: Dict[str, Any], session_id: Optional[str]) -> Optional[D
 
 def clamp_index(idx: Optional[int], n: int) -> int:
     if n == 0:
-        raise HTTPException(status_code=422, detail="No day records for this participant.")
+        raise HTTPException(status_code=409, detail="No days logged yet. Log your first check-in on the Check-in page.")
     if idx is None:
         return n - 1
     return max(0, min(idx, n - 1))
 
 
-def recompute_baseline(days: List[Dict[str, Any]]) -> Dict[str, int]:
-    first = days[: min(7, len(days))]
-    def avg(k: str) -> int:
-        return int(round(sum(float(d[k]) for d in first) / len(first)))
-    return {"steps": avg("steps"), "rhr": avg("rhr"), "sleepScore": avg("sleepScore"), "readiness": avg("readiness")}
+def recompute_baseline(days: List[Dict[str, Any]]) -> Optional[Dict[str, int]]:
+    return onboarding.baseline(days)
+
+
+def starting_state(user: Account) -> tuple:
+    """(state, memories) an account starts from, and returns to on reset."""
+    if user.pid in DEFAULT_APP_STATE:
+        return copy.deepcopy(DEFAULT_APP_STATE[user.pid]), copy.deepcopy(DEFAULT_MEMORY_STORE[user.pid])
+    return onboarding.starting_state(user.name, user.pid, user.source or onboarding.FRESH)
 
 
 def new_id(prefix: str) -> str:
@@ -401,13 +412,16 @@ PAGES: Dict[str, Dict[str, str]] = {
     "memory": {"title": "Memory: CareCompanion", "description": "The goals, constraints and rules the coach keeps on file."},
     "data": {"title": "Data: CareCompanion", "description": "Trends, the day-by-day ledger, and how the forecast model compares with its baselines."},
     "login": {"title": "Sign in: CareCompanion", "description": "Sign in with a demo account to see its forecast, sessions and saved memory."},
+    "signup": {"title": "Create an account: CareCompanion", "description": "Create an account and start with your own check-ins or with sample PMData days."},
 }
-PUBLIC_PAGES = {"home", "login"}
+PUBLIC_PAGES = {"home", "login", "signup"}
+AUTH_PAGES = {"login", "signup"}
 PAGE_SCRIPTS = {
     "home": '  <script defer src="/static/tracker.js"></script>\n',
     "data": '  <script defer src="/static/vendor/chart.umd.min.js"></script>\n',
     "demo": '  <script defer src="/static/demo.js"></script>\n',
     "login": '  <script defer src="/static/login.js"></script>\n',
+    "signup": '  <script defer src="/static/login.js"></script>\n',
 }
 _PAGE_CACHE: Dict[str, Any] = {}
 
@@ -440,7 +454,9 @@ def assemble_page(name: str) -> str:
 
 def account_html(user: Optional[Account]) -> str:
     if user is None:
-        return ('<a href="/login" id="loginLink" class="inline-flex items-center gap-2 px-3 h-9 rounded-md text-xs font-medium '
+        return ('<a href="/signup" id="signupLink" class="inline-flex items-center px-3 h-9 rounded-md text-xs font-medium '
+                'border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">Sign up</a>'
+                '<a href="/login" id="loginLink" class="inline-flex items-center gap-2 px-3 h-9 rounded-md text-xs font-medium '
                 'bg-accent text-accent-ink hover:opacity-90 whitespace-nowrap btn-transition">'
                 '<i data-lucide="log-in" class="w-3.5 h-3.5" aria-hidden="true"></i><span>Sign in</span></a>')
     name = html.escape(user.name)
@@ -469,10 +485,17 @@ def demo_accounts_html() -> str:
     return f'<ul class="login-accounts">{items}</ul>{note}'
 
 
+def sample_options_html() -> str:
+    return "".join(f'<option value="pmdata:{html.escape(pid)}">Participant {html.escape(pid.upper())}</option>'
+                   for pid in onboarding.sample_participants())
+
+
 def render_page(name: str, user: Optional[Account] = None) -> str:
-    html_out = assemble_page(name).replace("<!-- @account -->", "" if name == "login" else account_html(user))
+    html_out = assemble_page(name).replace("<!-- @account -->", "" if name in AUTH_PAGES else account_html(user))
     if name == "login":
         html_out = html_out.replace("<!-- @accounts -->", demo_accounts_html())
+    if name == "signup":
+        html_out = html_out.replace("<!-- @samples -->", sample_options_html())
     return html_out
 
 
@@ -481,7 +504,7 @@ def page_route(name: str):
         user = optional_user(request)
         if user is None and name not in PUBLIC_PAGES:
             return RedirectResponse(f"/login?next=/{name}", status_code=303)
-        if user is not None and name == "login":
+        if user is not None and name in AUTH_PAGES:
             return RedirectResponse(auth.safe_next(request.query_params.get("next")), status_code=303)
         return HTMLResponse(render_page(name, user))
     handler.__name__ = f"page_{name}"
@@ -489,7 +512,7 @@ def page_route(name: str):
 
 
 app.add_api_route("/", page_route("home"), methods=["GET", "HEAD"], include_in_schema=False)
-for _name in ("demo", "forecast", "coach", "checkin", "memory", "data", "login"):
+for _name in ("demo", "forecast", "coach", "checkin", "memory", "data", "login", "signup"):
     app.add_api_route(f"/{_name}", page_route(_name), methods=["GET", "HEAD"], include_in_schema=False)
 
 
@@ -527,6 +550,37 @@ def login(payload: LoginInput, request: Request, response: Response):
     token = auth.issue_token(user)
     set_token_cookie(response, request, token)
     log.info("login %s", user.username)
+    return {"user": user.public(), "access_token": token, "token_type": "bearer", "expires_in": auth.TOKEN_TTL_S}
+
+
+class SignupInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    username: str = Field(min_length=1, max_length=40)
+    password: str = Field(min_length=1, max_length=200)
+    name: str = Field(min_length=1, max_length=80)
+    start: str = Field(default=onboarding.FRESH, max_length=20)  # "fresh" or "pmdata:<participant>"
+
+
+@app.post("/api/auth/signup", status_code=201)
+def signup(payload: SignupInput, request: Request, response: Response):
+    wait = limiter.hit("signup", client_ip(request), *LIMIT_SIGNUP)
+    if wait:
+        raise HTTPException(status_code=429, detail="Too many new accounts from here. Try again later.",
+                            headers={"Retry-After": str(int(wait))})
+    if not onboarding.valid_source(payload.start):
+        raise HTTPException(status_code=422, detail="Choose how to start: fresh, or one of the sample participants.")
+    try:
+        user = auth.register(payload.username, payload.password, payload.name, payload.start,
+                             role=onboarding.role_for(payload.start))
+    except auth.SignupError as e:
+        raise HTTPException(status_code=409 if "taken" in str(e) or "full" in str(e) else 422, detail=str(e))
+    state, memories = starting_state(user)
+    with store.edit(user.store_key) as data:
+        data["state"] = {user.pid: state}
+        data["memory"] = {user.pid: memories}
+    token = auth.issue_token(user)
+    set_token_cookie(response, request, token)
+    log.info("signup %s (%s)", user.username, payload.start)
     return {"user": user.public(), "access_token": token, "token_type": "bearer", "expires_in": auth.TOKEN_TTL_S}
 
 
@@ -591,6 +645,7 @@ def get_participant_state(participant_id: str, user: Account = Depends(current_u
         "sessions": pdata["sessions"],
         "evolutionLog": pdata["evolutionLog"],
         "memories": data["memory"].get(pid, []),
+        "sample": str(pdata.get("source", "")).startswith("pmdata:"),
     }
 
 
@@ -616,6 +671,8 @@ def log_biometric_checkin(participant_id: str, payload: CheckinInput, user: Acco
             idx = len(days)
             rec = day_record(payload, f"Day {idx + 1}")
             days.append(rec)
+        if len(days) <= 7:  # the baseline is the first week's average
+            pdata["baseline"] = recompute_baseline(days)
 
         bio = build_biometrics_from_days(days, idx)
         ml_result = run_ml_prediction(bio)
@@ -634,6 +691,7 @@ def log_biometric_checkin(participant_id: str, payload: CheckinInput, user: Acco
             "day_index": idx,
             "ml_prediction": ml_result,
             "days": days,
+            "baseline": pdata["baseline"],
             "session": session,
         }
 
@@ -714,8 +772,7 @@ def import_days(participant_id: str, payload: ImportDaysInput, user: Account = D
 def reset_full_state(participant_id: str, user: Account = Depends(current_user)):
     pid = own_pid(participant_id, user)
     with store.edit(user.store_key) as data:
-        data["state"][pid] = copy.deepcopy(DEFAULT_APP_STATE[pid])
-        data["memory"][pid] = copy.deepcopy(DEFAULT_MEMORY_STORE[pid])
+        data["state"][pid], data["memory"][pid] = starting_state(user)
         return {"participant_id": pid, "state": data["state"][pid], "memories": data["memory"][pid]}
 
 
@@ -753,7 +810,7 @@ def delete_memory(participant_id: str, memory_id: str, user: Account = Depends(c
 def reset_memory(participant_id: str, user: Account = Depends(current_user)):
     pid = own_pid(participant_id, user)
     with store.edit(user.store_key) as data:
-        data["memory"][pid] = copy.deepcopy(DEFAULT_MEMORY_STORE[pid])
+        data["memory"][pid] = starting_state(user)[1]
         return {"participant_id": pid, "memories": data["memory"][pid]}
 
 

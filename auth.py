@@ -9,13 +9,18 @@
 * Logout revokes the token's jti until it would have expired anyway.
 * The signing key comes from CC_JWT_SECRET, or is generated once and kept in
   data/.jwt_secret (mode 600) so sessions survive restarts.
+* Anyone can also sign up. Registered accounts live in data/users.json (mode 600):
+  username, display name, a random scrypt salt and hash, and the PMData participant
+  whose days the account started from. Writes are atomic and serialised with a lock.
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import os
+import re
 import secrets
 import threading
 import time
@@ -37,9 +42,10 @@ DEMO_PASSWORD = os.getenv("CC_DEMO_PASSWORD", "demo1234")
 @dataclass(frozen=True)
 class Account:
     username: str
-    pid: str           # persona id in demo_data.DEFAULT_APP_STATE
+    pid: str           # persona id in demo_data.DEFAULT_APP_STATE, or u + 8 hex for a registered account
     name: str
     role: str
+    source: str = ""   # registered accounts: the PMData participant their days came from
 
     @property
     def store_key(self) -> str:
@@ -71,9 +77,116 @@ _DUMMY_HASH = _hash(secrets.token_hex(16), _DUMMY_SALT)
 
 def authenticate(username: str, password: str) -> Optional[Account]:
     user = username.strip().lower()
-    salt, expected = (_SALTS[user], _HASHES[user]) if user in ACCOUNTS else (_DUMMY_SALT, _DUMMY_HASH)
+    rec = users.get(user) if user not in ACCOUNTS else None
+    if user in ACCOUNTS:
+        salt, expected = _SALTS[user], _HASHES[user]
+    elif rec:
+        salt, expected = bytes.fromhex(rec["salt"]), bytes.fromhex(rec["hash"])
+    else:
+        salt, expected = _DUMMY_SALT, _DUMMY_HASH
     ok = hmac.compare_digest(_hash(password, salt), expected)
-    return ACCOUNTS[user] if ok and user in ACCOUNTS else None
+    if not ok:
+        return None
+    return ACCOUNTS.get(user) or (_account(rec) if rec else None)
+
+
+def get_account(username: Optional[str]) -> Optional[Account]:
+    if not username:
+        return None
+    if username in ACCOUNTS:
+        return ACCOUNTS[username]
+    rec = users.get(username)
+    return _account(rec) if rec else None
+
+
+# --------------------------------------------------------------------------- sign-up
+
+USERNAME_RE = re.compile(r"^[a-z0-9_]{3,20}$")
+MIN_PASSWORD = 8
+MAX_USERS = int(os.getenv("CC_MAX_USERS", "500"))
+RESERVED = set(ACCOUNTS) | {"admin", "root", "system", "support", "coach", "demo"}
+
+
+class SignupError(ValueError):
+    pass
+
+
+def _account(rec: Dict) -> Account:
+    return Account(rec["username"], rec["pid"], rec["name"], rec.get("role") or "CareCompanion member", rec.get("source", ""))
+
+
+class _Users:
+    """Registered accounts, kept in one JSON file."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self._lock = threading.Lock()
+        self._cache: Optional[Dict[str, Dict]] = None
+
+    def _load(self) -> Dict[str, Dict]:
+        if self._cache is None:
+            try:
+                self._cache = json.loads(self.path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                self._cache = {}
+        return self._cache
+
+    def get(self, username: str) -> Optional[Dict]:
+        with self._lock:
+            return self._load().get(username)
+
+    def count(self) -> int:
+        with self._lock:
+            return len(self._load())
+
+    def add(self, rec: Dict) -> None:
+        with self._lock:
+            data = dict(self._load())
+            if rec["username"] in data:
+                raise SignupError("That username is taken.")
+            if len(data) >= MAX_USERS:
+                raise SignupError("Sign-ups are full right now. Use a demo account instead.")
+            data[rec["username"]] = rec
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_name(f".{self.path.name}.{secrets.token_hex(4)}")
+            fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(data, f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp, self.path)
+            self._cache = data
+
+    def reset(self, path: Optional[Path] = None) -> None:
+        """For tests: forget the cache, optionally point at another file."""
+        with self._lock:
+            if path is not None:
+                self.path = path
+            self._cache = None
+
+
+users = _Users(Path(os.getenv("CC_USERS_FILE", str(Path(__file__).resolve().parent / "data" / "users.json"))))
+
+
+def register(username: str, password: str, name: str, source: str, role: str = "CareCompanion member") -> Account:
+    """Create an account. Raises SignupError with a message fit to show the user."""
+    user = username.strip().lower()
+    name = " ".join(name.split())
+    if not USERNAME_RE.match(user):
+        raise SignupError("Usernames are 3 to 20 characters: lowercase letters, digits or _.")
+    if user in RESERVED:
+        raise SignupError("That username is taken.")
+    if len(password) < MIN_PASSWORD:
+        raise SignupError(f"Use a password of at least {MIN_PASSWORD} characters.")
+    if password.lower() == user:
+        raise SignupError("The password can't be the same as the username.")
+    if not 1 <= len(name) <= 40:
+        raise SignupError("Enter a name of up to 40 characters.")
+    salt = secrets.token_bytes(16)
+    rec = {"username": user, "name": name, "role": role, "pid": "u" + secrets.token_hex(4),
+           "source": source, "salt": salt.hex(), "hash": _hash(password, salt).hex(), "created": int(time.time())}
+    users.add(rec)
+    return _account(rec)
 
 
 # --------------------------------------------------------------------------- signing key
@@ -161,7 +274,7 @@ def decode_token(token: str) -> Optional[Dict]:
         )
     except jwt.PyJWTError:
         return None
-    account = ACCOUNTS.get(claims.get("sub"))
+    account = get_account(claims.get("sub"))
     if account is None or claims.get("pid") != account.pid or claims["jti"] in revoked:
         return None
     return claims
@@ -169,7 +282,7 @@ def decode_token(token: str) -> Optional[Dict]:
 
 def account_for(token: Optional[str]) -> Optional[Account]:
     claims = decode_token(token or "")
-    return ACCOUNTS[claims["sub"]] if claims else None
+    return get_account(claims["sub"]) if claims else None
 
 
 def revoke(token: Optional[str]) -> None:

@@ -37,9 +37,12 @@ def anon(tmp_path, monkeypatch):
         monkeypatch.delenv(var, raising=False)
     auth.set_secret("test-secret-" + "x" * 40)
     auth.revoked.clear()
+    real_users = auth.users.path
+    auth.users.reset(tmp_path / "users.json")
     app.limiter.reset()
     yield TestClient(app.app)
     auth.set_secret(None)
+    auth.users.reset(real_users)
 
 
 def sign_in(c, username="alex", password=auth.DEMO_PASSWORD):
@@ -785,3 +788,113 @@ def test_red_flag_skips_the_llm_and_is_remembered(client, monkeypatch):
     assert "stop training" in body["reply"].lower() and "112" in body["reply"]
     assert body["steps"][0]["tool"] == "safety_check"
     assert any("medical clearance" in m["text"] for m in client.get("/api/memory/p01").json()["memories"])
+
+
+# ----------------------------------------------------------------- sign-up
+
+def sign_up(c, username="sam_k", password="correct horse", name="Sam K", start="fresh"):
+    return c.post("/api/auth/signup", json={"username": username, "password": password, "name": name, "start": start})
+
+
+def test_signup_fresh_account_starts_empty_and_signs_in(anon):
+    res = sign_up(anon)
+    assert res.status_code == 201
+    user = res.json()["user"]
+    assert user["username"] == "sam_k" and user["pid"].startswith("U")
+    pid = user["pid"].lower()
+    state = anon.get(f"/api/state/{pid}").json()
+    assert state["days"] == [] and state["memories"] == [] and state["sample"] is False
+    assert state["baseline"] is None and len(state["sessions"]) == 1
+    # Nothing that needs a day works yet, and says why.
+    res = anon.get(f"/api/predict/{pid}")
+    assert res.status_code == 409 and "check-in" in res.json()["detail"]
+    # The first check-in creates Day 1 and the baseline.
+    res = anon.post(f"/api/checkin/{pid}", json={**DAY, "session_id": "S1"})
+    assert res.status_code == 200
+    body = res.json()
+    assert body["day_index"] == 0 and body["baseline"]["rhr"] == 65 and body["session"]["dayLabel"] == "Day 1"
+    assert anon.get(f"/api/predict/{pid}").status_code == 200
+    # Sign out and back in with the new password: the day is still there.
+    anon.post("/api/auth/logout", json={})
+    assert sign_in(anon, "sam_k", "correct horse").status_code == 200
+    assert len(anon.get(f"/api/state/{pid}").json()["days"]) == 1
+
+
+def test_signup_sample_account_gets_real_pmdata_days(anon):
+    res = sign_up(anon, start="pmdata:p05")
+    assert res.status_code == 201
+    pid = res.json()["user"]["pid"].lower()
+    state = anon.get(f"/api/state/{pid}").json()
+    assert state["sample"] is True and "P05" in state["role"]
+    assert len(state["days"]) == 14 and all(d["date"] for d in state["days"])
+    assert anon.get(f"/api/predict/{pid}").status_code == 200
+    # Reset returns to the same sample days, not to a demo persona.
+    anon.post(f"/api/checkin/{pid}", json=DAY)
+    reset = anon.post(f"/api/state/{pid}/reset", json={}).json()
+    assert len(reset["state"]["days"]) == 14 and reset["state"]["name"] == "Sam K"
+
+
+@pytest.mark.parametrize("payload, status", [
+    ({"username": "alex"}, 409),                 # demo account name
+    ({"username": "ab"}, 422),                   # too short
+    ({"username": "Bad Name!"}, 422),
+    ({"password": "short"}, 422),
+    ({"password": "sam_k"}, 422),                # same as the username
+    ({"name": "   "}, 422),
+    ({"start": "pmdata:p12"}, 422),              # no resting HR in the release, so not offered
+    ({"start": "p01"}, 422),
+])
+def test_signup_rejects_bad_input(anon, payload, status):
+    base = {"username": "sam_k", "password": "correct horse", "name": "Sam K", "start": "fresh"}
+    res = anon.post("/api/auth/signup", json={**base, **payload})
+    assert res.status_code == status
+    assert auth.users.count() == 0
+
+
+def test_signup_duplicate_username_is_rejected(anon):
+    assert sign_up(anon).status_code == 201
+    other = TestClient(app.app)
+    res = sign_up(other, password="another password")
+    assert res.status_code == 409 and "taken" in res.json()["detail"]
+    assert sign_in(other, "sam_k", "another password").status_code == 401
+
+
+def test_registered_accounts_are_isolated(anon):
+    a = sign_up(anon).json()["user"]["pid"].lower()
+    other = TestClient(app.app)
+    b = sign_up(other, username="riya").json()["user"]["pid"].lower()
+    assert a != b
+    assert anon.get(f"/api/state/{b}").status_code == 403
+    assert other.get(f"/api/state/{a}").status_code == 403
+    assert other.get("/api/state/p01").status_code == 403
+
+
+def test_signup_password_is_hashed_on_disk(anon):
+    sign_up(anon)
+    text = auth.users.path.read_text()
+    assert "correct horse" not in text
+    rec = json.loads(text)["sam_k"]
+    assert len(rec["salt"]) == 32 and len(rec["hash"]) == 64
+    assert (auth.users.path.stat().st_mode & 0o777) == 0o600
+
+
+def test_signup_is_rate_limited(anon, monkeypatch):
+    monkeypatch.setattr(app, "LIMIT_SIGNUP", (2, 3600))
+    codes = [sign_up(TestClient(app.app), username=f"user_{i}").status_code for i in range(3)]
+    assert codes == [201, 201, 429]
+
+
+def test_signup_respects_user_cap(anon, monkeypatch):
+    monkeypatch.setattr(auth, "MAX_USERS", 1)
+    assert sign_up(anon).status_code == 201
+    res = sign_up(TestClient(app.app), username="riya")
+    assert res.status_code == 409 and "full" in res.json()["detail"]
+
+
+def test_signup_page_is_public_and_lists_samples(anon):
+    page = anon.get("/signup")
+    assert page.status_code == 200
+    assert 'id="signupForm"' in page.text and 'value="pmdata:p05"' in page.text and "pmdata:p12" not in page.text
+    assert 'href="/signup"' in anon.get("/login").text
+    sign_up(anon)
+    assert anon.get("/signup", follow_redirects=False).status_code == 303

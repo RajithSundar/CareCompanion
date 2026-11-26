@@ -126,6 +126,13 @@
   }
 
   function render(d) {
+    if (d && d.empty) {
+      ['trkSteps', 'trkRhr', 'trkSleep', 'trkReadyVal', 'trkForecastVal'].forEach(id => { el(id).textContent = '--'; });
+      el('trkRing').setAttribute('stroke-dasharray', '0 100');
+      el('trkForecast').dataset.state = 'none';
+      el('trackerSummary').textContent = `${d.who}, no days logged yet. Log a check-in to fill the watch.`;
+      return;
+    }
     const data = d || randomStats();
     el('trkSteps').textContent = fmt(data.steps);
     el('trkRhr').textContent = data.rhr;

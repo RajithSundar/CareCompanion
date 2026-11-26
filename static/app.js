@@ -104,6 +104,8 @@ function getSession() {
   const p = getPersona();
   return p.sessions[Math.min(state.activeSessionIndex, p.sessions.length - 1)] || p.sessions[0];
 }
+// A new account that started fresh has no days until its first check-in.
+function hasDays() { return getPersona().days.length > 0; }
 function getActiveDayRecord() {
   const p = getPersona();
   const s = getSession();
@@ -158,6 +160,7 @@ async function loadModelInfo() {
 }
 
 async function syncPredictionFromBackend() {
+  if (!hasDays()) { state.livePrediction = null; return; }
   const p = getPersona();
   const s = getSession();
   const key = `${p.id}:${s.id}:${s.dayIndex}`;
@@ -191,8 +194,52 @@ function formatMarkdownSimple(text) {
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-medium text-accent">$1</strong>').replace(/\n/g, '<br>');
 }
 
+// Pages that need at least one day show a short note instead until the first check-in.
+const NEEDS_DAYS = { forecast: 'the forecast', coach: 'the coach', data: 'your trends' };
+function renderNoDays(empty) {
+  document.body.classList.toggle('no-days', empty);
+  const main = document.querySelector('main');
+  const what = NEEDS_DAYS[PAGE];
+  if (!main || !what) return;
+  let note = $('noDaysNote');
+  if (empty && !has('noDaysNote')) {
+    note = document.createElement('section');
+    note.id = 'noDaysNote';
+    note.className = 'no-days-note';
+    note.innerHTML = `<div class="shell"><h2 class="no-days-title">No days logged yet</h2>
+      <p class="no-days-text">Log today's numbers from your tracker, or import earlier days, and ${what} starts from there.</p>
+      <a href="/checkin" class="no-days-action btn-transition">Log your first check-in</a></div>`;
+    main.querySelector('.page-head').after(note);
+  }
+  if (has('noDaysNote')) note.hidden = !empty;
+  main.querySelectorAll('.page-body, .page-head-aside').forEach(el => { el.hidden = empty; });
+}
+
+function renderBlankCheckin() {
+  ['inputSteps', 'inputRhr', 'inputSleep', 'inputDeep', 'inputRem', 'inputCardio', 'inputPeak'].forEach(id => { $(id).value = ''; });
+  $('checkinTargetDay').textContent = 'a logged day';
+  const update = document.querySelector('input[name="checkinMode"][value="update"]');
+  if (update) { update.disabled = true; update.checked = false; }
+  const fresh = document.querySelector('input[name="checkinMode"][value="new"]');
+  if (fresh) fresh.checked = true;
+  const badge = $('liveUpdateBadge');
+  badge.textContent = 'Forecast after your first day';
+  badge.className = 'px-2.5 py-1 rounded text-xs font-medium border bg-paper-3 text-muted border-rule-2';
+}
+
 // Each page renders only its own sections (the others would build HTML into detached stand-ins).
 function renderAll() {
+  const empty = state.profileLoaded && !hasDays();
+  renderNoDays(empty);
+  if (empty) {
+    if (window.CCTracker) window.CCTracker.render({ empty: true, who: getPersona().name.split(' ')[0] });
+    if (has('inputSteps')) renderBlankCheckin();
+    if (has('memoryList')) renderMemoryPanel();
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  const update = document.querySelector('input[name="checkinMode"][value="update"]');
+  if (update) update.disabled = false;
   if (has('overviewGreeting') || has('modelComparisonGrid')) renderOverview();
   else renderTracker();
   if (has('biometricLedgerBody')) renderLedger();
@@ -213,6 +260,7 @@ function renderAll() {
 function renderTracker() {
   if (!window.CCTracker) return;
   if (!state.profileLoaded) return; // tracker.js falls back to a random sample if no profile arrives
+  if (!hasDays()) return;
   const p = getPersona(); const d = getActiveDayRecord(); const pred = state.livePrediction;
   window.CCTracker.render({
     sample: false,
@@ -227,6 +275,7 @@ function renderTracker() {
 }
 
 function renderOverview() {
+  if (!hasDays()) return;
   renderTracker();
   const p = getPersona();
   const s = getSession();
@@ -535,7 +584,8 @@ function renderChatHeaderAndPlan() {
   $('planAdherenceBadge').textContent = `${s.plan.length ? Math.round((doneCount / s.plan.length) * 100) : 0}%`;
 
   const planList = $('actionPlanList');
-  planList.innerHTML = s.plan.map(item => `
+  planList.innerHTML = s.plan.length ? '' : '<p class="px-1 py-1 text-xs text-muted">No plan yet. Ask the coach and it writes one here.</p>';
+  if (s.plan.length) planList.innerHTML = s.plan.map(item => `
     <label class="flex items-center gap-2.5 p-2.5 rounded border text-xs cursor-pointer btn-transition ${
       item.done
         ? 'bg-cool-soft border-rule-2 text-ink'
@@ -828,6 +878,7 @@ $('applyCheckinBtn').addEventListener('click', async (e) => {
     return;
   }
   p.days = data.days;
+  if (data.baseline) p.baseline = data.baseline;
   if (data.session) Object.assign(s, data.session);
   state.livePrediction = data.ml_prediction ? {
     label: data.ml_prediction.predicted_recovery_state,

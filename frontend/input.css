@@ -697,6 +697,40 @@ textarea:disabled {
 .login-account-user { font-size: 0.8125rem; color: var(--color-ink-2); margin-top: var(--space-2xs); }
 .login-accounts code, .login-note code { font-family: var(--font-outlier); color: var(--color-accent); }
 .login-note { margin: 0; font-size: 0.875rem; color: var(--color-muted); }
+.login-hint { margin: 0; font-size: 0.8125rem; color: var(--color-muted); }
+.login-switch { margin: 0; font-size: 0.9375rem; color: var(--color-ink-2); }
+.login-switch a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+.login-switch a:hover { text-decoration-thickness: 2px; }
+.login-switch a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: 2px; }
+select.login-input { appearance: auto; }
+
+/* Sign-up: how a new account starts */
+.signup-start { display: grid; gap: var(--space-xs); margin: 0; padding: 0; border: 0; min-width: 0; }
+.signup-start legend { font-size: 0.875rem; color: var(--color-ink-2); margin-bottom: var(--space-2xs); padding: 0; }
+.signup-option {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-xs); align-items: start; cursor: pointer;
+  padding: var(--space-sm) var(--space-md); background: var(--color-paper-2);
+  border: 1px solid var(--color-rule-2); border-radius: var(--radius-card);
+}
+.signup-option:hover { border-color: var(--color-muted); }
+.signup-option:has(input:checked) { border-color: var(--color-accent); }
+.signup-option:has(input:focus-visible) { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.signup-option input { margin-top: 0.3rem; accent-color: var(--color-accent); }
+.signup-option-name { display: block; font-size: 1rem; font-weight: 500; color: var(--color-ink); }
+.signup-option-text { display: block; font-size: 0.875rem; color: var(--color-muted); }
+
+/* A fresh account before its first check-in */
+.no-days-note { padding-block: var(--space-xl) var(--space-3xl); }
+.no-days-note .shell { display: grid; gap: var(--space-sm); justify-items: start; }
+.no-days-title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 500; margin: 0; }
+.no-days-text { margin: 0; max-width: 34rem; color: var(--color-ink-2); }
+.no-days-action {
+  display: inline-flex; align-items: center; height: 2.75rem; padding: 0 var(--space-md); margin-top: var(--space-xs);
+  border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-accent-ink); font-weight: 500; font-size: 0.9375rem;
+}
+.no-days-action:hover { opacity: 0.9; }
+.no-days-action:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+[hidden] { display: none !important; }
 
 /* Theme toggle: a round button; the moon (go dark) and the sun (go light) swap with a turn. */
 .theme-toggle {

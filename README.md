@@ -5,7 +5,7 @@ A supervised learning demo for next-day recovery forecasting, plus a small coach
 - **Task:** given one day's biometrics, forecast the recovery state for the next day (Ready, Moderate, or Deload Needed).
 - **Model:** RandomForest, selected by nested leave-one-participant-out validation.
 - **Agent:** a tool-using coach (`agent.py`) that looks up saved facts, earlier sessions and trends, saves what you tell it and rewrites your plan. Azure OpenAI first, then OpenRouter or Groq; without a key, a rule-based coach.
-- **App:** a FastAPI backend with demo-account sign-in and a multi-page dashboard.
+- **App:** a FastAPI backend with sign-up, sign-in (three demo accounts ready to use) and a multi-page dashboard.
 
 ## The brief, and where each part lives
 
@@ -129,7 +129,9 @@ Open `http://127.0.0.1:8000` and sign in with a demo account:
 | `maya` | Maya Lin, desk-bound tech lead | `demo1234` |
 | `jordan` | Jordan Patel, strength athlete | `demo1234` |
 
-The landing page is public (its watch shows sample stats until you sign in); every other page redirects to `/login`.
+Or create your own account at `/signup`. A new account starts either **fresh** (no days; log your own check-ins or import a CSV, and the forecast and coach start after the first day) or with **sample data** (the last 14 complete days of one real PMData participant, labelled as sample data in the app).
+
+The landing, sign-in and sign-up pages are public (the watch shows sample stats until you sign in); every other page redirects to `/login`.
 
 To run the tests:
 
@@ -151,6 +153,7 @@ Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_
 - Sign-out revokes the token's `jti` and clears the cookie. Sign-in attempts are rate-limited per IP (`CC_LOGINS_PER_5MIN`, default 10).
 - Passwords are scrypt-hashed and compared in constant time, and unknown usernames take as long as known ones. Set `CC_DEMO_PASSWORD` to change the shared demo password and `CC_SHOW_DEMO_PASSWORD=0` to stop the sign-in page showing it.
 - The signing key is `CC_JWT_SECRET` (32+ characters) or, if unset, a random key generated once into `data/.jwt_secret` (mode 600).
+- Sign-up (`POST /api/auth/signup`) takes a name, a username (3 to 20 of `a-z 0-9 _`), a password (8+ characters) and how to start. Registered accounts are kept in `data/users.json` (mode 600, scrypt salt and hash only), sign-ups are rate-limited per IP (`CC_SIGNUPS_PER_HOUR`, default 5) and capped in total (`CC_MAX_USERS`, default 500). PMData participants p12 and p13 have no resting heart rate in the release, so they are not offered as sample data; other gaps in a sample day are filled with that participant's median (`onboarding.py`).
 - Each account can only read and change its own profile (403 otherwise). Its records live in one JSON file under `data/accounts/` and persist across sign-ins and devices, which is what lets the coach remember earlier sessions.
 
 ## Hosting
@@ -176,7 +179,8 @@ Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_
 - `experiments/evaluate_agent.py`: the memory and safety evaluation above.
 - `demo.py`: the three-session simulation behind `/demo`.
 - `features.py`: feature definitions shared by training and serving.
-- `auth.py`: demo accounts, password hashing and JWT issue, verify and revoke.
+- `auth.py`: demo and registered accounts, sign-up, password hashing and JWT issue, verify and revoke.
+- `onboarding.py`: what a new account starts with (fresh, or sample PMData days).
 - `sandbox.py`, `ratelimit.py`: per-account storage and rate limiting.
 - `demo_data.py`: the three demo personas.
 - `static/`: the dashboard (`index.html`, `app.js`, `tracker.js`, built `app.css`).
