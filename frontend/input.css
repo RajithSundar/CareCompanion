@@ -444,13 +444,11 @@ button, [role="button"] { -webkit-user-select: none; user-select: none; }
   width: 100%;
   font-size: calc(var(--r) * 0.07);
   padding: calc(var(--r) * 0.025) calc(var(--r) * 0.06);
-  border-radius: calc(var(--r) * 0.06);
-  border: 1px solid var(--color-glass-rule);
   color: var(--color-glass-muted);
 }
-.scr-forecast[data-state="Ready"] { color: var(--color-glass-ready); border-color: var(--color-glass-ready); }
-.scr-forecast[data-state="Moderate"] { color: var(--color-glass-moderate); border-color: var(--color-glass-moderate); }
-.scr-forecast[data-state="Deload Needed"] { color: var(--color-glass-deload); border-color: var(--color-glass-deload); }
+.scr-forecast[data-state="Ready"] { color: var(--color-glass-ready); }
+.scr-forecast[data-state="Moderate"] { color: var(--color-glass-moderate); }
+.scr-forecast[data-state="Deload Needed"] { color: var(--color-glass-deload); }
 
 .tracker-cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-xs); font-size: 0.875rem; color: var(--color-muted); }
 
