@@ -1,4 +1,4 @@
-  <!-- Site header: wordmark, page links, account (sign in / sign out), theme, coach status -->
+  <!-- Site header: wordmark, page links, theme toggle, account (sign in / sign out) -->
   <header class="sticky top-0 z-30 bg-paper border-b border-rule">
     <div class="shell h-16 flex items-center justify-between gap-4">
       <div class="flex items-center gap-6 min-w-0">
@@ -21,17 +21,12 @@
         </nav>
 
       <div class="flex items-center gap-2.5 shrink-0">
+        <button id="themeToggleBtn" type="button" class="theme-toggle btn-transition" aria-label="Switch to dark mode" title="Switch to dark mode">
+          <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
+          <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+        </button>
+
         <!-- @account -->
-
-        <button id="themeToggleBtn" type="button" aria-pressed="false" aria-label="Dark mode" class="inline-flex items-center gap-2 px-2.5 sm:px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
-          <i data-lucide="moon" class="w-3.5 h-3.5 sm:hidden" aria-hidden="true"></i>
-          <span id="themeToggleLabel" class="hidden sm:inline">Dark mode</span>
-        </button>
-
-        <button id="openApiModalBtn" type="button" aria-label="Coach status" class="inline-flex items-center gap-2 px-2.5 sm:px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
-          <i data-lucide="bot" class="w-3.5 h-3.5 text-accent shrink-0" aria-hidden="true"></i>
-          <span id="apiStatusLabel" class="hidden sm:inline">Coach status</span>
-        </button>
       </div>
     </div>
         <nav aria-label="Pages (compact)" class="site-nav site-nav-narrow shell">

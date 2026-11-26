@@ -147,7 +147,6 @@ async function loadModelInfo() {
     const data = await api('/api/model-info');
     state.serverLlm = data.llm_configured ? { provider: data.llm_provider, model: data.llm_model } : null;
     state.modelInfoLoaded = true;
-    renderApiStatus();
     if (data.trained && data.feature_importances) {
       state.modelInfo = data;
       FEATURE_IMPORTANCES = Object.entries(data.feature_importances)
@@ -203,7 +202,6 @@ function renderAll() {
   renderMessages();
   renderQuickPrompts();
   renderMemoryPanel();
-  renderApiStatus();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -651,21 +649,6 @@ function renderMemoryPanel() {
   `).join('');
 }
 
-function renderApiStatus() {
-  const label = $('apiStatusLabel');
-  const detail = $('coachStatusText');
-  if (!state.modelInfoLoaded) {
-    label.textContent = 'Coach status';
-    detail.textContent = 'Checking the server…';
-  } else if (state.serverLlm) {
-    label.textContent = `Coach: ${state.serverLlm.provider}`;
-    detail.textContent = `The coach writes replies with ${state.serverLlm.provider} (${state.serverLlm.model}), grounded in the forecast and your saved memories.`;
-  } else {
-    label.textContent = 'Coach: offline replies';
-    detail.textContent = 'No language model is configured on the server, so the coach gives rule-based replies built from the forecast and your saved memories.';
-  }
-}
-
 // Sends a message to the coach. The server saves both turns to the session on success.
 // Returns true on success. On failure the user turn and an error note are shown but not saved.
 async function sendToCoach(userText) {
@@ -889,19 +872,6 @@ $('resetDemoBtn').addEventListener('click', async () => {
   }
 });
 
-const apiModal = $('apiModal');
-function closeApiModal() { apiModal.classList.add('hidden'); apiModal.classList.remove('flex'); }
-$('openApiModalBtn').addEventListener('click', () => {
-  renderApiStatus();
-  apiModal.classList.remove('hidden'); apiModal.classList.add('flex');
-  $('closeApiModalBtn').focus();
-});
-$('closeApiModalBtn').addEventListener('click', closeApiModal);
-apiModal.addEventListener('click', (e) => { if (e.target === apiModal) closeApiModal(); });
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !apiModal.classList.contains('hidden')) closeApiModal();
-});
-
 const IMPORT_REQUIRED = ['steps', 'rhr', 'sleepScore', 'deepMin', 'remMin', 'cardio', 'peak', 'readiness', 'fatigue', 'soreness', 'stress'];
 
 function parseImport(raw) {
@@ -989,12 +959,13 @@ window.addEventListener('DOMContentLoaded', () => {
   if (ACCOUNT) loadParticipantState(state.activePersonaId);
   else if (window.CCTracker) window.CCTracker.render(null); // signed out: the watch shows sample stats
 });
+// The icon shows where a click takes you: a moon in light mode, a sun in dark mode (CSS swaps them).
 function syncThemeToggle() {
   const dark = document.documentElement.dataset.theme === 'dark';
+  const label = dark ? 'Switch to light mode' : 'Switch to dark mode';
   const btn = $('themeToggleBtn');
-  $('themeToggleLabel').textContent = dark ? 'Light mode' : 'Dark mode';
-  btn.setAttribute('aria-label', dark ? 'Light mode' : 'Dark mode');
-  btn.setAttribute('aria-pressed', String(dark));
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
 }
 $('themeToggleBtn').addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';

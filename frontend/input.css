@@ -697,3 +697,33 @@ textarea:disabled {
 .login-account-user { font-size: 0.8125rem; color: var(--color-ink-2); margin-top: var(--space-2xs); }
 .login-accounts code, .login-note code { font-family: var(--font-outlier); color: var(--color-accent); }
 .login-note { margin: 0; font-size: 0.875rem; color: var(--color-muted); }
+
+/* Theme toggle: a round button; the moon (go dark) and the sun (go light) swap with a turn. */
+.theme-toggle {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: 1px solid var(--color-rule-2);
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  cursor: pointer;
+  overflow: hidden;
+}
+.theme-toggle:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.theme-toggle:active { transform: scale(0.94); }
+.theme-icon {
+  grid-area: 1 / 1;
+  width: 1.05rem;
+  height: 1.05rem;
+  transition: transform var(--dur-short) var(--ease-out), opacity var(--dur-short) var(--ease-out);
+}
+.theme-icon-moon { fill: currentColor; }
+.theme-icon-sun { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.theme-icon-sun circle { fill: currentColor; stroke: none; }
+:root[data-theme="light"] .theme-icon-sun,
+:root:not([data-theme]) .theme-icon-sun { opacity: 0; transform: rotate(-90deg) scale(0.5); }
+:root[data-theme="dark"] .theme-icon-moon { opacity: 0; transform: rotate(90deg) scale(0.5); }
+@media (prefers-reduced-motion: reduce) { .theme-icon { transition: none; } }

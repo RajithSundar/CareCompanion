@@ -661,7 +661,9 @@ def test_landing_and_login_are_public_and_show_sign_in(anon):
 def test_signed_in_header_has_name_and_sign_out(client):
     page = client.get("/coach").text
     assert 'id="accountChip" data-pid="P01"' in page and "Alex Rivera" in page and 'id="logoutBtn"' in page
-    assert 'id="personaSelect"' not in page
+    assert 'id="personaSelect"' not in page and 'openApiModalBtn' not in page
+    header = page[page.index("<header"):page.index("</header>")]
+    assert header.index('id="themeToggleBtn"') < header.index('id="accountChip"') < header.index('id="logoutBtn"')  # account on the far right
     res = client.get("/login?next=/memory", follow_redirects=False)  # already signed in
     assert res.status_code == 303 and res.headers["location"] == "/memory"
     assert client.get("/login?next=//evil.com", follow_redirects=False).headers["location"] == "/"
