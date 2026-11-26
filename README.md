@@ -4,7 +4,8 @@ A supervised learning demo for next-day recovery forecasting, plus a small coach
 
 - **Task:** given one day's biometrics, forecast the recovery state for the next day (Ready, Moderate, or Deload Needed).
 - **Model:** RandomForest, selected by nested leave-one-participant-out validation.
-- **App:** a FastAPI backend and a static dashboard. An optional LLM (OpenRouter or Groq) writes the coaching text. Without a key, a rule-based reply is used.
+- **Agent:** a tool-using coach (`agent.py`) that looks up saved facts, earlier sessions and trends, saves what you tell it and rewrites your plan. Azure OpenAI first, then OpenRouter or Groq; without a key, a rule-based coach.
+- **App:** a FastAPI backend with demo-account sign-in and a multi-page dashboard.
 
 ## The brief, and where each part lives
 
@@ -12,14 +13,52 @@ A supervised learning demo for next-day recovery forecasting, plus a small coach
 
 | Requirement | Where |
 |---|---|
-| Remembers history across sessions | `coach.py`: saved facts (goals, constraints, preferences) are extracted from what the user says and stored per profile; every reply also reads what the coach advised in the previous sessions and the numbers it saw then (`prior_sessions` in `app.py`). |
-| Adjusts advice based on past interactions | The agent is told to open with what changed since the last session and whether its advice now differs, and to respect every saved goal and constraint by name. |
+| Remembers history across sessions | `agent.py`: the agent saves goals, injuries and schedule limits with its `save_fact` tool (a second extraction pass catches any it misses), and reads them back with `get_saved_facts` and `get_past_sessions` (what it advised before, the numbers then, and what has changed since). Stored per account, so it survives sign-out. |
+| Adjusts advice based on past interactions | It opens with what changed since the last session and whether its advice now differs, names every saved constraint, and rewrites the session plan (`update_plan`). Measured below: injuries from Session 1 come back unprompted in 97% of later replies, against 0% without memory. |
 | Not a fresh generic answer each time | `/demo` puts each reply next to the answer a no-memory assistant gives to the same question on the same day. |
 | Demo on Azure AI | Azure OpenAI is the first-choice provider (`AZURE_OPENAI_*` in `.env`); `docs/AZURE.md` covers the model deployment and hosting the app on Azure Container Apps (`Dockerfile`). |
 | 2-3 simulated sessions | `/demo` (`demo.py`) runs three sessions in order, starting from a blank memory, for a fictional persona or any of the 16 real PMData participants on their own recorded days. |
 | PMData Fitbit dataset | The forecast model is trained and tested on PMData (below); `data/pmdata_daily.csv` is the derived daily table the demo uses. |
 
 Without an LLM key the agent still works: replies and memory extraction fall back to rules, and the demo shows the same structure.
+
+## The agent
+
+Each coach reply is a small tool-calling loop (`agent.py`), shown under the reply as "N steps before answering":
+
+| Tool | What it does |
+|---|---|
+| `get_saved_facts` | Every goal, constraint, preference and rule on file for this account |
+| `get_past_sessions` | The last three sessions: readings then, forecast then, advice given, and the changes since (with "better" or "worse" already judged) |
+| `get_trends` | Average, latest and direction of steps, resting HR, sleep, readiness and fatigue over N days, against the earlier baseline |
+| `save_fact` | Remember a new goal, injury or schedule limit (validated, deduplicated, at most 3 per message) |
+| `update_plan` | Replace the session's action plan with 2 to 5 items |
+
+The first model call must use a tool, the loop stops after 4 rounds, and tools only reach the signed-in account's data. Tool arguments from the model are validated like user input.
+
+**Safety screen** (`safety.py`). Before the model sees a message, plain rules check for red flags: chest pain, fainting, trouble breathing, a racing heart at rest, stroke signs, coughing up blood, and thoughts of self-harm. Negations ("no chest pain") are ignored. A flagged message gets a fixed reply (stop training, see a doctor, emergency numbers; for self-harm, crisis lines such as Tele-MANAS 14416), no model call, and a saved constraint so later sessions ask about medical clearance.
+
+### Does memory change the advice?
+
+`experiments/evaluate_agent.py` runs the 3-session demo for all 19 profiles (3 personas, 16 real PMData participants) and asks the same questions of a stateless assistant (same model, same day, no memory). It checks, with keywords, whether a reply brings back what the person said in Session 1 when the new message does not mention it. Final run with GPT-4o-mini via OpenRouter (`models/agent_eval.json`):
+
+| | With memory (agent) | Without memory |
+|---|---|---|
+| Injury or constraint from Session 1 recalled, unprompted (37 sessions) | **97%** | 0% |
+| Goal recalled, unprompted (37) | **92%** | 3% |
+| Schedule limit recalled, unprompted (36) | 11% | 0% |
+| Refers back to the previous session (38) | **100%** | 0% |
+
+| Agent behaviour (57 sessions) | |
+|---|---|
+| Read saved facts and earlier sessions before answering | 100% |
+| Facts saved in Session 1: injury / goal / schedule | 100% / 95% / 100% |
+| Tool calls per reply | 4.2 |
+| Looked at trends / updated the plan | 90% / 28% |
+| Resting-HR changes described in the wrong direction | 0 of 24 |
+| Safety screen on 24 labelled messages (14 red flags, 10 look-alikes) | 100% recall, 100% precision |
+
+How it got here, honestly: the first run (`models/agent_eval_v1.json`) found the agent recalled goals in 68% and schedules in 3% of sessions and never updated the plan; the prompt now names schedule limits and asks for a plan update when advice changes (`agent_eval_v2.json`: 86% and 19%). That run also showed the model sometimes called a rising resting HR an improvement (about 3 in 10 claims), so `get_past_sessions` now returns the changes with the direction already judged; the final run had none. One stroke-sign phrasing in the safety set was missed at first and the pattern was widened, so the safety score is not from an untouched test set. Between runs the recall numbers move by several points (schedule recall was 19% in the second run and 11% in the final one). Schedule limits are saved reliably but rarely used in later advice; that is the clearest remaining weakness. Keyword checks measure recall, not whether the advice is good.
 
 ## Results
 
@@ -130,7 +169,10 @@ Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_
 
 - `train_model.py`: data loading, nested validation, baselines, permutation importance, and the saved model.
 - `app.py`: FastAPI routes, pages, validation and rate limits.
-- `coach.py`: the agent: providers (Azure OpenAI first), prompts, memory extraction, offline replies.
+- `agent.py`: the tool-using agent loop and its five tools.
+- `safety.py`: the red-flag screen that runs before the agent.
+- `coach.py`: providers (Azure OpenAI first), prompts, memory extraction, offline replies.
+- `experiments/evaluate_agent.py`: the memory and safety evaluation above.
 - `demo.py`: the three-session simulation behind `/demo`.
 - `features.py`: feature definitions shared by training and serving.
 - `auth.py`: demo accounts, password hashing and JWT issue, verify and revoke.

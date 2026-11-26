@@ -47,7 +47,9 @@
           <div class="demo-replies">
             <div class="demo-reply is-memory">
               <div class="demo-reply-label">CareCompanion, with memory</div>
+              ${renderAgentSteps(s.steps)}
               <div class="demo-reply-text">${formatMarkdownSimple(s.advice)}</div>
+              ${s.plan ? `<div class="demo-plan"><span class="demo-memory-label">Plan it set</span><ul>${s.plan.map(p => `<li>${esc(p.text)}</li>`).join('')}</ul></div>` : ''}
             </div>
             <div class="demo-reply">
               <div class="demo-reply-label">Same question, no memory</div>

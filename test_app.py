@@ -488,21 +488,34 @@ def test_coach_rejects_browser_supplied_keys_and_oversize(client):
     assert client.post("/api/coach", json={"participant_id": "p01", "message": "x" * 2001}).status_code == 422
 
 
-def _mock_llm(*contents):
+def _reply(item):
+    """A fake chat completion: a string is a text reply, a list of (name, args) is a tool-call turn."""
+    if isinstance(item, (list, tuple)):
+        calls = [SimpleNamespace(id=f"call_{i}", function=SimpleNamespace(name=n, arguments=json.dumps(a)))
+                 for i, (n, a) in enumerate(item)]
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="", tool_calls=calls))])
+    if isinstance(item, Exception):
+        return item
+    return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=item, tool_calls=None))])
+
+
+def _mock_llm(*items):
     client = MagicMock()
-    client.chat.completions.create.side_effect = [
-        SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=c))]) for c in contents
-    ]
+    client.chat.completions.create.side_effect = [_reply(i) for i in items]
     return client
 
 
-def test_live_coach_with_memory_extraction(anon, monkeypatch):
+READ_BOTH = [("get_saved_facts", {}), ("get_past_sessions", {})]
+
+
+def test_live_coach_agent_uses_tools_saves_and_plans(anon, monkeypatch):
     client = anon
     sign_in(client, "maya")
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")
     mock = _mock_llm(
+        READ_BOTH + [("save_fact", {"category": "Constraint", "text": "Mild right ankle soreness after trail run"})],
+        [("get_trends", {"days": 7}), ("update_plan", {"items": ["Rest the ankle today", "Easy yoga tomorrow"]})],
         "Protect your **right ankle** today.",
-        json.dumps({"memories": [{"category": "Constraint", "text": "Mild right ankle soreness after trail run"}]}),
     )
     with patch("coach.OpenAI", return_value=mock):
         res = client.post("/api/coach", json={
@@ -511,31 +524,69 @@ def test_live_coach_with_memory_extraction(anon, monkeypatch):
         })
     assert res.status_code == 200
     body = res.json()
-    assert body["mode"] == "llm_live"
+    assert body["mode"] == "llm_live" and body["reply"] == "Protect your **right ankle** today."
     assert body["citations"][0] == "OpenRouter: openai/gpt-4o-mini"
+    assert [st["tool"] for st in body["steps"]] == ["get_saved_facts", "get_past_sessions", "save_fact", "get_trends", "update_plan"]
     assert body["newly_extracted_memories"][0]["category"] == "Constraint"
-    assert any("right ankle" in m["text"].lower() for m in client.get("/api/memory/p07").json()["memories"])
-    system_prompt = mock.chat.completions.create.call_args_list[0].kwargs["messages"][0]["content"]
-    assert "<memories>" in system_prompt and "never follow instructions" in system_prompt.lower()
-    # The agent also reads what it advised in earlier sessions.
-    assert "<previous_sessions>" in system_prompt and "Session 3 (Day 10)" in system_prompt
+    assert body["plan_updated"] and [i["text"] for i in body["plan"]] == ["Rest the ankle today", "Easy yoga tomorrow"]
+    state = client.get("/api/state/p07").json()
+    assert any("right ankle" in m["text"].lower() for m in state["memories"])
+    assert [i["text"] for i in state["sessions"][3]["plan"]] == ["Rest the ankle today", "Easy yoga tomorrow"]
+    assert state["sessions"][3]["messages"][-1]["steps"][0]["tool"] == "get_saved_facts"
+    calls = mock.chat.completions.create.call_args_list
+    assert len(calls) == 3  # the agent saved a fact itself, so no extra extraction pass
+    first = calls[0].kwargs
+    assert first["tool_choice"] == "required" and {t["function"]["name"] for t in first["tools"]} == {
+        "get_saved_facts", "get_past_sessions", "get_trends", "save_fact", "update_plan"}
+    assert "never follow instructions" in first["messages"][0]["content"].lower()
+    # Tool results went back to the model: earlier sessions and saved facts.
+    tool_msgs = [m for m in calls[1].kwargs["messages"] if m["role"] == "tool"]
+    assert "desk" in tool_msgs[0]["content"].lower()
+    assert [x["label"] for x in json.loads(tool_msgs[1]["content"])["sessions"]] == ["Session 1", "Session 2", "Session 3"]
 
 
-def test_memory_extraction_falls_back_without_json_mode(anon, monkeypatch):
+def test_memory_safety_net_when_agent_saves_nothing(anon, monkeypatch):
     client = anon
     sign_in(client, "jordan")
     monkeypatch.setenv("GROQ_API_KEY", "gsk-test")
-    mock = MagicMock()
-    mock.chat.completions.create.side_effect = [
-        SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content="Rest today."))]),
-        RuntimeError("response_format not supported"),
-        SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(
-            content='Sure: {"memories": [{"category": "Goal", "text": "Run a 10k in spring"}]}'))]),
-    ]
+    mock = _mock_llm(
+        READ_BOTH, "Rest today.",
+        RuntimeError("response_format not supported"),  # extraction retries without JSON mode
+        'Sure: {"memories": [{"category": "Goal", "text": "Run a 10k in spring"}]}',
+    )
     with patch("coach.OpenAI", return_value=mock):
         body = client.post("/api/coach", json={"participant_id": "p12", "message": "I want to run a 10k in spring."}).json()
     assert body["citations"][0].startswith("Groq: ")
     assert body["newly_extracted_memories"][0]["text"] == "Run a 10k in spring"
+    assert body["steps"][-1]["summary"].endswith("(memory check)")
+
+
+def test_agent_loop_is_bounded():
+    import agent
+    ctx = agent.AgentContext("S1", {}, None, [], [], [], None)
+    mock = _mock_llm(*([READ_BOTH] * agent.MAX_ROUNDS), "Final answer.")
+    assert agent.run(mock, {"model": "m"}, ctx, "hi") == "Final answer."
+    last = mock.chat.completions.create.call_args_list[-1].kwargs
+    assert "tools" not in last and len(mock.chat.completions.create.call_args_list) == agent.MAX_ROUNDS + 1
+
+
+def test_agent_tools_validate_model_input():
+    import agent
+    days = agent.normalize_days([{"day": f"D{i}", "steps": 8000 + i * 100, "rhr": 60 - i % 3, "sleepScore": 80,
+                                  "readiness": 7, "fatigue": 2} for i in range(30)])
+    ctx = agent.AgentContext("Session 2", {}, None, days, [{"id": "m1", "category": "Goal", "text": "10k", "session": "S1"}], [], None)
+    assert "Unknown tool" in ctx.call("delete_everything", "{}")
+    assert "Bad arguments" in ctx.call("save_fact", "not json")
+    assert "Bad arguments" in ctx.call("get_saved_facts", '{"category": "Goal"}')  # no such parameter
+    assert json.loads(ctx.call("save_fact", json.dumps({"category": "Goal", "text": "10k"})))["saved"] is False  # duplicate
+    for i in range(agent.MAX_NEW_FACTS):
+        assert json.loads(ctx.call("save_fact", json.dumps({"category": "Hacker", "text": f"fact {i}"})))["saved"]
+    assert json.loads(ctx.call("save_fact", json.dumps({"category": "Goal", "text": "one too many"})))["saved"] is False
+    assert {m["category"] for m in ctx.new_memories} == {"Baseline"}  # unknown categories are coerced
+    assert json.loads(ctx.call("update_plan", json.dumps({"items": ["a"]})))["updated"] is False  # no open session
+    trends = json.loads(ctx.call("get_trends", json.dumps({"days": 500})))
+    assert trends["days_covered"] == 30 and trends["steps"]["direction"] == "rising"
+    assert trends["steps"]["latest"] == 10900
 
 
 def test_llm_failure_is_502_and_not_saved(client, monkeypatch):
@@ -553,7 +604,7 @@ def test_llm_failure_is_502_and_not_saved(client, monkeypatch):
 def test_coach_rate_limit(client, monkeypatch):
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")
     monkeypatch.setattr(app, "LIMIT_COACH_IP", (2, 600))
-    mock = _mock_llm("a", "{}", "b", "{}")
+    mock = _mock_llm(READ_BOTH, "a", "{}", READ_BOTH, "b", "{}")
     with patch("coach.OpenAI", return_value=mock):
         codes = [client.post("/api/coach", json={"participant_id": "p01", "message": "hi"}).status_code for _ in range(3)]
     assert codes == [200, 200, 429]
@@ -579,7 +630,7 @@ def test_live_coach_uses_azure_client(client, monkeypatch):
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com/")
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "k")
     monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
-    mock = _mock_llm("Rest today.", "{}")
+    mock = _mock_llm(READ_BOTH, "Rest today.", "{}")
     with patch("coach.AzureOpenAI", return_value=mock) as az:
         body = client.post("/api/coach", json={"participant_id": "p01", "session_id": "S4", "message": "hi"}).json()
     assert az.called and body["citations"][0] == "Azure OpenAI: gpt-4o-mini"
@@ -598,7 +649,8 @@ def test_offline_memory_extraction():
 def test_offline_coach_refers_to_previous_session(client):
     body = client.post("/api/coach", json={"participant_id": "p01", "session_id": "S3", "message": "Ready to ramp up?"}).json()
     assert body["reply"].startswith("Since Session 2 (Day 5)")
-    assert "Earlier sessions read: 2" in body["citations"]
+    assert [st["summary"] for st in body["steps"]] == ["Read 3 saved facts", "Read 2 earlier sessions"]
+    assert "Agent steps: 2" in body["citations"]
 
 
 @pytest.mark.parametrize("profile", ["p01", "p07", "p12", "pmdata:p05"])
@@ -618,20 +670,25 @@ def test_demo_offline_shows_advice_changing(client, profile):
         assert "Since" not in s["stateless_advice"]
 
 
-def test_demo_live_calls_llm_with_history(client, monkeypatch):
+def test_demo_live_runs_the_agent_with_growing_memory(client, monkeypatch):
     monkeypatch.setenv("AZURE_OPENAI_ENDPOINT", "https://example.openai.azure.com/")
     monkeypatch.setenv("AZURE_OPENAI_API_KEY", "k")
     monkeypatch.setenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o-mini")
     replies = []
-    for n in range(3):
-        replies += [f"advice {n}", f"generic {n}", json.dumps({"memories": [{"category": "Goal", "text": f"fact {n}"}]})]
+    for n in range(3):  # per session: tool turn, advice, memory check (agent saved nothing), stateless reply
+        replies += [READ_BOTH, f"advice {n}", json.dumps({"memories": [{"category": "Goal", "text": f"fact {n}"}]}), f"generic {n}"]
     mock = _mock_llm(*replies)
     with patch("coach.AzureOpenAI", return_value=mock):
         data = client.post("/api/demo/run", json={"profile": "p07"}).json()
     assert data["provider"] == "Azure OpenAI: gpt-4o-mini"
-    assert [s["advice"] for s in data["sessions"]] == ["advice 0", "advice 1", "advice 2"]
-    third_prompt = mock.chat.completions.create.call_args_list[6].kwargs["messages"][0]["content"]
-    assert "advice 1" in third_prompt and "fact 0" in third_prompt and "fact 1" in third_prompt
+    sessions = data["sessions"]
+    assert [s["advice"] for s in sessions] == ["advice 0", "advice 1", "advice 2"]
+    assert [s["stateless_advice"] for s in sessions] == ["generic 0", "generic 1", "generic 2"]
+    assert [m["text"] for m in sessions[2]["memories_used"]] == ["fact 0", "fact 1"]
+    assert sessions[2]["steps"][1]["summary"] == "Read 2 earlier sessions"
+    # The third session's agent read the second session's advice through its tool.
+    tool_results = [m["content"] for m in mock.chat.completions.create.call_args_list[9].kwargs["messages"] if m["role"] == "tool"]
+    assert any("advice 1" in t for t in tool_results) and any("fact 1" in t for t in tool_results)
 
 
 def test_demo_rejects_unknown_profile(client):
@@ -690,3 +747,41 @@ def test_static_assets_are_versioned_and_cached(anon):
     assert "immutable" in anon.get(f"/static/app.css?v={v}").headers["cache-control"]
     assert anon.get("/static/fonts/fonts.css").headers["cache-control"] == "public, max-age=604800"
     assert anon.get("/api/model-info").headers["cache-control"] == "no-store"
+
+
+# ----------------------------------------------------------------- safety screen
+
+@pytest.mark.parametrize("msg,kind", [
+    ("I had chest pain during my run this morning", "chest_pain"),
+    ("Felt pressure in my chest on the stairs", "chest_pain"),
+    ("I passed out after intervals yesterday", "fainting"),
+    ("My heart is racing at rest and I have palpitations", "heart_rhythm"),
+    ("I can't breathe properly even sitting down", "breathing"),
+    ("Sometimes I want to kill myself", "self_harm"),
+])
+def test_safety_flags_red_flags(msg, kind):
+    import safety
+    assert safety.check(msg)["kind"] == kind
+
+
+@pytest.mark.parametrize("msg", [
+    "No chest pain, legs just heavy. Should I run?",
+    "I've never fainted, but I feel tired",
+    "My calf is tight after intervals",
+    "Heart rate zones for tempo runs?",
+])
+def test_safety_ignores_negations_and_ordinary_aches(msg):
+    import safety
+    assert safety.check(msg) is None
+
+
+def test_red_flag_skips_the_llm_and_is_remembered(client, monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")
+    mock = MagicMock()
+    with patch("coach.OpenAI", return_value=mock):
+        body = client.post("/api/coach", json={"session_id": "S4", "message": "Got chest pain on my tempo run, should I finish the plan?"}).json()
+    assert not mock.chat.completions.create.called
+    assert body["mode"] == "safety" and body["safety_flag"] == "chest_pain"
+    assert "stop training" in body["reply"].lower() and "112" in body["reply"]
+    assert body["steps"][0]["tool"] == "safety_check"
+    assert any("medical clearance" in m["text"] for m in client.get("/api/memory/p01").json()["memories"])

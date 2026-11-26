@@ -1,7 +1,8 @@
 """Simulated multi-session demo: the same coach, three sessions, advice that changes.
 
-For each session the agent sees that day's biometrics and forecast, the facts it has
-saved so far, and what it advised in earlier sessions. Next to every reply is the
+For each session the tool-using agent (agent.py) sees that day's biometrics and forecast,
+and looks up the facts it has saved so far, what it advised in earlier sessions and recent
+trends; it saves new facts and rewrites the plan as it goes. Next to every reply is the
 answer a stateless assistant gives to the same question on the same day, with no
 memory and no history, so the effect of memory is visible.
 
@@ -17,6 +18,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import pandas as pd
 
+import agent
 import coach
 from demo_data import DEFAULT_APP_STATE
 from features import APP_TO_CANONICAL, BASE_COLS, engineer_features, features_for_app_day
@@ -91,10 +93,13 @@ def _real_sessions(pid: str) -> List[Dict[str, Any]]:
     out = []
     for n, idx in enumerate((first, second, third)):
         row = feats.iloc[idx]
+        history = feats.iloc[: idx + 1]
         out.append({
             "label": f"Session {n + 1}",
             "day": row["date"].strftime("%Y-%m-%d"),
             "features": _clean({c: float(row[c]) if pd.notna(row[c]) else None for c in feats.columns if c in _FEATURES}),
+            "days": agent.normalize_days([_clean({**r, "date": r["date"].strftime("%Y-%m-%d")})
+                                          for r in history.to_dict("records")]),
             "message": REAL_SCRIPT[n],
         })
     return out
@@ -109,6 +114,7 @@ def _persona_sessions(pid: str) -> List[Dict[str, Any]]:
             "label": f"Session {n + 1}",
             "day": sess["dayLabel"],
             "features": features_for_app_day(p["days"], sess["dayIndex"]),
+            "days": agent.normalize_days(p["days"][: sess["dayIndex"] + 1]),
             "message": user_msg,
         })
     return out
@@ -136,26 +142,27 @@ def run_demo(profile: str, predict: Callable[[Dict[str, Any]], Optional[Dict[str
 
     memories: List[Dict[str, str]] = []  # the demo starts from a blank slate and builds memory as it goes
     prior: List[Dict[str, Any]] = []
+    plan: List[Dict[str, Any]] = []
     results = []
     for sess in sessions:
         f = sess["features"]
         forecast = predict(f)
         memories_before = list(memories)
+        ctx = agent.AgentContext(session_label=sess["label"], features=f, forecast=forecast, days=sess["days"],
+                                 memories=memories, prior=list(prior), plan=plan)
         if cfg and client is not None:
-            advice = coach.complete(client, cfg, [
-                {"role": "system", "content": coach.build_system_prompt(pid, sess["label"], forecast, f, memories, prior)},
-                {"role": "user", "content": sess["message"]},
-            ])
+            advice = agent.run(client, cfg, ctx, sess["message"])
+            agent.ensure_memory(client, cfg, ctx, sess["message"])
             stateless = coach.complete(client, cfg, [
                 {"role": "system", "content": coach.build_stateless_prompt(forecast, f)},
                 {"role": "user", "content": sess["message"]},
             ])
-            new = coach.extract_new_memories(client, cfg, sess["message"], sess["label"], memories)
         else:
-            advice = coach.offline_reply(f, pid, sess["message"], forecast, memories, prior)
+            advice = agent.run_offline(ctx, pid, sess["message"])
             stateless = coach.offline_stateless_reply(f, forecast)
-            new = coach.extract_memories_offline(sess["message"], sess["label"], memories)
-        memories = memories + new
+        memories = memories + ctx.new_memories
+        if ctx.new_plan is not None:
+            plan = ctx.new_plan
         snap = coach.snapshot(f)
         results.append({
             "label": sess["label"],
@@ -164,7 +171,9 @@ def run_demo(profile: str, predict: Callable[[Dict[str, Any]], Optional[Dict[str
             "forecast": forecast,
             "message": sess["message"],
             "memories_used": memories_before,
-            "new_memories": new,
+            "new_memories": ctx.new_memories,
+            "steps": ctx.steps,
+            "plan": plan if ctx.new_plan is not None else None,
             "advice": advice,
             "stateless_advice": stateless,
         })

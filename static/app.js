@@ -565,6 +565,16 @@ function renderChatHeaderAndPlan() {
   });
 }
 
+// What the agent did before answering: one line per tool call, folded by default.
+const STEP_LABELS = { get_saved_facts: 'Facts', get_past_sessions: 'Sessions', get_trends: 'Trends',
+                      save_fact: 'Saved', update_plan: 'Plan', safety_check: 'Safety' };
+function renderAgentSteps(steps) {
+  if (!Array.isArray(steps) || !steps.length) return '';
+  const flagged = steps.some(st => st.tool === 'safety_check');
+  return `<details class="agent-steps"${flagged ? ' open' : ''}><summary>${steps.length} step${steps.length === 1 ? '' : 's'} before answering</summary>
+    <ol>${steps.map(st => `<li data-tool="${esc(st.tool)}"><span class="agent-step-tool">${esc(STEP_LABELS[st.tool] || st.tool)}</span><span>${esc(st.summary)}</span></li>`).join('')}</ol></details>`;
+}
+
 function renderMessages() {
   const s = getSession();
   const container = $('chatMessages');
@@ -579,6 +589,7 @@ function renderMessages() {
     if (m.role === 'user') {
       return `<div class="flex justify-end"><div class="max-w-[82%] rounded-md bg-paper-3 border border-accent text-ink px-4 py-2.5 text-sm">${formatMarkdownSimple(m.text)}</div></div>`;
     }
+    const stepsHtml = renderAgentSteps(m.steps);
     const citationsHtml = (m.citations && m.citations.length)
       ? `<div class="mt-2.5 flex flex-wrap gap-1.5">${m.citations.map(c => `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-cool-soft text-cool border border-rule-2">${esc(c)}</span>`).join('')}</div>`
       : '';
@@ -586,7 +597,7 @@ function renderMessages() {
       <div class="flex items-start gap-3">
         <div class="w-8 h-8 rounded-md bg-cool text-accent-ink flex items-center justify-center shrink-0 mt-0.5" aria-hidden="true"><i data-lucide="activity" class="w-4 h-4"></i></div>
         <div class="flex-1 min-w-0">
-          <div class="rounded-md bg-paper-3 border border-rule-2 px-4 py-3 text-sm text-ink-2 leading-relaxed">${formatMarkdownSimple(m.text)}${citationsHtml}</div>
+          <div class="rounded-md bg-paper-3 border border-rule-2 px-4 py-3 text-sm text-ink-2 leading-relaxed">${stepsHtml}${formatMarkdownSimple(m.text)}${citationsHtml}</div>
         </div>
       </div>
     `;
@@ -683,7 +694,12 @@ async function sendToCoach(userText) {
       };
     }
     if (Array.isArray(data.memories)) p.memories = data.memories.map(m => ({ ...m, activeFrom: 0 }));
-    s.messages.push({ role: 'coach', text: data.reply, citations: data.citations || [] });
+    s.messages.push({ role: 'coach', text: data.reply, citations: data.citations || [], steps: data.steps || [] });
+    if (data.plan_updated && Array.isArray(data.plan)) {
+      s.plan = data.plan;
+      renderChatHeaderAndPlan();
+      showToast('The coach updated your plan');
+    }
     if (Array.isArray(data.newly_extracted_memories) && data.newly_extracted_memories.length > 0) {
       showToast(`Saved ${data.newly_extracted_memories.length} new memory fact(s)`);
     }

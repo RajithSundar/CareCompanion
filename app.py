@@ -28,9 +28,11 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+import agent
 import auth
 import coach
 import demo
+import safety
 from coach import llm_config, make_llm_client
 from demo_data import DEFAULT_APP_STATE, DEFAULT_MEMORY_STORE
 from features import FEATURE_COLS, features_for_app_day
@@ -804,62 +806,66 @@ def coach_chat(req: CoachRequest, request: Request, user: Account = Depends(curr
         raise HTTPException(status_code=404, detail="Session not found.")
     session_label = (session or {}).get("label") or req.session_label or "Live"
 
-    biometrics = req.biometrics
-    if biometrics is None:
-        idx = req.day_index if req.day_index is not None else (session or {}).get("dayIndex")
-        biometrics = build_biometrics_from_days(pdata["days"], clamp_index(idx, len(pdata["days"])))
+    idx = req.day_index if req.day_index is not None else (session or {}).get("dayIndex")
+    day_idx = clamp_index(idx, len(pdata["days"]))
+    biometrics = req.biometrics or build_biometrics_from_days(pdata["days"], day_idx)
     ml_result = run_ml_prediction(biometrics)
-
     features = biometrics.model_dump()
     prior = prior_sessions(pdata, req.session_id)
+
+    ctx = agent.AgentContext(
+        session_label=session_label, features=features, forecast=ml_result,
+        days=agent.normalize_days(pdata["days"][: day_idx + 1]), memories=memories, prior=prior,
+        plan=copy.deepcopy(session["plan"]) if session is not None else None,
+        allow_save=req.auto_extract_memory,
+    )
     cfg = llm_config()
-    newly_extracted: List[Dict[str, str]] = []
-    if cfg is None:
+    flag = safety.check(req.message)
+    if flag:
+        # Red flag: a fixed escalation reply, no model call, and a note so later sessions know.
+        mode, mode_tag = "safety", "Safety check"
+        reply = flag["reply"]
+        ctx.steps.append({"tool": "safety_check", "summary": f"Red flag ({flag['kind'].replace('_', ' ')}): coaching paused"})
+        ctx.allow_save = True
+        ctx.save_fact("Constraint", flag["memory"])
+    elif cfg is None:
         mode, mode_tag = "offline_fallback", "Offline reply (no LLM)"
-        reply = coach.offline_reply(features, pid, req.message, ml_result, memories, prior)
-        if req.auto_extract_memory:
-            newly_extracted = coach.extract_memories_offline(req.message, session_label, memories)
+        reply = agent.run_offline(ctx, pid, req.message)
     else:
         enforce_llm_limits(request)
-        messages: List[Dict[str, str]] = [{
-            "role": "system",
-            "content": coach.build_system_prompt(pid, session_label, ml_result, features, memories, prior),
-        }]
-        for turn in req.history[-6:]:
-            content = turn.text.strip()
-            if content:
-                messages.append({"role": "assistant" if turn.role in ("coach", "assistant") else "user", "content": content})
-        messages.append({"role": "user", "content": req.message})
-
-        client = make_llm_client(cfg)
+        history = [{"role": "assistant" if t.role in ("coach", "assistant") else "user", "content": t.text.strip()}
+                   for t in req.history[-6:] if t.text.strip()]
         try:
-            reply = coach.complete(client, cfg, messages)
+            client = make_llm_client(cfg)
+            reply = agent.run(client, cfg, ctx, req.message, history)
+            agent.ensure_memory(client, cfg, ctx, req.message)
         except Exception:
-            log.exception("%s chat completion failed", cfg["provider"])
+            log.exception("%s agent run failed", cfg["provider"])
             raise HTTPException(status_code=502, detail=f"The coach could not reach {cfg['provider']}. Try again.")
         if not reply:
             raise HTTPException(status_code=502, detail="The coach returned an empty reply. Try again.")
-
-        mode = "llm_live"
-        mode_tag = f"{cfg['provider']}: {cfg['model']}"
-        if req.auto_extract_memory:
-            newly_extracted = coach.extract_new_memories(client, cfg, req.message, session_label, memories)
+        mode, mode_tag = "llm_live", f"{cfg['provider']}: {cfg['model']}"
 
     pred_label = ml_result["predicted_recovery_state"] if ml_result else "Unavailable"
+    newly_extracted = ctx.new_memories
     with store.edit(user.store_key) as data:
         mem_list = data["memory"][pid]
         if newly_extracted:
-            room = max(0, MAX_MEMORIES - len(mem_list))
-            newly_extracted = newly_extracted[:room]
+            newly_extracted = newly_extracted[: max(0, MAX_MEMORIES - len(mem_list))]
             mem_list[:0] = newly_extracted
         memories = mem_list
         coach_msg = {
             "role": "coach",
             "text": reply,
-            "citations": [mode_tag, f"Forecast: {pred_label}", f"Memory: {len(memories)}", f"Earlier sessions read: {len(prior)}"],
+            "citations": [mode_tag, f"Forecast: {pred_label}", f"Memory: {len(memories)}", f"Agent steps: {len(ctx.steps)}"],
+            "steps": ctx.steps,
         }
         live_session = find_session(data["state"][pid], req.session_id)
+        plan = None
         if live_session is not None:
+            if ctx.new_plan is not None:
+                live_session["plan"] = ctx.new_plan
+            plan = live_session.get("plan", [])
             msgs = live_session.setdefault("messages", [])
             msgs.append({"role": "user", "text": req.message})
             msgs.append(coach_msg)
@@ -868,6 +874,10 @@ def coach_chat(req: CoachRequest, request: Request, user: Account = Depends(curr
     return {
         "reply": reply,
         "citations": coach_msg["citations"],
+        "steps": ctx.steps,
+        "plan": plan,
+        "plan_updated": ctx.new_plan is not None and plan is not None,
+        "safety_flag": flag["kind"] if flag else None,
         "ml_prediction": ml_result,
         "memories_used": len(memories),
         "memories": memories,
