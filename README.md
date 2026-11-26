@@ -116,7 +116,7 @@ Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_
 ## Hosting
 
 - Writes are atomic and locked per account. Request bodies are capped at 256 KB, writes must be JSON, and every field is range-checked.
-- The page sends a strict Content-Security-Policy (no inline or third-party scripts). Chart.js and Lucide are vendored in `static/vendor/`; Tailwind is built ahead of time (`frontend/README.md`).
+- The page sends a strict Content-Security-Policy (no inline or third-party scripts). Chart.js is vendored in `static/vendor/`; the 17 Lucide icons in use are inlined in `static/icons.js` (3 KB instead of 358 KB); Tailwind is built ahead of time (`frontend/README.md`).
 - `/docs` and `/openapi.json` are disabled.
 - On this machine the app and its Tailscale Funnel run as systemd user services: `systemctl --user status carecompanion carecompanion-tailscaled`. Logs: `journalctl --user -u carecompanion -f`.
 

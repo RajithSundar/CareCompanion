@@ -672,3 +672,21 @@ def test_signed_in_header_has_name_and_sign_out(client):
 def test_demo_password_can_be_hidden(anon, monkeypatch):
     monkeypatch.setenv("CC_SHOW_DEMO_PASSWORD", "0")
     assert auth.DEMO_PASSWORD not in anon.get("/login").text
+
+
+# ----------------------------------------------------------------- performance
+
+def test_text_responses_are_gzipped(anon):
+    for path in ("/", "/static/app.css", "/static/vendor/chart.umd.min.js"):
+        res = anon.get(path, headers={"Accept-Encoding": "gzip"})
+        assert res.status_code == 200 and res.headers.get("content-encoding") == "gzip", path
+
+
+def test_static_assets_are_versioned_and_cached(anon):
+    page = anon.get("/").text
+    assert "lucide.min.js" not in page and "/static/icons.js?v=" in page
+    assert "/static/app.css?v=" in page and "/static/app.js?v=" in page
+    v = page.split("/static/app.css?v=")[1].split('"')[0]
+    assert "immutable" in anon.get(f"/static/app.css?v={v}").headers["cache-control"]
+    assert anon.get("/static/fonts/fonts.css").headers["cache-control"] == "public, max-age=604800"
+    assert anon.get("/api/model-info").headers["cache-control"] == "no-store"

@@ -15,5 +15,5 @@ chmod +x frontend/bin/tailwindcss
 cd frontend && ./bin/tailwindcss -c tailwind.config.js -i input.css -o ../static/app.css --minify
 ```
 
-`static/vendor/` holds Chart.js 4.4.1 and Lucide 0.468.0 (UMD builds from the npm
+`static/vendor/` holds Chart.js 4.4.1 and the Lucide 0.468.0 licence (the icons the site uses live in `static/icons.js`, extracted from the Lucide UMD build from the npm
 registry, verified against the registry shasum). Their licenses sit next to them.

@@ -24,6 +24,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -109,9 +110,19 @@ async def guard(request: Request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    if request.url.path.startswith("/api/"):
+    path = request.url.path
+    if path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
+    elif path.startswith("/static/") and response.status_code == 200:
+        # Pages link app CSS/JS with ?v=<mtime>, so those URLs never change content: cache for a year.
+        # Fonts and vendored libraries are fixed files: cache for a week.
+        versioned = "v=" in request.url.query
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable" if versioned else "public, max-age=604800"
     return response
+
+
+# Compress text responses (HTML, CSS, JS, JSON) above 1 KB. Added after the guard, so it wraps it.
+app.add_middleware(GZipMiddleware, minimum_size=1000, compresslevel=6)
 
 
 if STATIC_DIR.exists():
@@ -403,14 +414,14 @@ def assemble_page(name: str) -> str:
     """Assemble static/pages/<name>.html with the shared partials. Cached until any source file changes."""
     parts = STATIC_DIR / "partials"
     sources = [STATIC_DIR / "pages" / f"{name}.html", *(parts / f for f in ("head.html", "header.html", "footer.html", "chrome.html")),
-               *(STATIC_DIR / f for f in ("app.css", "app.js", "tracker.js", "demo.js", "login.js"))]
+               *(STATIC_DIR / f for f in ("app.css", "app.js", "tracker.js", "demo.js", "login.js", "icons.js"))]
     key = tuple(p.stat().st_mtime for p in sources)
     cached = _PAGE_CACHE.get(name)
     if cached and cached[0] == key:
         return cached[1]
     page, head, header, footer, chrome = (p.read_text(encoding="utf-8") for p in sources[:5])
     meta = PAGES[name]
-    version = str(int(max((STATIC_DIR / f).stat().st_mtime for f in ("app.css", "app.js", "tracker.js", "demo.js", "login.js"))))
+    version = str(int(max((STATIC_DIR / f).stat().st_mtime for f in ("app.css", "app.js", "tracker.js", "demo.js", "login.js", "icons.js"))))
     head = (head.replace("{{title}}", meta["title"])
                 .replace("{{description}}", meta["description"])
                 .replace("{{scripts}}", PAGE_SCRIPTS.get(name, "").replace('.js"', '.js?v={{v}}"'))

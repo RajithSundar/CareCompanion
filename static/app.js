@@ -191,17 +191,21 @@ function formatMarkdownSimple(text) {
     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-medium text-accent">$1</strong>').replace(/\n/g, '<br>');
 }
 
+// Each page renders only its own sections (the others would build HTML into detached stand-ins).
 function renderAll() {
-  renderOverview();
-  renderLedger();
-  renderSessionStepper();
-  renderKPIs();
-  renderUpdateInputs();
-  renderChart();
-  renderChatHeaderAndPlan();
-  renderMessages();
-  renderQuickPrompts();
-  renderMemoryPanel();
+  if (has('overviewGreeting') || has('modelComparisonGrid')) renderOverview();
+  else renderTracker();
+  if (has('biometricLedgerBody')) renderLedger();
+  if (has('biometricChart')) renderChart();
+  if (has('kpiSteps')) renderKPIs();
+  if (has('inputSteps')) renderUpdateInputs();
+  if (has('chatMessages')) {
+    renderSessionStepper();
+    renderChatHeaderAndPlan();
+    renderMessages();
+    renderQuickPrompts();
+  }
+  if (has('memoryList')) renderMemoryPanel();
   if (window.lucide) lucide.createIcons();
 }
 
