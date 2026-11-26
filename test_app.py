@@ -1,4 +1,4 @@
-"""Tests for the CareCompanion backend: forecast, sandboxes, validation, security and the coach."""
+"""Tests for the CareCompanion backend: forecast, accounts and JWT, validation, security and the coach."""
 
 import json
 import threading
@@ -11,6 +11,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app
+import auth
 import features
 import train_model
 from sandbox import SandboxStore
@@ -29,16 +30,35 @@ DAY = {"steps": 4100, "rhr": 65, "sleepScore": 58, "deepMin": 40, "remMin": 50,
 
 
 @pytest.fixture()
-def client(tmp_path, monkeypatch):
-    monkeypatch.setattr(app, "store", SandboxStore(tmp_path / "sandboxes"))
-    monkeypatch.delenv("GROQ_API_KEY", raising=False)
-    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+def anon(tmp_path, monkeypatch):
+    """A signed-out browser."""
+    monkeypatch.setattr(app, "store", SandboxStore(tmp_path / "accounts"))
+    for var in ("GROQ_API_KEY", "OPENROUTER_API_KEY", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_DEPLOYMENT"):
+        monkeypatch.delenv(var, raising=False)
+    auth.set_secret("test-secret-" + "x" * 40)
+    auth.revoked.clear()
     app.limiter.reset()
-    return TestClient(app.app)
+    yield TestClient(app.app)
+    auth.set_secret(None)
 
 
-def fresh_client():
-    return TestClient(app.app)
+def sign_in(c, username="alex", password=auth.DEMO_PASSWORD):
+    return c.post("/api/auth/login", json={"username": username, "password": password})
+
+
+@pytest.fixture()
+def client(anon):
+    """Signed in as the demo account alex (profile p01)."""
+    assert sign_in(anon).status_code == 200
+    app.limiter.reset()  # the sign-in itself counts as a write
+    return anon
+
+
+def fresh_client(username=None):
+    c = TestClient(app.app)
+    if username:
+        assert sign_in(c, username).status_code == 200
+    return c
 
 
 # ----------------------------------------------------------------- model + features
@@ -153,46 +173,104 @@ def test_raw_loader_records_missing_fitbit_files(tmp_path, monkeypatch):
     assert "p12/fitbit/resting_heart_rate.json" in train_model.MISSING_FILES
 
 
-# ----------------------------------------------------------------- sandboxes
+# ----------------------------------------------------------------- accounts + JWT
 
-def test_each_visitor_gets_a_private_sandbox(client):
-    assert client.post("/api/memory/p01", json={"category": "Goal", "text": "Visitor A only"}).status_code == 200
-    a_mem = client.get("/api/memory/p01").json()["memories"]
-    assert any(m["text"] == "Visitor A only" for m in a_mem)
-
-    other = fresh_client()
-    b_mem = other.get("/api/memory/p01").json()["memories"]
-    assert not any(m["text"] == "Visitor A only" for m in b_mem)
-
-
-def test_sandbox_cookie_is_httponly_and_strict(client):
-    res = client.get("/api/state/p01")
+def test_login_sets_httponly_strict_jwt_cookie(anon):
+    res = sign_in(anon)
+    assert res.status_code == 200
+    body = res.json()
+    assert body["user"] == {"username": "alex", "pid": "P01", "name": "Alex Rivera", "role": "Half-Marathon Prep, Morning Runner"}
+    assert body["token_type"] == "bearer" and body["expires_in"] == auth.TOKEN_TTL_S
     cookie = res.headers["set-cookie"].lower()
-    assert "cc_sid=" in cookie and "httponly" in cookie and "samesite=strict" in cookie
+    assert "cc_token=" in cookie and "httponly" in cookie and "samesite=strict" in cookie
+    claims = auth.decode_token(body["access_token"])
+    assert claims["sub"] == "alex" and claims["pid"] == "p01" and claims["exp"] - claims["iat"] == auth.TOKEN_TTL_S
+    assert anon.get("/api/auth/me").json()["user"]["name"] == "Alex Rivera"
+
+
+def test_wrong_password_and_unknown_user_are_401(anon):
+    assert sign_in(anon, "alex", "nope").status_code == 401
+    assert sign_in(anon, "mallory", "demo1234").status_code == 401
+    assert sign_in(anon, "ALEX ", auth.DEMO_PASSWORD).status_code == 200  # usernames are case-insensitive
+    assert anon.post("/api/auth/login", json={"username": "alex", "password": "x", "admin": True}).status_code == 422
+
+
+def test_login_is_rate_limited(anon, monkeypatch):
+    monkeypatch.setattr(app, "LIMIT_LOGIN", (3, 300))
+    codes = [sign_in(anon, "alex", "bad").status_code for _ in range(4)]
+    assert codes == [401, 401, 401, 429]
+
+
+def test_api_requires_a_token(anon):
+    for path in ("/api/state/p01", "/api/memory/p01", "/api/predict/p01", "/api/auth/me", "/api/demo/profiles"):
+        res = anon.get(path)
+        assert res.status_code == 401 and res.headers["www-authenticate"] == "Bearer"
+    assert anon.post("/api/coach", json={"message": "hi"}).status_code == 401
+    assert anon.post("/api/demo/run", json={"profile": "p01"}).status_code == 401
+    # Public: health, model card, the stateless model endpoint.
+    assert anon.get("/healthz").status_code == 200 and anon.get("/api/model-info").status_code == 200
+
+
+def test_bearer_header_works_without_cookie(anon):
+    token = sign_in(anon).json()["access_token"]
+    other = TestClient(app.app)
+    assert other.get("/api/state/p01", headers={"Authorization": f"Bearer {token}"}).status_code == 200
+
+
+@pytest.mark.parametrize("make", [
+    lambda: "not-a-jwt",
+    lambda: __import__("jwt").encode({"sub": "alex", "pid": "p01", "iat": 0, "nbf": 0, "exp": 9999999999, "jti": "x",
+                                      "iss": auth.ISSUER, "aud": auth.AUDIENCE}, "wrong-key-" + "y" * 40, algorithm="HS256"),
+    lambda: __import__("jwt").encode({"sub": "alex", "pid": "p01", "iat": 0, "nbf": 0, "exp": 1, "jti": "x",
+                                      "iss": auth.ISSUER, "aud": auth.AUDIENCE}, auth.secret(), algorithm="HS256"),
+    lambda: __import__("jwt").encode({"sub": "alex", "pid": "p07", "iat": 0, "nbf": 0, "exp": 9999999999, "jti": "x",
+                                      "iss": auth.ISSUER, "aud": auth.AUDIENCE}, auth.secret(), algorithm="HS256"),
+    lambda: __import__("jwt").encode({"sub": "alex", "pid": "p01", "iat": 0, "nbf": 0, "exp": 9999999999, "jti": "x",
+                                      "iss": auth.ISSUER, "aud": "someone-else"}, auth.secret(), algorithm="HS256"),
+    lambda: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJhbGV4IiwicGlkIjoicDAxIn0.",  # alg=none
+], ids=["garbage", "wrong-key", "expired", "pid-mismatch", "wrong-audience", "alg-none"])
+def test_forged_or_expired_tokens_are_rejected(anon, make):
+    anon.cookies.set(auth.COOKIE, make())
+    assert anon.get("/api/state/p01").status_code == 401
+
+
+def test_logout_revokes_the_token(anon):
+    token = sign_in(anon).json()["access_token"]
+    assert anon.post("/api/auth/logout", json={}).status_code == 200
+    assert "cc_token=" in anon.post("/api/auth/logout", json={}).headers.get("set-cookie", "")  # cookie cleared
+    other = TestClient(app.app)
+    assert other.get("/api/state/p01", headers={"Authorization": f"Bearer {token}"}).status_code == 401
+
+
+def test_an_account_cannot_touch_another_profile(client):
+    assert client.get("/api/state/p07").status_code == 403
+    assert client.post("/api/memory/p07", json={"category": "Goal", "text": "x"}).status_code == 403
+    assert client.post("/api/coach", json={"participant_id": "p12", "message": "hi"}).status_code == 403
+
+
+def test_account_data_persists_across_logins_and_is_private(client):
+    assert client.post("/api/memory/p01", json={"category": "Goal", "text": "Alex only"}).status_code == 200
+    client.post("/api/auth/logout", json={})
+    again = fresh_client("alex")  # a new browser, same account
+    assert any(m["text"] == "Alex only" for m in again.get("/api/memory/p01").json()["memories"])
+    maya = fresh_client("maya")
+    assert maya.get("/api/state/p07").json()["name"] == "Maya Lin"
+    assert not any(m["text"] == "Alex only" for m in maya.get("/api/memory/p07").json()["memories"])
 
 
 def test_reads_do_not_create_files(client, tmp_path):
     client.get("/api/state/p01")
     client.get("/api/predict/p01")
-    assert not list((tmp_path / "sandboxes").glob("*.json")) if (tmp_path / "sandboxes").exists() else True
-
-
-def test_forged_cookie_is_replaced(client):
-    client.cookies.set("cc_sid", "../../etc/passwd")
-    res = client.get("/api/state/p01")
-    assert res.status_code == 200
-    assert "../" not in res.cookies.get("cc_sid", "")
+    assert not list((tmp_path / "accounts").glob("*.json")) if (tmp_path / "accounts").exists() else True
 
 
 def test_concurrent_writes_do_not_lose_updates(client):
-    client.get("/api/state/p01")
-    sid = client.cookies.get("cc_sid")
+    token = client.cookies.get(auth.COOKIE)
     errors = []
 
     def add(i):
-        c = fresh_client()
-        c.cookies.set("cc_sid", sid)
-        r = c.post("/api/memory/p01", json={"category": "Goal", "text": f"m{i}"})
+        c = TestClient(app.app)
+        r = c.post("/api/memory/p01", json={"category": "Goal", "text": f"m{i}"}, headers={"Authorization": f"Bearer {token}"})
         if r.status_code != 200:
             errors.append(r.status_code)
 
@@ -203,6 +281,12 @@ def test_concurrent_writes_do_not_lose_updates(client):
         t.join()
     assert not errors
     assert len(client.get("/api/memory/p01").json()["memories"]) == 3 + 20
+
+
+def test_safe_next_blocks_open_redirects():
+    assert auth.safe_next("/coach") == "/coach"
+    for bad in ("//evil.com", "https://evil.com", "/\\evil.com", "", None):
+        assert auth.safe_next(bad) == "/"
 
 
 def test_sandbox_prune_caps_count(tmp_path):
@@ -220,6 +304,7 @@ def test_unknown_participant_is_404(client):
     assert client.get("/api/state/p99").status_code == 404
     assert client.post("/api/memory/p99/reset", json={}).status_code == 404
     assert client.get("/api/memory/p02").status_code == 404
+    assert client.get("/api/state/p07").status_code == 403  # exists, but belongs to maya
 
 
 def test_checkin_new_day_appends_and_moves_session(client):
@@ -411,7 +496,9 @@ def _mock_llm(*contents):
     return client
 
 
-def test_live_coach_with_memory_extraction(client, monkeypatch):
+def test_live_coach_with_memory_extraction(anon, monkeypatch):
+    client = anon
+    sign_in(client, "maya")
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")
     mock = _mock_llm(
         "Protect your **right ankle** today.",
@@ -434,7 +521,9 @@ def test_live_coach_with_memory_extraction(client, monkeypatch):
     assert "<previous_sessions>" in system_prompt and "Session 3 (Day 10)" in system_prompt
 
 
-def test_memory_extraction_falls_back_without_json_mode(client, monkeypatch):
+def test_memory_extraction_falls_back_without_json_mode(anon, monkeypatch):
+    client = anon
+    sign_in(client, "jordan")
     monkeypatch.setenv("GROQ_API_KEY", "gsk-test")
     mock = MagicMock()
     mock.chat.completions.create.side_effect = [
@@ -548,3 +637,36 @@ def test_demo_live_calls_llm_with_history(client, monkeypatch):
 def test_demo_rejects_unknown_profile(client):
     assert client.post("/api/demo/run", json={"profile": "pmdata:p99"}).status_code == 404
     assert client.post("/api/demo/run", json={"profile": "../etc"}).status_code == 422
+
+
+# ----------------------------------------------------------------- sign-in pages
+
+@pytest.mark.parametrize("path", ["/demo", "/forecast", "/coach", "/checkin", "/memory", "/data"])
+def test_signed_out_pages_redirect_to_login(anon, path):
+    res = anon.get(path, follow_redirects=False)
+    assert res.status_code == 303 and res.headers["location"] == f"/login?next={path}"
+
+
+def test_landing_and_login_are_public_and_show_sign_in(anon):
+    home = anon.get("/")
+    assert home.status_code == 200 and 'href="/login"' in home.text and "logoutBtn" not in home.text
+    login = anon.get("/login")
+    assert login.status_code == 200
+    for needle in ('id="loginForm"', 'autocomplete="current-password"', 'data-username="alex"', 'data-username="maya"',
+                   'data-username="jordan"', "/static/login.js"):
+        assert needle in login.text
+    assert "<script>" not in login.text  # CSP: no inline scripts
+
+
+def test_signed_in_header_has_name_and_sign_out(client):
+    page = client.get("/coach").text
+    assert 'id="accountChip" data-pid="P01"' in page and "Alex Rivera" in page and 'id="logoutBtn"' in page
+    assert 'id="personaSelect"' not in page
+    res = client.get("/login?next=/memory", follow_redirects=False)  # already signed in
+    assert res.status_code == 303 and res.headers["location"] == "/memory"
+    assert client.get("/login?next=//evil.com", follow_redirects=False).headers["location"] == "/"
+
+
+def test_demo_password_can_be_hidden(anon, monkeypatch):
+    monkeypatch.setenv("CC_SHOW_DEMO_PASSWORD", "0")
+    assert auth.DEMO_PASSWORD not in anon.get("/login").text

@@ -17,6 +17,11 @@ async function api(path, { method = 'GET', body } = {}) {
     throw new Error('Could not reach the server. Check your connection.');
   }
   const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && !path.startsWith('/api/auth/')) {
+    // Session expired or signed out in another tab: back to the sign-in page, then here.
+    location.assign(`/login?next=${encodeURIComponent(location.pathname)}`);
+    throw new Error('Signed out. Sign in again to continue.');
+  }
   if (!res.ok) {
     let msg = data.detail;
     if (Array.isArray(msg)) msg = msg.map(d => `${(d.loc || []).slice(-1)[0] || 'field'}: ${d.msg}`).join('; ');
@@ -36,7 +41,13 @@ function $(id) {
 const has = id => Boolean(document.getElementById(id));
 const PAGE = document.body.dataset.page || 'home';
 
-// The chosen profile and session follow the visitor from page to page.
+// The signed-in account, rendered into the header by the server. Null when signed out.
+const ACCOUNT = (() => {
+  const el = document.getElementById('accountChip');
+  return el ? { pid: el.dataset.pid, name: el.dataset.name } : null;
+})();
+
+// The chosen session follows the visitor from page to page.
 const store = {
   get(k, fallback) { try { const v = localStorage.getItem(`cc_${k}`); return v === null ? fallback : v; } catch (e) { return fallback; } },
   set(k, v) { try { localStorage.setItem(`cc_${k}`, String(v)); } catch (e) {} }
@@ -74,7 +85,7 @@ const FALLBACK_PERSONA = {
 
 const state = {
   personas: { P01: JSON.parse(JSON.stringify(FALLBACK_PERSONA)) },
-  activePersonaId: ['P01', 'P07', 'P12'].includes(localStorage.getItem('cc_persona')) ? localStorage.getItem('cc_persona') : 'P01',
+  activePersonaId: ACCOUNT ? ACCOUNT.pid : 'P01', // the account's own profile
   activeSessionIndex: null, // restored per profile once its sessions load
   chartMode: 'activity',
   serverLlm: null, // { provider, model } when the server has a key
@@ -85,8 +96,8 @@ const state = {
   livePrediction: undefined // undefined = loading, null = unavailable
 };
 
-// Older versions stored an API key in the browser. Remove it.
-try { localStorage.removeItem('carecompanion_api_v2'); } catch (e) {}
+// Older versions stored an API key and a chosen profile in the browser. Remove them.
+try { localStorage.removeItem('carecompanion_api_v2'); localStorage.removeItem('cc_persona'); } catch (e) {}
 
 function getPersona() { return state.personas[state.activePersonaId] || FALLBACK_PERSONA; }
 function getSession() {
@@ -731,13 +742,11 @@ function selectSession(idx) {
   syncPredictionFromBackend();
 }
 
-$('personaSelect').value = state.activePersonaId;
-$('personaSelect').addEventListener('change', (e) => {
-  state.activePersonaId = e.target.value;
-  store.set('persona', state.activePersonaId);
-  state.activeSessionIndex = null;
-  state.livePrediction = undefined;
-  loadParticipantState(state.activePersonaId);
+$('logoutBtn').addEventListener('click', async (e) => {
+  e.currentTarget.disabled = true;
+  try { await api('/api/auth/logout', { method: 'POST', body: {} }); } catch (err) {}
+  try { sessionStorage.removeItem('cc_pending_prompt'); } catch (err) {}
+  location.assign('/');
 });
 
 $('nextSessionBtn').addEventListener('click', () => {
@@ -977,7 +986,8 @@ $('exportMarkdownBtn').addEventListener('click', () => {
 window.addEventListener('DOMContentLoaded', () => {
   renderAll();
   loadModelInfo();
-  loadParticipantState(state.activePersonaId);
+  if (ACCOUNT) loadParticipantState(state.activePersonaId);
+  else if (window.CCTracker) window.CCTracker.render(null); // signed out: the watch shows sample stats
 });
 function syncThemeToggle() {
   const dark = document.documentElement.dataset.theme === 'dark';

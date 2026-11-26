@@ -81,7 +81,15 @@ python train_model.py            # optional: retrains and rewrites models/
 uvicorn app:app --port 8000
 ```
 
-Open `http://127.0.0.1:8000`.
+Open `http://127.0.0.1:8000` and sign in with a demo account:
+
+| Username | Profile | Password |
+|---|---|---|
+| `alex` | Alex Rivera, half-marathon runner | `demo1234` |
+| `maya` | Maya Lin, desk-bound tech lead | `demo1234` |
+| `jordan` | Jordan Patel, strength athlete | `demo1234` |
+
+The landing page is public (its watch shows sample stats until you sign in); every other page redirects to `/login`.
 
 To run the tests:
 
@@ -96,10 +104,18 @@ Copy `.env.example` to `.env` and set one key. The server uses OpenRouter if `OP
 
 Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_PER_DAY` (60) LLM replies per IP, `CC_LLM_GLOBAL_PER_DAY` (500) in total, `CC_WRITES_PER_MIN` (60) writes per IP.
 
+## Accounts and sessions
+
+- Sign-in (`auth.py`) issues an HS256 JWT (PyJWT) with `iss`, `aud`, `iat`, `nbf`, `exp` (8 hours) and a random `jti`; decoding pins the algorithm and requires every claim, so `alg: none`, wrong-key, expired and tampered tokens are rejected.
+- The browser keeps the token in an HttpOnly, Secure, SameSite=Strict cookie that page scripts cannot read. API clients can send `Authorization: Bearer <token>` instead (`POST /api/auth/login` returns it).
+- Sign-out revokes the token's `jti` and clears the cookie. Sign-in attempts are rate-limited per IP (`CC_LOGINS_PER_5MIN`, default 10).
+- Passwords are scrypt-hashed and compared in constant time, and unknown usernames take as long as known ones. Set `CC_DEMO_PASSWORD` to change the shared demo password and `CC_SHOW_DEMO_PASSWORD=0` to stop the sign-in page showing it.
+- The signing key is `CC_JWT_SECRET` (32+ characters) or, if unset, a random key generated once into `data/.jwt_secret` (mode 600).
+- Each account can only read and change its own profile (403 otherwise). Its records live in one JSON file under `data/accounts/` and persist across sign-ins and devices, which is what lets the coach remember earlier sessions.
+
 ## Hosting
 
-- Each browser gets a private sandbox: a random id in an HttpOnly, SameSite=Strict cookie and its own JSON file under `data/sandboxes/`. Visitors cannot see or change each other's data. Reads never create files; sandboxes unused for 14 days are deleted, and at most 2,000 are kept.
-- Writes are atomic and locked per sandbox. Request bodies are capped at 256 KB, writes must be JSON, and every field is range-checked.
+- Writes are atomic and locked per account. Request bodies are capped at 256 KB, writes must be JSON, and every field is range-checked.
 - The page sends a strict Content-Security-Policy (no inline or third-party scripts). Chart.js and Lucide are vendored in `static/vendor/`; Tailwind is built ahead of time (`frontend/README.md`).
 - `/docs` and `/openapi.json` are disabled.
 - On this machine the app and its Tailscale Funnel run as systemd user services: `systemctl --user status carecompanion carecompanion-tailscaled`. Logs: `journalctl --user -u carecompanion -f`.
@@ -117,7 +133,8 @@ Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_
 - `coach.py`: the agent: providers (Azure OpenAI first), prompts, memory extraction, offline replies.
 - `demo.py`: the three-session simulation behind `/demo`.
 - `features.py`: feature definitions shared by training and serving.
-- `sandbox.py`, `ratelimit.py`: per-visitor storage and rate limiting.
+- `auth.py`: demo accounts, password hashing and JWT issue, verify and revoke.
+- `sandbox.py`, `ratelimit.py`: per-account storage and rate limiting.
 - `demo_data.py`: the three demo personas.
 - `static/`: the dashboard (`index.html`, `app.js`, `tracker.js`, built `app.css`).
 - `test_app.py`: API, sandbox, security, feature-parity and coach tests.

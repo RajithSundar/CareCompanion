@@ -1,4 +1,4 @@
-  <!-- Site header: wordmark, page links, profile, theme, coach status -->
+  <!-- Site header: wordmark, page links, account (sign in / sign out), theme, coach status -->
   <header class="sticky top-0 z-30 bg-paper border-b border-rule">
     <div class="shell h-16 flex items-center justify-between gap-4">
       <div class="flex items-center gap-6 min-w-0">
@@ -21,15 +21,7 @@
         </nav>
 
       <div class="flex items-center gap-2.5 shrink-0">
-        <div class="flex items-center gap-2 bg-paper-2 border border-rule-2 rounded-md px-2.5 h-9">
-          <i data-lucide="user" class="w-3.5 h-3.5 text-cool shrink-0" aria-hidden="true"></i>
-          <label for="personaSelect" class="sr-only">Active athlete profile</label>
-          <select id="personaSelect" class="bg-paper-2 text-xs font-medium text-ink focus:outline-none cursor-pointer max-w-[8.5rem] sm:max-w-none text-ellipsis">
-            <option value="P01">Alex Rivera (Runner)</option>
-            <option value="P07">Maya Lin (Tech Lead)</option>
-            <option value="P12">Jordan Patel (Strength)</option>
-          </select>
-        </div>
+        <!-- @account -->
 
         <button id="themeToggleBtn" type="button" aria-pressed="false" aria-label="Dark mode" class="inline-flex items-center gap-2 px-2.5 sm:px-3 h-9 rounded-md text-xs font-medium border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">
           <i data-lucide="moon" class="w-3.5 h-3.5 sm:hidden" aria-hidden="true"></i>

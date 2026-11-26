@@ -2,13 +2,15 @@
 CareCompanion — FastAPI backend.
 
 A next-day recovery forecast (scikit-learn, see train_model.py) plus a coaching chat
-that remembers durable facts across sessions. Each visitor works in a private
-sandbox (see sandbox.py). The LLM key lives only on the server.
+that remembers durable facts across sessions. Visitors sign in with a demo account
+(JWT, see auth.py); each account's records persist across logins and devices in its
+own file (see sandbox.py). The LLM key lives only on the server.
 """
 
 from __future__ import annotations
 
 import copy
+import html
 import json
 import logging
 import os
@@ -21,17 +23,19 @@ import joblib
 import pandas as pd
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+import auth
 import coach
 import demo
 from coach import llm_config, make_llm_client
 from demo_data import DEFAULT_APP_STATE, DEFAULT_MEMORY_STORE
 from features import FEATURE_COLS, features_for_app_day
 from ratelimit import RateLimiter
-from sandbox import SandboxStore, new_sid, valid_sid
+from auth import Account
+from sandbox import SandboxStore
 
 load_dotenv()
 
@@ -43,11 +47,9 @@ MODELS_DIR = BASE_DIR / "models"
 DATA_DIR = BASE_DIR / "data"
 STATIC_DIR = BASE_DIR / "static"
 
-SID_COOKIE = "cc_sid"
-SID_MAX_AGE = 30 * 86400
 MAX_BODY_BYTES = 256 * 1024
 
-# Per-persona caps inside one sandbox.
+# Per-account caps.
 MAX_DAYS = 366
 MAX_SESSIONS = 50
 MAX_MESSAGES_PER_SESSION = 200
@@ -57,10 +59,12 @@ MAX_MEMORIES = 60
 LIMIT_WRITES = (int(os.getenv("CC_WRITES_PER_MIN", "60")), 60)
 LIMIT_COACH_IP = (int(os.getenv("CC_COACH_PER_10MIN", "15")), 600)
 LIMIT_COACH_IP_DAY = (int(os.getenv("CC_COACH_PER_DAY", "60")), 86400)
+LIMIT_LOGIN = (int(os.getenv("CC_LOGINS_PER_5MIN", "10")), 300)
 LIMIT_LLM_GLOBAL_DAY = (int(os.getenv("CC_LLM_GLOBAL_PER_DAY", "500")), 86400)
 
 
-store = SandboxStore(Path(os.getenv("CC_SANDBOX_DIR", str(DATA_DIR / "sandboxes"))))
+# One data file per demo account, kept indefinitely (no age pruning).
+store = SandboxStore(Path(os.getenv("CC_ACCOUNT_DIR", str(DATA_DIR / "accounts"))), max_sandboxes=100, max_age_days=36500)
 limiter = RateLimiter()
 
 app = FastAPI(
@@ -126,22 +130,36 @@ def is_https(request: Request) -> bool:
     return request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
 
 
-def sandbox_id(request: Request, response: Response) -> str:
-    sid = request.cookies.get(SID_COOKIE)
-    if not valid_sid(sid):
-        sid = new_sid()
-    # Refresh on every request so active visitors keep their sandbox.
-    response.set_cookie(
-        SID_COOKIE, sid, max_age=SID_MAX_AGE, httponly=True, samesite="strict",
-        secure=is_https(request), path="/",
-    )
-    return sid
+def request_token(request: Request) -> Optional[str]:
+    header = request.headers.get("authorization", "")
+    if header.lower().startswith("bearer "):
+        return header[7:].strip()
+    return request.cookies.get(auth.COOKIE)
+
+
+def optional_user(request: Request) -> Optional[Account]:
+    return auth.account_for(request_token(request))
+
+
+def current_user(request: Request) -> Account:
+    user = optional_user(request)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Sign in to continue.", headers={"WWW-Authenticate": "Bearer"})
+    return user
 
 
 def normalize_pid(participant_id: str) -> str:
     pid = participant_id.strip().lower()
     if pid not in DEFAULT_APP_STATE:
         raise HTTPException(status_code=404, detail="Participant not found.")
+    return pid
+
+
+def own_pid(participant_id: str, user: Account) -> str:
+    """The signed-in account may only read or change its own profile."""
+    pid = normalize_pid(participant_id)
+    if pid != user.pid:
+        raise HTTPException(status_code=403, detail="This profile belongs to another account.")
     return pid
 
 
@@ -328,7 +346,7 @@ class HistoryTurn(BaseModel):
 
 
 class CoachRequest(BaseModel):
-    participant_id: str = Field(default="p01", max_length=10)
+    participant_id: Optional[str] = Field(default=None, max_length=10)  # defaults to the signed-in account
     session_id: Optional[str] = Field(default=None, max_length=20)
     session_label: Optional[str] = Field(default=None, max_length=40)
     message: str = Field(min_length=1, max_length=2000)
@@ -369,16 +387,19 @@ PAGES: Dict[str, Dict[str, str]] = {
     "checkin": {"title": "Check-in: CareCompanion", "description": "Log today's biometrics or import a block of days."},
     "memory": {"title": "Memory: CareCompanion", "description": "The goals, constraints and rules the coach keeps on file."},
     "data": {"title": "Data: CareCompanion", "description": "Trends, the day-by-day ledger, and how the forecast model compares with its baselines."},
+    "login": {"title": "Sign in: CareCompanion", "description": "Sign in with a demo account to see its forecast, sessions and saved memory."},
 }
+PUBLIC_PAGES = {"home", "login"}
 PAGE_SCRIPTS = {
     "home": '  <script defer src="/static/tracker.js"></script>\n',
     "data": '  <script defer src="/static/vendor/chart.umd.min.js"></script>\n',
     "demo": '  <script defer src="/static/demo.js"></script>\n',
+    "login": '  <script defer src="/static/login.js"></script>\n',
 }
 _PAGE_CACHE: Dict[str, Any] = {}
 
 
-def render_page(name: str) -> str:
+def assemble_page(name: str) -> str:
     """Assemble static/pages/<name>.html with the shared partials. Cached until any source file changes."""
     parts = STATIC_DIR / "partials"
     sources = [STATIC_DIR / "pages" / f"{name}.html", *(parts / f for f in ("head.html", "header.html", "footer.html", "chrome.html"))]
@@ -401,15 +422,58 @@ def render_page(name: str) -> str:
     return html
 
 
+def account_html(user: Optional[Account]) -> str:
+    if user is None:
+        return ('<a href="/login" id="loginLink" class="inline-flex items-center gap-2 px-3 h-9 rounded-md text-xs font-medium '
+                'bg-accent text-accent-ink hover:opacity-90 whitespace-nowrap btn-transition">'
+                '<i data-lucide="log-in" class="w-3.5 h-3.5" aria-hidden="true"></i><span>Sign in</span></a>')
+    name = html.escape(user.name)
+    return (f'<div id="accountChip" data-pid="{html.escape(user.pid.upper())}" data-name="{name}" '
+            'class="flex items-center gap-2 bg-paper-2 border border-rule-2 rounded-md px-2.5 h-9 text-xs font-medium text-ink" '
+            f'title="Signed in as {html.escape(user.username)}">'
+            '<i data-lucide="user" class="w-3.5 h-3.5 text-cool shrink-0" aria-hidden="true"></i>'
+            f'<span class="max-w-[8.5rem] truncate">{name}</span></div>'
+            '<button id="logoutBtn" type="button" aria-label="Sign out" class="inline-flex items-center gap-2 px-2.5 sm:px-3 h-9 rounded-md text-xs font-medium '
+            'border border-rule-2 bg-paper-2 hover:border-accent text-ink whitespace-nowrap btn-transition">'
+            '<i data-lucide="log-out" class="w-3.5 h-3.5" aria-hidden="true"></i><span class="hidden sm:inline">Sign out</span></button>')
+
+
+def demo_accounts_html() -> str:
+    """The sign-in page's account list. The shared password is shown unless CC_SHOW_DEMO_PASSWORD=0."""
+    show = os.getenv("CC_SHOW_DEMO_PASSWORD", "1") != "0"
+    items = "".join(
+        f'<li><button type="button" class="login-account btn-transition" data-username="{html.escape(a.username)}">'
+        f'<span class="login-account-name">{html.escape(a.name)}</span>'
+        f'<span class="login-account-role">{html.escape(a.role)}</span>'
+        f'<span class="login-account-user">Username <code>{html.escape(a.username)}</code></span></button></li>'
+        for a in auth.ACCOUNTS.values()
+    )
+    note = (f'<p class="login-note">All three use the password <code id="demoPassword">{html.escape(auth.DEMO_PASSWORD)}</code>. '
+            'Pick one to sign in straight away.</p>') if show else '<p class="login-note">Ask the team for the demo password.</p>'
+    return f'<ul class="login-accounts">{items}</ul>{note}'
+
+
+def render_page(name: str, user: Optional[Account] = None) -> str:
+    html_out = assemble_page(name).replace("<!-- @account -->", "" if name == "login" else account_html(user))
+    if name == "login":
+        html_out = html_out.replace("<!-- @accounts -->", demo_accounts_html())
+    return html_out
+
+
 def page_route(name: str):
-    def handler():
-        return HTMLResponse(render_page(name))
+    def handler(request: Request):
+        user = optional_user(request)
+        if user is None and name not in PUBLIC_PAGES:
+            return RedirectResponse(f"/login?next=/{name}", status_code=303)
+        if user is not None and name == "login":
+            return RedirectResponse(auth.safe_next(request.query_params.get("next")), status_code=303)
+        return HTMLResponse(render_page(name, user))
     handler.__name__ = f"page_{name}"
     return handler
 
 
 app.add_api_route("/", page_route("home"), methods=["GET", "HEAD"], include_in_schema=False)
-for _name in ("demo", "forecast", "coach", "checkin", "memory", "data"):
+for _name in ("demo", "forecast", "coach", "checkin", "memory", "data", "login"):
     app.add_api_route(f"/{_name}", page_route(_name), methods=["GET", "HEAD"], include_in_schema=False)
 
 
@@ -422,6 +486,44 @@ def favicon():
 def healthz():
     bundle, _ = load_ml_bundle()
     return {"ok": True, "model_loaded": bool(bundle)}
+
+
+class LoginInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    username: str = Field(min_length=1, max_length=40)
+    password: str = Field(min_length=1, max_length=200)
+
+
+def set_token_cookie(response: Response, request: Request, token: str) -> None:
+    response.set_cookie(auth.COOKIE, token, max_age=auth.TOKEN_TTL_S, httponly=True, samesite="strict",
+                        secure=is_https(request), path="/")
+
+
+@app.post("/api/auth/login")
+def login(payload: LoginInput, request: Request, response: Response):
+    wait = limiter.hit("login", client_ip(request), *LIMIT_LOGIN)
+    if wait:
+        raise HTTPException(status_code=429, detail="Too many sign-in attempts. Try again in a few minutes.",
+                            headers={"Retry-After": str(int(wait))})
+    user = auth.authenticate(payload.username, payload.password)
+    if user is None:
+        raise HTTPException(status_code=401, detail="Wrong username or password.")
+    token = auth.issue_token(user)
+    set_token_cookie(response, request, token)
+    log.info("login %s", user.username)
+    return {"user": user.public(), "access_token": token, "token_type": "bearer", "expires_in": auth.TOKEN_TTL_S}
+
+
+@app.post("/api/auth/logout")
+def logout(request: Request, response: Response):
+    auth.revoke(request_token(request))
+    response.delete_cookie(auth.COOKIE, path="/", httponly=True, samesite="strict", secure=is_https(request))
+    return {"ok": True}
+
+
+@app.get("/api/auth/me")
+def me(user: Account = Depends(current_user)):
+    return {"user": user.public()}
 
 
 @app.get("/api/model-info")
@@ -447,9 +549,9 @@ def predict_recovery(payload: BiometricInput):
 
 
 @app.get("/api/predict/{participant_id}")
-def predict_for_day(participant_id: str, day_index: Optional[int] = None, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    days = store.read(sid)["state"][pid]["days"]
+def predict_for_day(participant_id: str, day_index: Optional[int] = None, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    days = store.read(user.store_key)["state"][pid]["days"]
     idx = clamp_index(day_index, len(days))
     bio = build_biometrics_from_days(days, idx)
     result = run_ml_prediction(bio)
@@ -459,9 +561,9 @@ def predict_for_day(participant_id: str, day_index: Optional[int] = None, sid: s
 
 
 @app.get("/api/state/{participant_id}")
-def get_participant_state(participant_id: str, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    data = store.read(sid)
+def get_participant_state(participant_id: str, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    data = store.read(user.store_key)
     pdata = data["state"][pid]
     return {
         "participant_id": pid,
@@ -477,9 +579,9 @@ def get_participant_state(participant_id: str, sid: str = Depends(sandbox_id)):
 
 
 @app.post("/api/checkin/{participant_id}")
-def log_biometric_checkin(participant_id: str, payload: CheckinInput, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    with store.edit(sid) as data:
+def log_biometric_checkin(participant_id: str, payload: CheckinInput, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    with store.edit(user.store_key) as data:
         pdata = data["state"][pid]
         days = pdata["days"]
         if payload.mode == "update":
@@ -521,9 +623,9 @@ def log_biometric_checkin(participant_id: str, payload: CheckinInput, sid: str =
 
 
 @app.post("/api/sessions/{participant_id}")
-def create_session(participant_id: str, payload: NewSessionInput, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    with store.edit(sid) as data:
+def create_session(participant_id: str, payload: NewSessionInput, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    with store.edit(user.store_key) as data:
         pdata = data["state"][pid]
         sessions = pdata["sessions"]
         if len(sessions) >= MAX_SESSIONS:
@@ -559,9 +661,9 @@ def create_session(participant_id: str, payload: NewSessionInput, sid: str = Dep
 
 @app.patch("/api/sessions/{participant_id}/{session_id}/plan/{item_id}")
 def update_plan_item(participant_id: str, session_id: str, item_id: str, payload: PlanItemUpdate,
-                     sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    with store.edit(sid) as data:
+                     user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    with store.edit(user.store_key) as data:
         session = find_session(data["state"][pid], session_id)
         if session is None:
             raise HTTPException(status_code=404, detail="Session not found.")
@@ -573,15 +675,15 @@ def update_plan_item(participant_id: str, session_id: str, item_id: str, payload
 
 
 @app.post("/api/import/{participant_id}")
-def import_days(participant_id: str, payload: ImportDaysInput, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
+def import_days(participant_id: str, payload: ImportDaysInput, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
     dated = [d.date for d in payload.days]
     if any(dated) and not all(dated):
         raise HTTPException(status_code=422, detail="Give a date for every record or for none.")
     if all(dated) and dated != sorted(dated):
         raise HTTPException(status_code=422, detail="Records must be in date order.")
     days = [day_record(d, f"Day {i + 1}") for i, d in enumerate(payload.days)]
-    with store.edit(sid) as data:
+    with store.edit(user.store_key) as data:
         pdata = data["state"][pid]
         pdata["days"] = days
         pdata["baseline"] = recompute_baseline(days)
@@ -593,24 +695,24 @@ def import_days(participant_id: str, payload: ImportDaysInput, sid: str = Depend
 
 
 @app.post("/api/state/{participant_id}/reset")
-def reset_full_state(participant_id: str, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    with store.edit(sid) as data:
+def reset_full_state(participant_id: str, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    with store.edit(user.store_key) as data:
         data["state"][pid] = copy.deepcopy(DEFAULT_APP_STATE[pid])
         data["memory"][pid] = copy.deepcopy(DEFAULT_MEMORY_STORE[pid])
         return {"participant_id": pid, "state": data["state"][pid], "memories": data["memory"][pid]}
 
 
 @app.get("/api/memory/{participant_id}")
-def get_memory(participant_id: str, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    return {"participant_id": pid, "memories": store.read(sid)["memory"][pid]}
+def get_memory(participant_id: str, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    return {"participant_id": pid, "memories": store.read(user.store_key)["memory"][pid]}
 
 
 @app.post("/api/memory/{participant_id}")
-def add_memory(participant_id: str, item: MemoryItemInput, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    with store.edit(sid) as data:
+def add_memory(participant_id: str, item: MemoryItemInput, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    with store.edit(user.store_key) as data:
         memories = data["memory"][pid]
         if len(memories) >= MAX_MEMORIES:
             raise HTTPException(status_code=409, detail=f"At most {MAX_MEMORIES} memories. Delete some first.")
@@ -620,9 +722,9 @@ def add_memory(participant_id: str, item: MemoryItemInput, sid: str = Depends(sa
 
 
 @app.delete("/api/memory/{participant_id}/{memory_id}")
-def delete_memory(participant_id: str, memory_id: str, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    with store.edit(sid) as data:
+def delete_memory(participant_id: str, memory_id: str, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    with store.edit(user.store_key) as data:
         memories = data["memory"][pid]
         filtered = [m for m in memories if m.get("id") != memory_id]
         if len(filtered) == len(memories):
@@ -632,9 +734,9 @@ def delete_memory(participant_id: str, memory_id: str, sid: str = Depends(sandbo
 
 
 @app.post("/api/memory/{participant_id}/reset")
-def reset_memory(participant_id: str, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(participant_id)
-    with store.edit(sid) as data:
+def reset_memory(participant_id: str, user: Account = Depends(current_user)):
+    pid = own_pid(participant_id, user)
+    with store.edit(user.store_key) as data:
         data["memory"][pid] = copy.deepcopy(DEFAULT_MEMORY_STORE[pid])
         return {"participant_id": pid, "memories": data["memory"][pid]}
 
@@ -656,12 +758,12 @@ class DemoRequest(BaseModel):
 
 
 @app.get("/api/demo/profiles")
-def demo_profiles():
+def demo_profiles(user: Account = Depends(current_user)):
     return {"profiles": demo.profiles()}
 
 
 @app.post("/api/demo/run")
-def run_demo(req: DemoRequest, request: Request):
+def run_demo(req: DemoRequest, request: Request, user: Account = Depends(current_user)):
     """Three simulated sessions for one profile, with and without memory. Stateless: nothing is saved."""
     cfg = llm_config()
     client = None
@@ -678,9 +780,9 @@ def run_demo(req: DemoRequest, request: Request):
 
 
 @app.post("/api/coach")
-def coach_chat(req: CoachRequest, request: Request, sid: str = Depends(sandbox_id)):
-    pid = normalize_pid(req.participant_id)
-    snapshot = store.read(sid)
+def coach_chat(req: CoachRequest, request: Request, user: Account = Depends(current_user)):
+    pid = own_pid(req.participant_id or user.pid, user)
+    snapshot = store.read(user.store_key)
     pdata = snapshot["state"][pid]
     memories: List[Dict[str, str]] = snapshot["memory"][pid]
     session = find_session(pdata, req.session_id)
@@ -730,7 +832,7 @@ def coach_chat(req: CoachRequest, request: Request, sid: str = Depends(sandbox_i
             newly_extracted = coach.extract_new_memories(client, cfg, req.message, session_label, memories)
 
     pred_label = ml_result["predicted_recovery_state"] if ml_result else "Unavailable"
-    with store.edit(sid) as data:
+    with store.edit(user.store_key) as data:
         mem_list = data["memory"][pid]
         if newly_extracted:
             room = max(0, MAX_MEMORIES - len(mem_list))

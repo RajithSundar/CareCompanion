@@ -1,7 +1,7 @@
-"""Per-visitor storage.
+"""Per-account storage.
 
-Each browser gets a random sandbox id in an HttpOnly cookie and its own copy of the
-demo data, so one visitor can never see or change another visitor's records.
+Each demo account has its own JSON file (keyed by a hash of the username, see
+auth.Account.store_key) seeded from the demo data, so accounts never share records.
 
 * Reads of a sandbox that was never written return a fresh copy of the seed data
   without touching disk, so crawlers do not create files.

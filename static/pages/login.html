@@ -1,0 +1,36 @@
+<!-- @head -->
+<body class="bg-paper text-ink antialiased" data-page="{{page}}">
+<!-- @header -->
+  <main id="login">
+    <section class="page-body login-body">
+      <div class="shell login-grid">
+        <div class="login-copy">
+          <h1 class="page-title">Sign in to your coach</h1>
+          <p class="page-lead">Each account keeps its own days, sessions and saved memory, so the coach picks up where you left off.</p>
+
+          <form id="loginForm" class="login-form" novalidate>
+            <div class="login-field">
+              <label for="loginUsername">Username</label>
+              <input id="loginUsername" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required maxlength="40" class="login-input" />
+            </div>
+            <div class="login-field">
+              <label for="loginPassword">Password</label>
+              <input id="loginPassword" name="password" type="password" autocomplete="current-password" required maxlength="200" class="login-input" />
+            </div>
+            <p id="loginError" class="login-error" role="alert" hidden></p>
+            <button id="loginSubmit" type="submit" class="login-submit btn-transition">Sign in</button>
+            <noscript><p class="login-error">Signing in needs JavaScript turned on.</p></noscript>
+          </form>
+        </div>
+
+        <aside class="login-aside" aria-labelledby="demoAccountsTitle">
+          <h2 id="demoAccountsTitle" class="login-aside-title">Demo accounts</h2>
+          <!-- @accounts -->
+        </aside>
+      </div>
+    </section>
+  </main>
+<!-- @footer -->
+<!-- @chrome -->
+</body>
+</html>
