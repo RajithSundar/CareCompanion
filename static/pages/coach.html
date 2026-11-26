@@ -5,13 +5,13 @@
     <section class="page-head">
       <div class="shell page-head-grid">
         <div class="page-head-copy">
-          <h1 class="page-title">Coach</h1>
-          <p class="page-lead">Each session reads the ones before it. Pick a session, or open a new one.</p>
+          <h1 class="page-title">Your coach</h1>
+          <p class="page-lead">An AI you can ask about training. It remembers your goals, injuries and what it told you last time.</p>
         </div>
         <div class="page-head-aside">
             <button id="newSessionBtn" type="button" class="inline-flex items-center gap-2 px-4 h-10 rounded-md bg-paper-2 border border-rule-2 hover:border-accent text-ink text-xs font-medium whitespace-nowrap btn-transition">
             <i data-lucide="plus" class="w-4 h-4 text-accent" aria-hidden="true"></i>
-            <span>New session</span>
+            <span>Start a new chat</span>
           </button>
         </div>
       </div>
@@ -23,15 +23,15 @@
           <div class="lg:col-span-4 space-y-4 min-w-0">
             <div class="panels">
               <div class="px-4 py-3 flex items-center justify-between">
-                <h3 class="text-base text-ink">Session trail</h3>
-                <span class="text-xs text-muted">Select session</span>
+                <h3 class="text-base text-ink">Past chats</h3>
+                <span class="text-xs text-muted">Pick one to reopen</span>
               </div>
               <div id="sessionStepper" class="divide-y divide-rule bg-paper-3"></div>
             </div>
 
             <div class="panels">
               <div class="px-4 py-3 flex items-center justify-between">
-                <h3 class="text-base text-ink">Training protocol</h3>
+                <h3 class="text-base text-ink">Your plan</h3>
                 <span id="planAdherenceBadge" class="measured text-xs font-medium px-2 py-0.5 rounded bg-accent text-accent-ink">0%</span>
               </div>
               <div id="actionPlanList" class="p-3 space-y-2 bg-paper-3"></div>
@@ -49,7 +49,7 @@
                 <p id="sessionSubtitle" class="text-xs text-muted mt-1">Establishing biometric baselines and half-marathon goal</p>
               </div>
               <button id="nextSessionBtn" type="button" class="inline-flex items-center gap-1.5 px-3.5 h-9 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap btn-transition">
-                <span>Next session</span>
+                <span>Next chat</span>
                 <i data-lucide="arrow-right" class="w-3.5 h-3.5" aria-hidden="true"></i>
               </button>
             </div>
@@ -60,7 +60,7 @@
               <div id="quickPrompts" class="flex flex-wrap items-center gap-2"></div>
               <form id="chatForm" class="flex items-center gap-2.5">
                 <label for="chatInput" class="sr-only">Message CareCompanion</label>
-                <input id="chatInput" type="text" placeholder="Ask CareCompanion, grounded in the next-day forecast and session memory..." class="flex-1 h-10 bg-paper-2 border border-rule-2 rounded-md px-3.5 text-sm text-ink placeholder:text-muted focus:outline-none" />
+                <input id="chatInput" type="text" placeholder="Ask anything, e.g. Should I run today?" class="flex-1 h-10 bg-paper-2 border border-rule-2 rounded-md px-3.5 text-sm text-ink placeholder:text-muted focus:outline-none" />
                 <button id="sendChatBtn" type="submit" aria-label="Send message" class="inline-flex items-center justify-center px-4 h-10 rounded-md bg-accent text-accent-ink text-xs font-medium hover:opacity-90 whitespace-nowrap shrink-0 btn-transition">
                   <i data-lucide="send" class="w-4 h-4" aria-hidden="true"></i>
                 </button>

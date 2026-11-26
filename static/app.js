@@ -33,6 +33,27 @@ async function api(path, { method = 'GET', body } = {}) {
 
 const pid = () => state.activePersonaId.toLowerCase();
 
+// The model's three classes, in everyday words.
+const PLAIN = { 'Ready': 'Ready to train', 'Moderate': 'Take it easy', 'Deload Needed': 'Rest day' };
+const plain = label => PLAIN[label] || label;
+// Model feature names, in everyday words (the raw name stays in the tooltip).
+const FEATURE_NAMES = {
+  steps: 'Steps', resting_heart_rate: 'Resting heart rate', sleep_score: 'Sleep score', deep_sleep_min: 'Deep sleep',
+  rem_sleep_min: 'REM sleep', cardio_min: 'Hard exercise', peak_min: 'All-out exercise', readiness: 'Feeling ready today',
+  fatigue: 'Freshness today', soreness: 'Muscles today', stress: 'Relaxed today', rhr_delta: 'Heart rate vs last week',
+  sleep_3d_avg: 'Sleep, 3 days', steps_3d_avg: 'Steps, 3 days', readiness_3d_avg: 'Feeling ready, 3 days',
+  fatigue_3d_avg: 'Freshness, 3 days', readiness_lag1: 'Feeling ready yesterday', fatigue_lag1: 'Freshness yesterday',
+  soreness_lag1: 'Muscles yesterday', stress_lag1: 'Relaxed yesterday', sleep_lag1: 'Sleep yesterday',
+  readiness_change: 'Change in feeling ready', fatigue_change: 'Change in freshness', today_state_num: "Today's state",
+  state_streak: 'Days in the same state', readiness_7d_avg: 'Feeling ready, 7 days', fatigue_7d_avg: 'Freshness, 7 days',
+  readiness_7d_std: 'Ups and downs, 7 days'
+};
+const MEANING = {
+  'Ready': 'Your body looks recovered. A hard session should be fine.',
+  'Moderate': 'Train, but keep it light. Skip anything all-out.',
+  'Deload Needed': 'Your body needs recovery. Rest, or just walk and stretch.'
+};
+
 // Each page has only some of the dashboard's elements. $() returns a detached stand-in
 // for ones that are missing, so shared render code can run on every page unchanged.
 function $(id) {
@@ -64,7 +85,7 @@ const FALLBACK_PERSONA = {
   id: 'P01', name: 'Alex Rivera', role: 'Half-Marathon Prep, Morning Runner',
   baseline: { steps: 9400, rhr: 58, sleepScore: 79, readiness: 7 },
   days: [
-    { day: 'Day 1', steps: 9650, rhr: 58, sleepScore: 80, deepMin: 88, remMin: 95, readiness: 8, fatigue: 2, soreness: 2, stress: 2, fatBurn: 38, cardio: 26, peak: 8 }
+    { day: 'Day 1', steps: 9650, rhr: 58, sleepScore: 80, deepMin: 88, remMin: 95, readiness: 8, fatigue: 4, soreness: 4, stress: 4, fatBurn: 38, cardio: 26, peak: 8 }
   ],
   sessions: [
     {
@@ -303,7 +324,8 @@ function renderOverview() {
   });
 
   const clsEl = $('mlPredClass');
-  clsEl.textContent = pred === undefined ? 'Loading…' : pred === null ? 'Unavailable' : pred.label;
+  clsEl.textContent = pred === undefined ? 'Loading…' : pred === null ? 'Unavailable' : plain(pred.label);
+  $('mlPredMeaning').textContent = pred ? MEANING[pred.label] || '' : '';
   clsEl.className = `forecast-label ${
     !pred ? 'text-muted' : pred.label === 'Ready' ? 'text-cool' : pred.label === 'Deload Needed' ? 'text-accent' : 'text-ink'
   }`;
@@ -311,7 +333,7 @@ function renderOverview() {
   $('mlProbPills').innerHTML = !pred ? '' : ['Ready', 'Moderate', 'Deload Needed'].filter(k => k in pred.probs).map(k => {
     const pct = Math.round(pred.probs[k] * 100);
     return `<div class="prob-row${k === pred.label ? ' is-top' : ''}">
-      <span class="prob-name">${esc(k)}</span>
+      <span class="prob-name">${esc(plain(k))}</span>
       <span class="prob-track"><span class="prob-fill" style="transform: scaleX(${(pct / 100).toFixed(3)})"></span></span>
       <span class="prob-pct">${pct}%</span>
     </div>`;
@@ -327,7 +349,7 @@ function renderOverview() {
     const barColor = idx === 0 ? 'bg-accent' : 'bg-cool';
     return `
       <div class="flex items-center gap-3 text-xs">
-        <span class="w-36 truncate text-ink-2">${esc(f.name)}</span>
+        <span class="w-36 truncate text-ink-2" title="${esc(f.name)}">${esc(FEATURE_NAMES[f.name] || f.name)}</span>
         <div class="flex-1 h-2 bg-paper-3 border border-rule rounded-full overflow-hidden">
           <div class="h-full ${barColor} rounded-full" style="width: ${pct}%"></div>
         </div>
@@ -439,7 +461,7 @@ function renderKPIs() {
 
   $('kpiReadiness').textContent = `${d.readiness}/10`;
   const readEl = $('kpiReadinessDelta');
-  readEl.textContent = d.readiness >= 7 ? 'Ready' : d.readiness >= 5 ? 'Moderate' : 'Deload';
+  readEl.textContent = d.readiness >= 7 ? 'Good' : d.readiness >= 5 ? 'OK' : 'Low';
   readEl.className = `col-span-3 text-right text-xs font-medium ${d.readiness >= 7 ? 'text-cool' : 'text-accent'}`;
 }
 
@@ -464,7 +486,7 @@ function renderUpdateInputs() {
   $('valStress').textContent = d.stress;
 
   const badge = $('liveUpdateBadge');
-  badge.textContent = pred ? `Forecast: ${pred.label}` : 'Forecast unavailable';
+  badge.textContent = pred ? `Tomorrow: ${plain(pred.label)}` : 'Forecast unavailable';
   badge.className = `px-2.5 py-1 rounded text-xs font-medium border ${
     pred && pred.label === 'Deload Needed'
       ? 'bg-accent-soft text-accent border-accent'
@@ -523,7 +545,7 @@ function renderChart() {
   } else if (state.chartMode === 'recovery') {
     datasets = [
       {
-        label: 'Resting HR (bpm)',
+        label: 'Resting heart rate (bpm)',
         data: visibleDays.map(d => d.rhr),
         borderColor: accent,
         backgroundColor: accent,
@@ -533,7 +555,7 @@ function renderChart() {
         yAxisID: 'y'
       },
       {
-        label: 'PMSys readiness',
+        label: 'How ready you felt (0 to 10)',
         data: visibleDays.map(d => d.readiness),
         borderColor: cool,
         backgroundColor: cool,
@@ -550,9 +572,9 @@ function renderChart() {
     };
   } else {
     datasets = [
-      { label: 'Fat burn (min)', data: visibleDays.map(d => (d.fatBurn ?? null)), backgroundColor: cool, stack: 'hr' },
-      { label: 'Cardio (min)', data: visibleDays.map(d => d.cardio), backgroundColor: accent, stack: 'hr' },
-      { label: 'Peak (min)', data: visibleDays.map(d => d.peak), backgroundColor: ink, stack: 'hr' }
+      { label: 'Light exercise (min)', data: visibleDays.map(d => (d.fatBurn ?? null)), backgroundColor: cool, stack: 'hr' },
+      { label: 'Hard exercise (min)', data: visibleDays.map(d => d.cardio), backgroundColor: accent, stack: 'hr' },
+      { label: 'All-out exercise (min)', data: visibleDays.map(d => d.peak), backgroundColor: ink, stack: 'hr' }
     ];
     scales = {
       y: { stacked: true, beginAtZero: true, grid: { color: rule }, ticks: { color: muted } },
@@ -697,7 +719,7 @@ function renderMemoryPanel() {
   listEl.innerHTML = p.memories.map(m => `
     <div class="p-3 rounded-md border border-rule bg-paper-3 hover:border-rule-2 btn-transition group">
       <div class="flex items-center justify-between gap-2 mb-1.5">
-        <span class="px-2 py-0.5 rounded text-xs font-medium border ${catColors[m.category] || catColors.Baseline}">${esc(m.category === 'Adaptation' ? 'Rule' : m.category)}</span>
+        <span class="px-2 py-0.5 rounded text-xs font-medium border ${catColors[m.category] || catColors.Baseline}">${esc(({ Goal: 'Goal', Constraint: 'Injury or limit', Baseline: 'About you', Adaptation: 'Rule' }[m.category] || m.category))}</span>
         <div class="flex items-center gap-2">
           <span class="text-xs text-muted">${esc(m.session)}</span>
           <button type="button" data-del-mem="${esc(m.id)}" aria-label="Delete memory" class="del-mem-btn opacity-0 group-hover:opacity-100 focus:opacity-100 text-muted hover:text-accent"><i data-lucide="trash-2" class="w-3.5 h-3.5" aria-hidden="true"></i></button>
@@ -904,13 +926,13 @@ $('applyCheckinBtn').addEventListener('click', async (e) => {
   } : null;
   renderAll();
   const pred = state.livePrediction;
-  showToast(pred ? `Saved ${data.day_record.day} (forecast for the next day: ${pred.label})` : `Saved ${data.day_record.day}`);
+  showToast(pred ? `Saved ${data.day_record.day}. Tomorrow: ${plain(pred.label)}` : `Saved ${data.day_record.day}`);
 
   const d = data.day_record;
   const prompt = `I just logged ${d.day}: ${d.steps} steps, RHR ${d.rhr} bpm, sleep ${d.sleepScore}/100, readiness ${d.readiness}/10, fatigue ${d.fatigue}/5, soreness ${d.soreness}/5, stress ${d.stress}/5. How should I adjust my plan?`;
   btn.disabled = false;
   $('checkinResultTitle').textContent = `Saved ${d.day}`;
-  $('checkinResultText').textContent = pred ? `Forecast for the next day: ${pred.label}.` : 'The forecast is unavailable right now.';
+  $('checkinResultText').textContent = pred ? `Tomorrow looks like: ${plain(pred.label)}.` : 'The forecast is unavailable right now.';
   $('checkinResult').classList.remove('hidden');
   $('checkinAskCoach').onclick = () => {
     try { sessionStorage.setItem('cc_pending_prompt', JSON.stringify({ persona: p.id, session: s.id, text: prompt })); } catch (e) {}
@@ -988,7 +1010,7 @@ function parseImport(raw) {
 }
 
 $('fillSampleImportBtn').addEventListener('click', () => {
-  $('importTextarea').value = 'day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress\nDay 1,9100,59,81,85,92,22,6,8,2,2,2\nDay 2,10400,58,83,88,95,24,7,8,2,2,2\nDay 3,6200,64,61,50,66,8,0,4,4,4,4\nDay 4,7900,60,76,70,80,14,3,7,3,2,2';
+  $('importTextarea').value = 'day,steps,rhr,sleepScore,deepMin,remMin,cardio,peak,readiness,fatigue,soreness,stress\nDay 1,9100,59,81,85,92,22,6,8,4,4,4\nDay 2,10400,58,83,88,95,24,7,8,4,4,4\nDay 3,6200,64,61,50,66,8,0,4,2,2,2\nDay 4,7900,60,76,70,80,14,3,7,3,4,4';
 });
 $('confirmImportBtn').addEventListener('click', async () => {
   const raw = $('importTextarea').value.trim();

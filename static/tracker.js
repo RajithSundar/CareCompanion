@@ -125,6 +125,8 @@
     };
   }
 
+  const PLAIN = { 'Ready': 'ready to train', 'Moderate': 'take it easy', 'Deload Needed': 'rest day' };
+
   function render(d) {
     if (d && d.empty) {
       ['trkSteps', 'trkRhr', 'trkSleep', 'trkReadyVal', 'trkForecastVal'].forEach(id => { el(id).textContent = '--'; });
@@ -141,10 +143,10 @@
     const goal = 10000;
     el('trkRing').setAttribute('stroke-dasharray', `${Math.min(100, (Number(data.steps) / goal) * 100).toFixed(1)} 100`);
     el('trkForecast').dataset.state = data.forecast || 'none';
-    el('trkForecastVal').textContent = data.forecast ? data.forecast.replace(' Needed', '') : '--';
+    el('trkForecastVal').textContent = data.forecast ? ({ 'Ready': 'Train', 'Moderate': 'Easy', 'Deload Needed': 'Rest' }[data.forecast] || data.forecast) : '--';
     el('trackerSummary').textContent = data.sample
-      ? 'Random sample stats. No profile is loaded.'
-      : `${data.who}, ${data.day}: ${fmt(data.steps)} steps, resting heart rate ${data.rhr}, sleep score ${data.sleep}, readiness ${data.readiness} of 10.${data.forecast ? ` Tomorrow: ${data.forecast}.` : ''}`;
+      ? 'Example numbers. Sign in to see yours.'
+      : `${data.who}, ${data.day}: ${fmt(data.steps)} steps, resting heart rate ${data.rhr}, sleep score ${data.sleep}, readiness ${data.readiness} of 10.${data.forecast ? ` Tomorrow: ${PLAIN[data.forecast] || data.forecast}.` : ''}`;
   }
 
   // The watch shows the visitor's own clock.

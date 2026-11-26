@@ -37,9 +37,9 @@ REAL_SCRIPT = [
 def _label_state(readiness: Optional[float], fatigue: Optional[float]) -> Optional[str]:
     if readiness is None or fatigue is None:
         return None
-    if readiness >= 7 and fatigue <= 3:
+    if readiness >= 7 and fatigue >= 3:  # fatigue: 5 = very fresh (PMSys scale)
         return "Ready"
-    if readiness <= 4 or fatigue >= 4:
+    if readiness <= 4 or fatigue <= 2:
         return "Deload Needed"
     return "Moderate"
 
@@ -54,11 +54,12 @@ def _daily() -> Optional[pd.DataFrame]:
 
 
 def profiles() -> List[Dict[str, Any]]:
-    out = [{"id": pid, "label": f"{p['name']} (fictional persona)", "kind": "persona"} for pid, p in DEFAULT_APP_STATE.items()]
+    out = [{"id": pid, "label": f"{p['name'].split()[0]}, made up: {p['role'].split(',')[0].lower()}", "kind": "persona"}
+           for pid, p in DEFAULT_APP_STATE.items()]
     daily = _daily()
     if daily is not None:
         for pid, g in daily.groupby("participant_id"):
-            out.append({"id": f"pmdata:{pid}", "label": f"PMData participant {pid.upper()} ({len(g)} real days)", "kind": "pmdata"})
+            out.append({"id": f"pmdata:{pid}", "label": f"Real person {pid[1:].lstrip('0')} from the dataset ({len(g)} days)", "kind": "pmdata"})
     return out
 
 

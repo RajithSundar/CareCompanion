@@ -20,13 +20,13 @@ CLASSES = {"Deload Needed", "Moderate", "Ready"}
 
 FULL_BIOMETRICS = {
     "steps": 9650, "resting_heart_rate": 58, "sleep_score": 82, "deep_sleep_min": 88,
-    "rem_sleep_min": 95, "cardio_min": 26, "peak_min": 8, "readiness": 8, "fatigue": 2,
-    "soreness": 2, "stress": 2, "rhr_delta": 0.0, "sleep_3d_avg": 81.0, "steps_3d_avg": 9400.0,
-    "readiness_3d_avg": 7.7, "fatigue_3d_avg": 2.3,
+    "rem_sleep_min": 95, "cardio_min": 26, "peak_min": 8, "readiness": 8, "fatigue": 4,
+    "soreness": 4, "stress": 4, "rhr_delta": 0.0, "sleep_3d_avg": 81.0, "steps_3d_avg": 9400.0,
+    "readiness_3d_avg": 7.7, "fatigue_3d_avg": 3.7,
 }
 
 DAY = {"steps": 4100, "rhr": 65, "sleepScore": 58, "deepMin": 40, "remMin": 50,
-       "cardio": 3, "peak": 0, "readiness": 3, "fatigue": 5, "soreness": 4, "stress": 4}
+       "cardio": 3, "peak": 0, "readiness": 3, "fatigue": 1, "soreness": 2, "stress": 2}  # a bad day (PMSys: 5 = best)
 
 
 @pytest.fixture()
@@ -113,8 +113,8 @@ def test_server_features_match_training_pipeline():
 
 
 def test_lag_features_use_the_previous_calendar_day():
-    days = [dict(DAY, readiness=8, fatigue=2, date="2024-01-01"), dict(DAY, readiness=7, fatigue=2, date="2024-01-02"),
-            dict(DAY, readiness=3, fatigue=5, date="2024-01-05")]
+    days = [dict(DAY, readiness=8, fatigue=4, date="2024-01-01"), dict(DAY, readiness=7, fatigue=4, date="2024-01-02"),
+            dict(DAY, readiness=3, fatigue=1, date="2024-01-05")]
     d1 = features.features_for_app_day(days, 1)
     assert d1["readiness_lag1"] == 8 and d1["readiness_change"] == -1
     assert d1["today_state_num"] == 2 and d1["state_streak"] == 2       # Ready two days running
@@ -138,7 +138,7 @@ def test_raw_pmdata_loader_reads_all_required_files(tmp_path, monkeypatch):
     (pdir / "fitbit").mkdir()
     pd.DataFrame({
         "effective_time_frame": ["2019-11-01T08:00:00.000Z", "2019-11-02T08:00:00.000Z"],
-        "fatigue": [2, 4], "readiness": [8, 3], "soreness": [2, 3], "stress": [2, 3],
+        "fatigue": [4, 2], "readiness": [8, 3], "soreness": [4, 3], "stress": [4, 3],
     }).to_csv(pdir / "pmsys" / "wellness.csv", index=False)
     pd.DataFrame({
         "timestamp": ["2019-11-01T06:00:00Z", "2019-11-02T06:00:00Z"],
@@ -331,7 +331,7 @@ def test_checkin_new_day_appends_and_moves_session(client):
     assert body["day_index"] == 10 and len(body["days"]) == 11
     assert body["day_record"]["day"] == "Day 11"
     assert body["session"]["dayIndex"] == 10
-    assert "Forecast" in body["session"]["adaptation"]
+    assert "looks like" in body["session"]["adaptation"]
     state = client.get("/api/state/p01").json()
     assert state["sessions"][3]["dayIndex"] == 10  # persisted server-side
 
@@ -484,8 +484,8 @@ def test_frontend_escapes_rendered_data():
 
 def test_offline_coach_uses_forecast_wording_and_memory(client):
     fatigued = dict(FULL_BIOMETRICS, steps=4500, resting_heart_rate=64, sleep_score=59, readiness=3,
-                    fatigue=5, rhr_delta=5.0, sleep_3d_avg=63.0, steps_3d_avg=5100.0,
-                    readiness_3d_avg=4.0, fatigue_3d_avg=4.3)
+                    fatigue=1, rhr_delta=5.0, sleep_3d_avg=63.0, steps_3d_avg=5100.0,
+                    readiness_3d_avg=4.0, fatigue_3d_avg=1.7, soreness=2, stress=2)
     res = client.post("/api/coach", json={
         "participant_id": "p01", "session_id": "S2", "message": "Should I still do my tempo run?",
         "biometrics": fatigued,
@@ -667,7 +667,7 @@ def test_offline_coach_refers_to_previous_session(client):
     body = client.post("/api/coach", json={"participant_id": "p01", "session_id": "S3", "message": "Ready to ramp up?"}).json()
     assert body["reply"].startswith("Since Session 2 (Day 5)")
     assert [st["summary"] for st in body["steps"]] == ["Read 3 saved facts", "Read 2 earlier sessions"]
-    assert "Agent steps: 2" in body["citations"]
+    assert "2 lookups" in body["citations"]
 
 
 @pytest.mark.parametrize("profile", ["p01", "p07", "p12", "pmdata:p05"])

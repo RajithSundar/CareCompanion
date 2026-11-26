@@ -22,3 +22,4 @@ frontend/bin/
 data/accounts/
 data/.jwt_secret
 data/users.json
+data/accounts-backup-*/

@@ -4,7 +4,7 @@ The locked last 20% of each participant's days is not read here. Every number be
 leave-one-participant-out (LOPO) on the early block: train on 15 people, test on the 16th.
 
 Compared:
-  * feature sets: the current features; + lagged self-reports and today's state;
+  * feature sets: the original features; + lagged self-reports and today's state (features.LAG_COLS);
     + personal normalisation (each value against that person's own running mean and
     spread, using only that day and earlier days);
   * algorithms: logistic regression, k-nearest neighbours, SVM (RBF), naive Bayes,
@@ -44,40 +44,20 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import train_model as T  # noqa: E402
 from extra_features import split_by_time  # noqa: E402
-from features import FEATURE_COLS  # noqa: E402
+from features import BASE_COLS, DERIVED_COLS, LAG_COLS  # noqa: E402
 
 OUT = ROOT / "models" / "technique_sweep.json"
-STATE_NUM = {"Deload Needed": 0, "Moderate": 1, "Ready": 2}
 
-LAG_COLS = ["readiness_lag1", "fatigue_lag1", "soreness_lag1", "stress_lag1", "sleep_lag1",
-            "readiness_change", "fatigue_change", "today_state_num", "state_streak",
-            "readiness_7d_avg", "fatigue_7d_avg", "readiness_7d_std"]
 PERSONAL = ["readiness", "fatigue", "soreness", "stress", "sleep_score", "resting_heart_rate", "steps"]
 PERSONAL_COLS = [f"{c}_z" for c in PERSONAL]
+ORIGINAL_COLS = BASE_COLS + DERIVED_COLS  # the feature set before this round
 
 
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Personal normalisation (the lag features come from features.py, shared with serving)."""
     df = df.sort_values(["participant_id", "date"]).copy()
     g = df.groupby("participant_id", sort=False)
-    for c, name in (("readiness", "readiness"), ("fatigue", "fatigue"), ("soreness", "soreness"),
-                    ("stress", "stress"), ("sleep_score", "sleep")):
-        df[f"{name}_lag1"] = g[c].shift(1)
-    df["readiness_change"] = df["readiness"] - df["readiness_lag1"]
-    df["fatigue_change"] = df["fatigue"] - df["fatigue_lag1"]
-    df["today_state_num"] = df["today_state"].map(STATE_NUM) if "today_state" in df else df["recovery_state"].map(STATE_NUM)
-    # Days in the current state, counting today.
-    streak = []
-    for _, grp in df.groupby("participant_id", sort=False):
-        run, prev = 0, None
-        for s in grp["recovery_state"]:
-            run = run + 1 if s == prev else 1
-            prev = s
-            streak.append(run)
-    df["state_streak"] = streak
-    for c in ("readiness", "fatigue"):
-        df[f"{c}_7d_avg"] = g[c].transform(lambda s: s.rolling(7, min_periods=1).mean())
-    df["readiness_7d_std"] = g["readiness"].transform(lambda s: s.rolling(7, min_periods=2).std())
-    # Personal normalisation: against this person's own history up to and including today.
+    # Each value against this person's own history up to and including today.
     for c in PERSONAL:
         mean = g[c].transform(lambda s: s.expanding(min_periods=3).mean())
         std = g[c].transform(lambda s: s.expanding(min_periods=3).std())
@@ -113,8 +93,8 @@ def algorithms():
 
 
 def label_rule(readiness: np.ndarray, fatigue: np.ndarray) -> np.ndarray:
-    return np.where((readiness >= 7) & (fatigue <= 3), "Ready",
-                    np.where((readiness <= 4) | (fatigue >= 4), "Deload Needed", "Moderate"))
+    return np.where((readiness >= 7) & (fatigue >= 3), "Ready",
+                    np.where((readiness <= 4) | (fatigue <= 2), "Deload Needed", "Moderate"))
 
 
 def lopo(model, X, y, groups) -> np.ndarray:
@@ -155,8 +135,8 @@ def main():
            "persistence": score(y, early["today_state"]), "feature_sets": {}, "algorithms": {}, "regress_then_rule": {}}
     print("persistence", res["persistence"])
 
-    sets = {"current": FEATURE_COLS, "current+lags": FEATURE_COLS + LAG_COLS,
-            "current+lags+personal": FEATURE_COLS + LAG_COLS + PERSONAL_COLS}
+    sets = {"original": ORIGINAL_COLS, "original+lags": ORIGINAL_COLS + LAG_COLS,
+            "original+lags+personal": ORIGINAL_COLS + LAG_COLS + PERSONAL_COLS}
     algos = algorithms()
     # 1) feature sets, with two contrasting algorithms
     for sname, cols in sets.items():

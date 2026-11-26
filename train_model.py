@@ -65,7 +65,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
-from features import BASE_COLS, FEATURE_COLS, engineer_features
+from features import BASE_COLS, FEATURE_COLS, engineer_features, state_rule
 
 BASE_DIR = Path(__file__).resolve().parent
 RAW_DIR = BASE_DIR / "data" / "pmdata_raw"
@@ -81,15 +81,8 @@ CLASSES = ["Deload Needed", "Moderate", "Ready"]
 
 
 def label_recovery_state(df: pd.DataFrame) -> pd.Series:
-    """Same-day rule used to create the labels. Kept explicit for the write-up."""
-    return pd.Series(
-        np.where(
-            (df["readiness"] >= 7) & (df["fatigue"] <= 3),
-            "Ready",
-            np.where((df["readiness"] <= 4) | (df["fatigue"] >= 4), "Deload Needed", "Moderate"),
-        ),
-        index=df.index,
-    )
+    """Same-day rule used to create the labels (features.state_rule, shared with serving)."""
+    return state_rule(df["readiness"], df["fatigue"])
 
 
 def _read_json(path: Path):
@@ -388,7 +381,7 @@ def main():
         "dataset_source": dataset_source,
         "rows": int(len(df)),
         "participants": int(len(np.unique(groups))),
-        "label_rule": "Ready if readiness>=7 and fatigue<=3; Deload Needed if readiness<=4 or fatigue>=4; else Moderate. Labels are rule-based, not clinical ground truth.",
+        "label_rule": "PMSys scales run 1 (worst) to 5 (best). Ready if readiness>=7 and fatigue>=3; Deload Needed if readiness<=4 or fatigue<=2; else Moderate. Labels are rule-based, not clinical ground truth.",
         "validation": "Nested leave-one-participant-out. Inner grouped 3-fold CV tunes hyperparameters per outer fold.",
         "selected_model": best_name,
         "selection_metric": "macro_f1 (pooled out-of-fold)",

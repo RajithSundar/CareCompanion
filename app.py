@@ -339,6 +339,10 @@ def prior_sessions(pdata: Dict[str, Any], session_id: Optional[str], limit: int 
     return out
 
 
+# The model's three classes, in everyday words (shown to people; the model keeps its labels).
+PLAIN_STATE = {"Ready": "Ready to train", "Moderate": "Take it easy", "Deload Needed": "Rest day"}
+
+
 # --------------------------------------------------------------------------- request models
 
 class DayRecordIn(BaseModel):
@@ -520,7 +524,10 @@ def page_route(name: str):
         if user is None and name not in PUBLIC_PAGES:
             return RedirectResponse(f"/login?next=/{name}", status_code=303)
         if user is not None and name in AUTH_PAGES:
-            return RedirectResponse(auth.safe_next(request.query_params.get("next")), status_code=303)
+            # Already signed in: "Get started" goes straight to logging today.
+            default = "/checkin" if name == "signup" else "/"
+            nxt = request.query_params.get("next")
+            return RedirectResponse(auth.safe_next(nxt) if nxt else default, status_code=303)
         return HTMLResponse(render_page(name, user))
     handler.__name__ = f"page_{name}"
     return handler
@@ -702,8 +709,8 @@ def log_biometric_checkin(participant_id: str, payload: CheckinInput, user: Acco
             session["dayIndex"] = idx
             session["dayLabel"] = rec["day"]
             session["adaptation"] = (
-                f"Forecast for the day after {rec['day']}: {ml_result['predicted_recovery_state']} "
-                f"(RHR {rec['rhr']:.0f} bpm, readiness {rec['readiness']}/10)."
+                f"The day after {rec['day']} looks like: {PLAIN_STATE.get(ml_result['predicted_recovery_state'], ml_result['predicted_recovery_state']).lower()} "
+                f"(resting heart rate {rec['rhr']:.0f} bpm, feeling ready {rec['readiness']}/10)."
                 if ml_result else f"Check-in saved for {rec['day']}. Forecast unavailable."
             )
         return {
@@ -934,7 +941,7 @@ def coach_chat(req: CoachRequest, request: Request, user: Account = Depends(curr
         coach_msg = {
             "role": "coach",
             "text": reply,
-            "citations": [mode_tag, f"Forecast: {pred_label}", f"Memory: {len(memories)}", f"Agent steps: {len(ctx.steps)}"],
+            "citations": [mode_tag, f"Tomorrow: {PLAIN_STATE.get(pred_label, pred_label)}", f"{len(memories)} saved facts", f"{len(ctx.steps)} lookups"],
             "steps": ctx.steps,
         }
         live_session = find_session(data["state"][pid], req.session_id)

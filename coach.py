@@ -111,8 +111,8 @@ def snapshot(features: Dict[str, Any]) -> Dict[str, Optional[float]]:
 
 
 def describe_snapshot(s: Dict[str, Optional[float]]) -> str:
-    return (f"resting HR {fmt(s.get('resting_heart_rate'), 0, ' bpm')}, sleep score {fmt(s.get('sleep_score'))}, "
-            f"readiness {fmt(s.get('readiness'))}/10, fatigue {fmt(s.get('fatigue'))}/5, "
+    return (f"resting heart rate {fmt(s.get('resting_heart_rate'), 0, ' bpm')}, sleep score {fmt(s.get('sleep_score'))}, "
+            f"feeling ready {fmt(s.get('readiness'))}/10, freshness {fmt(s.get('fatigue'))}/5, "
             f"steps {fmt(s.get('steps'))}")
 
 
@@ -222,12 +222,20 @@ def extract_memories_offline(user_message: str, session_label: str,
 
 # --------------------------------------------------------------------------- offline replies
 
+PLAIN = {"Ready": "ready to train", "Moderate": "take it easy", "Deload Needed": "rest day"}
+
+
+def plain(label: Optional[str]) -> str:
+    """The model's class in everyday words."""
+    return PLAIN.get(label, label or "unavailable")
+
+
 def _forecast_phrase(ml_result: Optional[Dict[str, Any]]) -> tuple[Optional[str], str]:
     if not ml_result:
         return None, ""
     label = ml_result["predicted_recovery_state"]
     prob = ml_result["probabilities"].get(label)
-    return label, (f" ({round(prob * 100)}% model probability)" if prob is not None else "")
+    return label, (f" ({round(prob * 100)}% likely)" if prob is not None else "")
 
 
 def _delta(prev: Optional[float], now: Optional[float], unit: str = "") -> str:
@@ -259,22 +267,22 @@ def offline_reply(features: Dict[str, Any], pid: str, message: str, ml_result: O
 
     if any(k in q for k in ("remember", "memory", "history")):
         mem_lines = "\n".join(f"• **{m['category']}** ({m['session']}): {m['text']}" for m in memories) or "• Nothing saved yet."
-        return f"Saved facts for **{pid.upper()}**:\n{mem_lines}\n\nForecast for tomorrow: **{label or 'unavailable'}{conf}**."
+        return f"Saved facts for **{pid.upper()}**:\n{mem_lines}\n\nTomorrow looks like: **{plain(label)}{conf}**."
 
     parts: List[str] = []
     last = prior[-1] if prior else None
     if last:
         ps = last["snapshot"]
         parts.append(
-            f"Since {last['label']} ({last['day']}): resting HR {_delta(ps.get('resting_heart_rate'), s['resting_heart_rate'], ' bpm')}, "
-            f"sleep score {_delta(ps.get('sleep_score'), s['sleep_score'])}, readiness {_delta(ps.get('readiness'), s['readiness'])}."
+            f"Since {last['label']} ({last['day']}): resting heart rate {_delta(ps.get('resting_heart_rate'), s['resting_heart_rate'], ' bpm')}, "
+            f"sleep score {_delta(ps.get('sleep_score'), s['sleep_score'])}, how ready you felt {_delta(ps.get('readiness'), s['readiness'])} out of 10."
         )
     if label is None:
         parts.append(f"The forecast is unavailable, so train by feel today ({describe_snapshot(s)}).")
         return " ".join(parts)
 
     action = ACTIONS[label]
-    parts.append(f"**Forecast for tomorrow: {label}{conf}.** Today, **{action}**.")
+    parts.append(f"**Tomorrow: {plain(label)}{conf}.** Today, **{action}**.")
     if goal:
         parts.append(f"That keeps you on track: {to_second_person(goal)}")
     if constraint:
@@ -282,9 +290,9 @@ def offline_reply(features: Dict[str, Any], pid: str, message: str, ml_result: O
     if last:
         prev_label = last.get("forecast")
         if prev_label and prev_label != label:
-            parts.append(f"This changes last session's advice ({ACTIONS.get(prev_label, 'a different plan')}) because the forecast moved from {prev_label} to {label}.")
+            parts.append(f"This changes last session's advice ({ACTIONS.get(prev_label, 'a different plan')}) because tomorrow's outlook moved from {plain(prev_label)} to {plain(label)}.")
         elif prev_label:
-            parts.append(f"Same direction as last session, since the forecast is still {label}.")
+            parts.append(f"Same direction as last session, since tomorrow still looks like {plain(label)}.")
     return " ".join(p if p.endswith((".", "!", "?")) else p + "." for p in parts)
 
 
@@ -294,5 +302,5 @@ def offline_stateless_reply(features: Dict[str, Any], ml_result: Optional[Dict[s
     s = snapshot(features)
     if label is None:
         return f"Today's readings: {describe_snapshot(s)}. **Train by feel.**"
-    return (f"Today's readings: {describe_snapshot(s)}. The forecast for tomorrow is **{label}{conf}**, "
+    return (f"Today's readings: {describe_snapshot(s)}. Tomorrow looks like **{plain(label)}{conf}**, "
             f"so a general recommendation is to **{ACTIONS[label]}**.")

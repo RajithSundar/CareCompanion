@@ -1,0 +1,1387 @@
+{
+  "task": "Next-day recovery state forecast",
+  "dataset_source": "PMData (raw participant folders)",
+  "rows": 1423,
+  "participants": 16,
+  "label_rule": "Ready if readiness>=7 and fatigue<=3; Deload Needed if readiness<=4 or fatigue>=4; else Moderate. Labels are rule-based, not clinical ground truth.",
+  "validation": "Nested leave-one-participant-out. Inner grouped 3-fold CV tunes hyperparameters per outer fold.",
+  "selected_model": "RandomForest",
+  "selection_metric": "macro_f1 (pooled out-of-fold)",
+  "class_counts": {
+    "Deload Needed": 610,
+    "Moderate": 580,
+    "Ready": 233
+  },
+  "comparison": [
+    {
+      "model": "LogisticRegression",
+      "accuracy": 0.5369,
+      "macro_f1": 0.522,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6219,
+          "recall": 0.6148,
+          "f1": 0.6183,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5443,
+          "recall": 0.4345,
+          "f1": 0.4832,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.3838,
+          "recall": 0.588,
+          "f1": 0.4644,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          375,
+          143,
+          92
+        ],
+        [
+          200,
+          252,
+          128
+        ],
+        [
+          28,
+          68,
+          137
+        ]
+      ],
+      "brier": 0.5687,
+      "per_participant_accuracy_mean": 0.5458,
+      "per_participant_accuracy_std": 0.1572,
+      "chosen_params_per_fold": [
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 10.0
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 0.1
+        },
+        {
+          "clf__C": 0.1
+        }
+      ],
+      "beats_persistence_macro_f1": false
+    },
+    {
+      "model": "KNN",
+      "accuracy": 0.5081,
+      "macro_f1": 0.4514,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.591,
+          "recall": 0.4951,
+          "f1": 0.5388,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.4716,
+          "recall": 0.6431,
+          "f1": 0.5441,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.3967,
+          "recall": 0.206,
+          "f1": 0.2712,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          302,
+          278,
+          30
+        ],
+        [
+          164,
+          373,
+          43
+        ],
+        [
+          45,
+          140,
+          48
+        ]
+      ],
+      "brier": 0.5969,
+      "per_participant_accuracy_mean": 0.4939,
+      "per_participant_accuracy_std": 0.1219,
+      "chosen_params_per_fold": [
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 15
+        },
+        {
+          "clf__n_neighbors": 35
+        },
+        {
+          "clf__n_neighbors": 15
+        }
+      ],
+      "beats_persistence_macro_f1": false
+    },
+    {
+      "model": "SVM (RBF)",
+      "accuracy": 0.5657,
+      "macro_f1": 0.5478,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6302,
+          "recall": 0.6426,
+          "f1": 0.6364,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5639,
+          "recall": 0.4948,
+          "f1": 0.5271,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.4315,
+          "recall": 0.5408,
+          "f1": 0.48,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          392,
+          155,
+          63
+        ],
+        [
+          190,
+          287,
+          103
+        ],
+        [
+          40,
+          67,
+          126
+        ]
+      ],
+      "brier": 0.5509,
+      "per_participant_accuracy_mean": 0.5655,
+      "per_participant_accuracy_std": 0.1586,
+      "chosen_params_per_fold": [
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 1.0
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        },
+        {
+          "clf__C": 0.3
+        }
+      ],
+      "beats_persistence_macro_f1": false
+    },
+    {
+      "model": "GaussianNB",
+      "accuracy": 0.5362,
+      "macro_f1": 0.5259,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6443,
+          "recall": 0.4721,
+          "f1": 0.5449,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5036,
+          "recall": 0.6069,
+          "f1": 0.5504,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.444,
+          "recall": 0.5279,
+          "f1": 0.4824,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          288,
+          261,
+          61
+        ],
+        [
+          135,
+          352,
+          93
+        ],
+        [
+          24,
+          86,
+          123
+        ]
+      ],
+      "brier": 0.7334,
+      "per_participant_accuracy_mean": 0.5366,
+      "per_participant_accuracy_std": 0.154,
+      "chosen_params_per_fold": [
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ],
+      "beats_persistence_macro_f1": false
+    },
+    {
+      "model": "DecisionTree",
+      "accuracy": 0.52,
+      "macro_f1": 0.5068,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6786,
+          "recall": 0.5607,
+          "f1": 0.614,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5128,
+          "recall": 0.4483,
+          "f1": 0.4784,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.335,
+          "recall": 0.5923,
+          "f1": 0.4279,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          342,
+          169,
+          99
+        ],
+        [
+          145,
+          260,
+          175
+        ],
+        [
+          17,
+          78,
+          138
+        ]
+      ],
+      "brier": 0.5844,
+      "per_participant_accuracy_mean": 0.5194,
+      "per_participant_accuracy_std": 0.1934,
+      "chosen_params_per_fold": [
+        {
+          "clf__max_depth": 5,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 10
+        },
+        {
+          "clf__max_depth": 5,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 5,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 10
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 10
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 10
+        },
+        {
+          "clf__max_depth": 5,
+          "clf__min_samples_leaf": 10
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 10
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 30
+        },
+        {
+          "clf__max_depth": 3,
+          "clf__min_samples_leaf": 10
+        }
+      ],
+      "beats_persistence_macro_f1": false
+    },
+    {
+      "model": "RandomForest",
+      "accuracy": 0.5868,
+      "macro_f1": 0.5711,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6881,
+          "recall": 0.6148,
+          "f1": 0.6494,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5802,
+          "recall": 0.5552,
+          "f1": 0.5674,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.4272,
+          "recall": 0.5923,
+          "f1": 0.4964,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          375,
+          157,
+          78
+        ],
+        [
+          151,
+          322,
+          107
+        ],
+        [
+          19,
+          76,
+          138
+        ]
+      ],
+      "brier": 0.5369,
+      "per_participant_accuracy_mean": 0.5904,
+      "per_participant_accuracy_std": 0.1733,
+      "chosen_params_per_fold": [
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 8
+        }
+      ],
+      "beats_persistence_macro_f1": true
+    },
+    {
+      "model": "ExtraTrees",
+      "accuracy": 0.5777,
+      "macro_f1": 0.5677,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6718,
+          "recall": 0.5705,
+          "f1": 0.617,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5597,
+          "recall": 0.5741,
+          "f1": 0.5668,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.4548,
+          "recall": 0.6052,
+          "f1": 0.5193,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          348,
+          193,
+          69
+        ],
+        [
+          147,
+          333,
+          100
+        ],
+        [
+          23,
+          69,
+          141
+        ]
+      ],
+      "brier": 0.5526,
+      "per_participant_accuracy_mean": 0.5776,
+      "per_participant_accuracy_std": 0.1615,
+      "chosen_params_per_fold": [
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 3
+        },
+        {
+          "clf__max_depth": 6,
+          "clf__min_samples_leaf": 8
+        },
+        {
+          "clf__max_depth": 10,
+          "clf__min_samples_leaf": 8
+        }
+      ],
+      "beats_persistence_macro_f1": true
+    },
+    {
+      "model": "GradientBoosting",
+      "accuracy": 0.5819,
+      "macro_f1": 0.5389,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6427,
+          "recall": 0.6164,
+          "f1": 0.6293,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5464,
+          "recall": 0.65,
+          "f1": 0.5937,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.5068,
+          "recall": 0.3219,
+          "f1": 0.3937,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          376,
+          194,
+          40
+        ],
+        [
+          170,
+          377,
+          33
+        ],
+        [
+          39,
+          119,
+          75
+        ]
+      ],
+      "brier": 0.5389,
+      "per_participant_accuracy_mean": 0.5921,
+      "per_participant_accuracy_std": 0.1585,
+      "chosen_params_per_fold": [
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 3
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 3
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 3
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 3
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 3
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.06,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        }
+      ],
+      "beats_persistence_macro_f1": false
+    },
+    {
+      "model": "HistGradientBoosting",
+      "accuracy": 0.5706,
+      "macro_f1": 0.5554,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6612,
+          "recall": 0.5918,
+          "f1": 0.6246,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5679,
+          "recall": 0.5483,
+          "f1": 0.5579,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.4196,
+          "recall": 0.5708,
+          "f1": 0.4836,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          361,
+          171,
+          78
+        ],
+        [
+          156,
+          318,
+          106
+        ],
+        [
+          29,
+          71,
+          133
+        ]
+      ],
+      "brier": 0.5374,
+      "per_participant_accuracy_mean": 0.576,
+      "per_participant_accuracy_std": 0.1717,
+      "chosen_params_per_fold": [
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.08,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.08,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        },
+        {
+          "clf__learning_rate": 0.03,
+          "clf__max_depth": 2
+        }
+      ],
+      "beats_persistence_macro_f1": false
+    },
+    {
+      "model": "MLP",
+      "accuracy": 0.4793,
+      "macro_f1": 0.4253,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.544,
+          "recall": 0.5672,
+          "f1": 0.5554,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.4455,
+          "recall": 0.5,
+          "f1": 0.4712,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.3382,
+          "recall": 0.1974,
+          "f1": 0.2493,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          346,
+          222,
+          42
+        ],
+        [
+          242,
+          290,
+          48
+        ],
+        [
+          48,
+          139,
+          46
+        ]
+      ],
+      "brier": 0.6302,
+      "per_participant_accuracy_mean": 0.4941,
+      "per_participant_accuracy_std": 0.1459,
+      "chosen_params_per_fold": [
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.1
+        },
+        {
+          "clf__alpha": 0.1
+        },
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.1
+        },
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.1
+        },
+        {
+          "clf__alpha": 0.1
+        },
+        {
+          "clf__alpha": 0.1
+        },
+        {
+          "clf__alpha": 0.001
+        },
+        {
+          "clf__alpha": 0.001
+        }
+      ],
+      "beats_persistence_macro_f1": false
+    },
+    {
+      "model": "SoftVoting (LR+RF+ET)",
+      "accuracy": 0.5784,
+      "macro_f1": 0.5605,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6566,
+          "recall": 0.6082,
+          "f1": 0.6315,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.5612,
+          "recall": 0.569,
+          "f1": 0.5651,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.4519,
+          "recall": 0.5236,
+          "f1": 0.4851,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          371,
+          175,
+          64
+        ],
+        [
+          166,
+          330,
+          84
+        ],
+        [
+          28,
+          83,
+          122
+        ]
+      ],
+      "brier": 0.534,
+      "per_participant_accuracy_mean": 0.5788,
+      "per_participant_accuracy_std": 0.1633,
+      "chosen_params_per_fold": [
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 3
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 3
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 3
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 3
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        },
+        {
+          "rf__clf__min_samples_leaf": 8
+        }
+      ],
+      "beats_persistence_macro_f1": false
+    }
+  ],
+  "baselines": {
+    "majority_class": {
+      "accuracy": 0.3226,
+      "macro_f1": 0.197,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.3469,
+          "recall": 0.6574,
+          "f1": 0.4541,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.2172,
+          "recall": 0.1,
+          "f1": 0.137,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          401,
+          209,
+          0
+        ],
+        [
+          522,
+          58,
+          0
+        ],
+        [
+          233,
+          0,
+          0
+        ]
+      ]
+    },
+    "persistence_today_state": {
+      "accuracy": 0.5791,
+      "macro_f1": 0.5642,
+      "per_class": {
+        "Deload Needed": {
+          "precision": 0.6308,
+          "recall": 0.6049,
+          "f1": 0.6176,
+          "support": 610
+        },
+        "Moderate": {
+          "precision": 0.555,
+          "recall": 0.5828,
+          "f1": 0.5685,
+          "support": 580
+        },
+        "Ready": {
+          "precision": 0.5109,
+          "recall": 0.5021,
+          "f1": 0.5065,
+          "support": 233
+        }
+      },
+      "confusion_matrix": [
+        [
+          369,
+          192,
+          49
+        ],
+        [
+          179,
+          338,
+          63
+        ],
+        [
+          37,
+          79,
+          117
+        ]
+      ]
+    }
+  },
+  "selected_per_class": {
+    "Deload Needed": {
+      "precision": 0.6881,
+      "recall": 0.6148,
+      "f1": 0.6494,
+      "support": 610
+    },
+    "Moderate": {
+      "precision": 0.5802,
+      "recall": 0.5552,
+      "f1": 0.5674,
+      "support": 580
+    },
+    "Ready": {
+      "precision": 0.4272,
+      "recall": 0.5923,
+      "f1": 0.4964,
+      "support": 233
+    }
+  },
+  "feature_importances": {
+    "readiness_3d_avg": {
+      "mean": 0.042,
+      "std": 0.0666
+    },
+    "readiness_7d_avg": {
+      "mean": 0.0255,
+      "std": 0.0354
+    },
+    "steps_3d_avg": {
+      "mean": 0.0082,
+      "std": 0.0174
+    },
+    "today_state_num": {
+      "mean": 0.0076,
+      "std": 0.0158
+    },
+    "rem_sleep_min": {
+      "mean": 0.0068,
+      "std": 0.0217
+    },
+    "readiness_lag1": {
+      "mean": 0.0068,
+      "std": 0.0147
+    },
+    "deep_sleep_min": {
+      "mean": 0.0055,
+      "std": 0.0142
+    },
+    "readiness": {
+      "mean": 0.0052,
+      "std": 0.0258
+    },
+    "sleep_score": {
+      "mean": 0.0037,
+      "std": 0.0084
+    },
+    "steps": {
+      "mean": 0.0025,
+      "std": 0.0206
+    },
+    "sleep_3d_avg": {
+      "mean": 0.0025,
+      "std": 0.0126
+    },
+    "stress": {
+      "mean": 0.0018,
+      "std": 0.0068
+    },
+    "fatigue_7d_avg": {
+      "mean": 0.0018,
+      "std": 0.0072
+    },
+    "fatigue_3d_avg": {
+      "mean": 0.0007,
+      "std": 0.0101
+    },
+    "soreness_lag1": {
+      "mean": 0.0006,
+      "std": 0.0088
+    },
+    "soreness": {
+      "mean": 0.0006,
+      "std": 0.0032
+    },
+    "rhr_delta": {
+      "mean": 0.0004,
+      "std": 0.0104
+    },
+    "state_streak": {
+      "mean": -0.0,
+      "std": 0.0085
+    },
+    "stress_lag1": {
+      "mean": -0.0001,
+      "std": 0.0061
+    },
+    "fatigue_lag1": {
+      "mean": -0.0003,
+      "std": 0.0042
+    },
+    "resting_heart_rate": {
+      "mean": -0.0003,
+      "std": 0.0114
+    },
+    "fatigue": {
+      "mean": -0.0003,
+      "std": 0.0051
+    },
+    "fatigue_change": {
+      "mean": -0.0008,
+      "std": 0.0034
+    },
+    "peak_min": {
+      "mean": -0.0008,
+      "std": 0.0125
+    },
+    "cardio_min": {
+      "mean": -0.0017,
+      "std": 0.0148
+    },
+    "sleep_lag1": {
+      "mean": -0.0032,
+      "std": 0.0081
+    },
+    "readiness_7d_std": {
+      "mean": -0.0057,
+      "std": 0.0204
+    },
+    "readiness_change": {
+      "mean": -0.0065,
+      "std": 0.01
+    }
+  },
+  "feature_importance_method": "permutation (macro F1 drop) on each held-out participant, mean and std across participants",
+  "excluded_features": [
+    "sedentary_min",
+    "very_active_min"
+  ],
+  "excluded_reason": "The app does not store these fields, so the model is trained only on inputs the app can supply.",
+  "calibration": "Not calibrated. Brier score is reported so probabilities can be judged.",
+  "missing_source_files": [
+    "p12/fitbit/resting_heart_rate.json",
+    "p13/fitbit/resting_heart_rate.json"
+  ],
+  "feature_missing_rate": {
+    "steps": 0.0197,
+    "resting_heart_rate": 0.234,
+    "sleep_score": 0.1244,
+    "deep_sleep_min": 0.1244,
+    "rem_sleep_min": 0.1244,
+    "cardio_min": 0.019,
+    "peak_min": 0.019,
+    "readiness": 0.0,
+    "fatigue": 0.0,
+    "soreness": 0.0,
+    "stress": 0.0,
+    "rhr_delta": 0.234,
+    "sleep_3d_avg": 0.0773,
+    "steps_3d_avg": 0.0112,
+    "readiness_3d_avg": 0.0,
+    "fatigue_3d_avg": 0.0,
+    "readiness_lag1": 0.1476,
+    "fatigue_lag1": 0.1476,
+    "soreness_lag1": 0.1476,
+    "stress_lag1": 0.1476,
+    "sleep_lag1": 0.241,
+    "readiness_change": 0.1476,
+    "fatigue_change": 0.1476,
+    "today_state_num": 0.0,
+    "state_streak": 0.0,
+    "readiness_7d_avg": 0.0,
+    "fatigue_7d_avg": 0.0,
+    "readiness_7d_std": 0.0119
+  },
+  "library_versions": {
+    "python": "3.14.4",
+    "scikit-learn": "1.9.1",
+    "pandas": "3.1.1",
+    "numpy": "2.5.5",
+    "joblib": "1.6.0"
+  }
+}

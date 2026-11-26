@@ -96,11 +96,20 @@ def _rolling_std(df: pd.DataFrame, col: str, days: int) -> pd.Series:
     return out
 
 
+# PMSys wellness scales run 1 (worst) to 5 (best): fatigue 5 = very fresh, soreness 5 = not
+# sore, stress 5 = relaxed. In PMData these scores rise with sleep quality, mood and readiness.
+# Readiness runs 0 (not ready) to 10 (fully ready).
+READY_MIN_READINESS, READY_MIN_FATIGUE = 7, 3      # Ready: ready, and not tired
+DELOAD_MAX_READINESS, DELOAD_MAX_FATIGUE = 4, 2    # Deload Needed: not ready, or tired
+
+
 def state_rule(readiness: pd.Series, fatigue: pd.Series) -> pd.Series:
-    """The labelling rule: Ready if readiness >= 7 and fatigue <= 3; Deload Needed if
-    readiness <= 4 or fatigue >= 4; otherwise Moderate. Missing inputs give a missing state."""
-    out = pd.Series(np.where((readiness >= 7) & (fatigue <= 3), "Ready",
-                             np.where((readiness <= 4) | (fatigue >= 4), "Deload Needed", "Moderate")),
+    """The labelling rule: Ready if readiness >= 7 and fatigue >= 3 (not tired); Deload Needed if
+    readiness <= 4 or fatigue <= 2 (tired or very tired); otherwise Moderate. Missing inputs
+    give a missing state."""
+    out = pd.Series(np.where((readiness >= READY_MIN_READINESS) & (fatigue >= READY_MIN_FATIGUE), "Ready",
+                             np.where((readiness <= DELOAD_MAX_READINESS) | (fatigue <= DELOAD_MAX_FATIGUE),
+                                      "Deload Needed", "Moderate")),
                     index=readiness.index, dtype=object)
     return out.where(readiness.notna() & fatigue.notna())
 

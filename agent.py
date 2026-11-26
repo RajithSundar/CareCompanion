@@ -46,7 +46,8 @@ TOOLS: List[Dict[str, Any]] = [
     {"type": "function", "function": {
         "name": "get_trends",
         "description": "Summarise the last N days of steps, resting heart rate, sleep score, readiness and fatigue: "
-                       "average, latest, direction, and the person's earlier baseline.",
+                       "average, latest, direction, and the person's earlier baseline. Fatigue runs 1 (exhausted) to "
+                       "5 (very fresh), so higher is better.",
         "parameters": {"type": "object", "properties": {
             "days": {"type": "integer", "minimum": 3, "maximum": 60, "description": "Window length (default 14)."}},
             "additionalProperties": False}}},
@@ -187,8 +188,8 @@ class AgentContext:
 
 # For each reading: label, unit, and whether a higher value is better for recovery.
 _DIRECTION = {"resting_heart_rate": ("resting HR", " bpm", False), "sleep_score": ("sleep score", "", True),
-              "readiness": ("readiness", "/10", True), "fatigue": ("fatigue", "/5", False),
-              "soreness": ("soreness", "/5", False), "steps": ("steps", "", None)}
+              "readiness": ("readiness", "/10", True), "fatigue": ("freshness (fatigue score)", "/5", True),
+              "soreness": ("soreness score", "/5", True), "steps": ("steps", "", None)}
 
 
 def changes(then: Dict[str, Any], now: Dict[str, Any]) -> List[str]:
@@ -236,7 +237,12 @@ def system_prompt(ctx: AgentContext) -> str:
         "2. Name and respect every saved goal, constraint AND schedule limit or preference (for example when they can "
         "train), and fit the advice to them. Do not repeat generic tips.\n"
         "3. Say when the forecast is uncertain.\n"
-        "4. Be concise: 3 to 5 sentences, with the action items in **bold**."
+        "4. Be concise: 3 to 5 sentences, with the action items in **bold**.\n"
+        "Scales: readiness 0 to 10 and fatigue, soreness and stress 1 to 5, where higher is always better "
+        "(fatigue 5 = very fresh, soreness 5 = not sore, stress 5 = relaxed).\n"
+        "5. Write for someone with no sports-science background. Call the forecast states 'ready to train', "
+        "'take it easy' and 'rest day' (never 'deload'), say 'resting heart rate' (not RHR), and avoid jargon such as "
+        "PMSys, baseline delta, zones or protocol."
     )
 
 

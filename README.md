@@ -1,13 +1,15 @@
-# CareCompanion
+# CareCompanion: an agentic health coach
 
-A supervised learning demo for next-day recovery forecasting, plus a small coaching dashboard around it.
+Log how you slept and how you feel each day. CareCompanion predicts whether you're ready to train tomorrow, and an AI coach that remembers your goals, injuries and past conversations plans around it.
 
-- **Task:** given one day's biometrics, forecast the recovery state for the next day (Ready, Moderate, or Deload Needed).
-- **Model:** RandomForest, picked from eleven supervised algorithms by nested leave-one-participant-out validation. On each person's locked later days it reaches 64.0% (3 classes) and 74.0% accuracy with AUC 0.79 (deload yes/no), ahead of the tomorrow-equals-today baseline.
+- **Task:** given one day's biometrics and how the person feels, forecast the recovery state for the next day: Ready, Moderate or Deload Needed (shown in the app as "ready to train", "take it easy" and "rest day").
+- **Model:** ExtraTrees, picked from eleven supervised algorithms by nested leave-one-participant-out validation. On each person's locked later days it reaches 63.4% accuracy and macro F1 0.627 (3 classes), against 62.0% and 0.594 for the tomorrow-equals-today baseline.
 - **Agent:** a tool-using coach (`agent.py`) that looks up saved facts, earlier sessions and trends, saves what you tell it and rewrites your plan. Azure OpenAI first, then OpenRouter or Groq; without a key, a rule-based coach.
 - **App:** a FastAPI backend with sign-up, sign-in (three demo accounts ready to use) and a multi-page dashboard.
 
 ## The brief, and where each part lives
+
+Problem 27, "CareCompanion: Agentic Health Coach". *Users need ongoing, personalized health coaching, not one-off advice.*
 
 > Build a coaching agent that remembers a user's history across multiple sessions and adjusts its advice based on past interactions (not a fresh generic answer each time). Deliverable: demo on Azure AI showing advice changing across 2-3 simulated sessions. Dataset: PMData Fitbit dataset.
 
@@ -65,73 +67,75 @@ How it got here, honestly: the first run (`models/agent_eval_v1.json`) found the
 
 Trained and evaluated on the real **PMData** dataset (Thambawita et al., 2020): 1,423 next-day forecast rows from 16 participants over five months.
 
+> **Correction (26 Nov 2026).** Earlier versions of this project labelled days with the PMSys wellness scales the wrong way round. In PMSys, fatigue, soreness and stress run from 1 (worst) to 5 (best): fatigue 5 means very fresh. In PMData these scores rise with sleep quality, mood and readiness, which confirms it. The old rule treated fatigue 4 or 5 as "Deload Needed", so 21% of days were mislabelled (77 well-rested days were labelled as needing rest). The rule, the demo personas and every result below have been redone with the correct direction. The old results are kept in `models/before-label-fix/` and should not be compared with these, because the labels differ.
+
 ### Eleven supervised algorithms, new-person setting
 
 Nested leave-one-participant-out: each participant is held out in turn, and every algorithm is tuned by grouped 3-fold CV on the other 15 only. Numbers from `models/model_metrics.json`, sorted by macro F1.
 
 | Model | Accuracy | Macro F1 | Brier | Accuracy per participant |
 |---|---|---|---|---|
-| **RandomForest (selected)** | **0.587** | **0.571** | 0.537 | 0.590 ± 0.173 |
-| ExtraTrees | 0.578 | 0.568 | 0.553 | 0.578 ± 0.162 |
-| Soft voting (LR + RF + ET) | 0.578 | 0.560 | 0.534 | 0.579 ± 0.163 |
-| HistGradientBoosting | 0.571 | 0.555 | 0.537 | 0.576 ± 0.172 |
-| SVM (RBF kernel) | 0.566 | 0.548 | 0.551 | 0.566 ± 0.159 |
-| GradientBoosting | 0.582 | 0.539 | 0.539 | 0.592 ± 0.159 |
-| Gaussian naive Bayes | 0.536 | 0.526 | 0.733 | 0.537 ± 0.154 |
-| LogisticRegression | 0.537 | 0.522 | 0.569 | 0.546 ± 0.157 |
-| DecisionTree | 0.520 | 0.507 | 0.584 | 0.519 ± 0.193 |
-| KNN | 0.508 | 0.451 | 0.597 | 0.494 ± 0.122 |
-| MLP (one hidden layer) | 0.479 | 0.425 | 0.630 | 0.494 ± 0.146 |
-| Baseline: persistence (tomorrow = today) | 0.579 | 0.564 | | |
-| Baseline: majority class | 0.323 | 0.197 | | |
+| **ExtraTrees (selected)** | **0.573** | **0.557** | 0.558 | 0.579 ± 0.148 |
+| RandomForest | 0.575 | 0.555 | 0.550 | 0.577 ± 0.153 |
+| Soft voting (LR + RF + ET) | 0.577 | 0.550 | 0.538 | 0.584 ± 0.149 |
+| HistGradientBoosting | 0.547 | 0.528 | 0.557 | 0.556 ± 0.167 |
+| SVM (RBF kernel) | 0.543 | 0.521 | 0.554 | 0.544 ± 0.155 |
+| Gaussian naive Bayes | 0.535 | 0.520 | 0.755 | 0.539 ± 0.163 |
+| GradientBoosting | 0.581 | 0.516 | 0.532 | 0.595 ± 0.152 |
+| LogisticRegression | 0.500 | 0.494 | 0.603 | 0.512 ± 0.143 |
+| DecisionTree | 0.502 | 0.479 | 0.610 | 0.508 ± 0.158 |
+| KNN | 0.528 | 0.475 | 0.583 | 0.529 ± 0.151 |
+| MLP (one hidden layer) | 0.490 | 0.416 | 0.609 | 0.495 ± 0.163 |
+| Baseline: persistence (tomorrow = today) | 0.574 | 0.543 | | |
+| Baseline: majority class | 0.508 | 0.225 | | |
 
-The selected random forest is now slightly ahead of persistence (0.571 vs 0.564 macro F1, 0.587 vs 0.579 accuracy). Before the lag features it was behind (0.550 and 0.561). The bagged and boosted tree models lead; distance-based (KNN) and neural (MLP) models do worst on 1,400 noisy rows. Choosing among eleven models on the same folds flatters the winner a little, which is why the locked test below matters more. Accuracy varies a lot between participants (standard deviation 0.17).
+For someone the model has never seen, the selected model is ahead of persistence on macro F1 (0.557 vs 0.543) and level on accuracy (0.573 vs 0.574). The bagged tree models lead; KNN and the MLP do worst on 1,400 noisy rows. Choosing among eleven models on the same folds flatters the winner a little, which is why the locked test below matters more. Accuracy varies a lot between participants (standard deviation 0.15).
 
-### How the features were improved
+### How the features were chosen
 
-`experiments/explore_techniques.py` compared techniques on the **early 80%** of each participant's days only (`models/technique_sweep.json`), with persistence at 0.550 macro F1 on those rows:
+`experiments/explore_techniques.py` compared techniques on the **early 80%** of each participant's days only (`models/technique_sweep.json`, rerun on the corrected labels). Persistence scores 0.529 macro F1 on those rows.
 
-| Technique | Best macro F1 | Kept? |
+| Technique (random forest unless stated) | Macro F1 | Kept? |
 |---|---|---|
-| Current features (random forest) | 0.528 | baseline |
-| **+ lag features**: yesterday's readiness, fatigue, soreness, stress and sleep; change since yesterday; today's state and how many days it has lasted; 7-day readiness and fatigue mean and spread | **0.575** | yes |
-| + personal normalisation (each value against the person's own running mean and spread) | 0.569 | no |
-| Soft voting, stacking, MLP, KNN on the lag features | 0.41 to 0.55 | voting kept as a candidate only |
-| Regress tomorrow's readiness and fatigue, then apply the label rule | 0.466 | no |
+| Original features | 0.522 | baseline |
+| **+ lag features**: yesterday's readiness, fatigue, soreness, stress and sleep; change since yesterday; today's state and how many days it has lasted; 7-day readiness and fatigue mean and spread | **0.545** | yes |
+| + personal normalisation (each value against the person's own running mean and spread) | 0.542 | no: no gain over lags alone |
+| Soft voting, stacking, MLP, KNN on the same features | 0.45 to 0.54 | voting kept as a candidate only |
+| Regress tomorrow's readiness and fatigue, then apply the label rule | 0.438 | no |
 
 "Yesterday" means the previous calendar day: after a gap in the record the lag features are missing and imputed, in training and in the app alike.
 
 ### Final test on unseen future days
 
-To check the realistic setting, where the app already has some of a user's history, the last 20% of each participant's timeline (292 days) was locked away before any feature exploration. All eleven candidates were tuned on the first 80% (1,131 rows), the best by inner CV was picked (random forest), and it was scored once on the locked part (`experiments/evaluate_holdout.py`, `models/holdout_metrics.json`).
+To check the realistic setting, where the app already has some of a user's history, the last 20% of each participant's timeline (292 days) was locked away before any feature exploration. All eleven candidates were tuned on the first 80% (1,131 rows), the best by inner CV was picked (ExtraTrees), and it was scored once on the locked part (`experiments/evaluate_holdout.py`, `models/holdout_metrics.json`).
 
-| Question | Model, original features | **Model, current** | Persistence |
-|---|---|---|---|
-| Tomorrow's state (3 classes) | 61.3% accuracy, macro F1 0.610 | **64.0% accuracy, macro F1 0.629** | 62.0%, 0.620 |
-| Will tomorrow need a deload? (yes/no) | 71.6% accuracy, F1 0.656, AUC 0.763 | **74.0% accuracy, F1 0.686, AUC 0.790** | 69.9%, F1 0.627 |
-| Confident deload alerts (probability at least 0.65 either way) | right on 77.2% of 51% of days | **right on 79.1% of 64% of days** | 76.5% on the same days |
+| Question | Model | Persistence |
+|---|---|---|
+| Tomorrow's state (3 classes) | **63.4% accuracy, macro F1 0.627** | 62.0%, macro F1 0.594 |
+| Will tomorrow need a rest day? (yes/no, 48% of days) | **69.9% accuracy, F1 0.677, ROC AUC 0.757** | 68.2%, F1 0.669 |
+| Days the model is confident (probability at least 0.65 either way, 45% of days) | 80.0% right | 80.0% on the same days |
 
-- Both tasks now beat persistence. The yes/no deload alert does so clearly, and it gives a probability (AUC 0.79), so the alert threshold can be tuned.
-- On the 3-class task the lead is small: the 95% bootstrap interval for the macro-F1 difference is [-0.050, +0.066], so a tie cannot be ruled out.
-- **This is the locked set's third use**: first for the original 3-class and binary results, then for the confident-alert threshold, now for the current features. Each time the choices were made on the early 80% before the locked part was read, but repeated use still makes the locked numbers slightly optimistic.
+- The 3-class forecast is ahead of persistence by 0.033 macro F1. The 95% bootstrap interval for the difference is [-0.024, +0.086], so it is likely but not certain that the model is better.
+- The yes/no rest-day alert is 1.7 points ahead and, unlike persistence, gives a probability (AUC 0.76), so its threshold can be tuned. On the days it is confident it is right 80% of the time, but so is persistence: those are the easy days.
+- **Use of the locked set.** It was scored three times on the old labels (the original model, the confident-alert threshold, the lag features) and now once on the corrected labels. Each time, the choices were fixed on the early 80% before the locked part was read, but repeated use still makes these numbers slightly optimistic.
 - Tried and dropped earlier: training load from `srpe.csv` (acute:chronic workload ratio), recent injuries, tomorrow's weekday, and weighting each person's own history three times.
 
 Selected model (new-person setting), per class:
 
 | Class | Precision | Recall | Support |
 |---|---|---|---|
-| Deload Needed | 0.69 | 0.61 | 610 |
-| Moderate | 0.58 | 0.56 | 580 |
-| Ready | 0.43 | 0.59 | 233 |
+| Deload Needed | 0.70 | 0.58 | 723 |
+| Moderate | 0.51 | 0.54 | 449 |
+| Ready | 0.44 | 0.62 | 251 |
 
-Permutation importance puts the 3-day and 7-day readiness averages first, then 3-day steps, today's state, REM sleep and yesterday's readiness. The standard deviations are larger than the means, so only the top two are clear. The earlier model is kept in `models/previous/` for comparison.
+Permutation importance puts today's state first, then today's readiness and its 3-day and 7-day averages, then the fatigue averages. In other words, how people say they feel carries most of the signal; the wearable numbers add a little. The standard deviations are larger than the means, so only the first place is clear.
 
 **Gaps in the data.** The release has no `resting_heart_rate.json` for p12 and p13, so resting heart rate is missing on 23% of rows; sleep fields on 12%. Missing values are imputed (median) inside the pipeline, and the metrics file lists the absent files and each feature's missing rate.
 
 ## Method
 
 - **Target.** The recovery state on day t+1, paired with day t's features. Pairs that are not on consecutive calendar days are dropped.
-- **Labels are rule-based.** Ready if readiness >= 7 and fatigue <= 3; Deload Needed if readiness <= 4 or fatigue >= 4; otherwise Moderate. Not clinical ground truth.
+- **Labels are rule-based** (`features.state_rule`). PMSys scales run 1 (worst) to 5 (best), readiness 0 to 10. Ready if readiness >= 7 and fatigue >= 3 (not tired); Deload Needed if readiness <= 4 or fatigue <= 2 (tired); otherwise Moderate. Not clinical ground truth.
 - **Features** (`features.py`, shared by training and serving), 28 in all: steps, resting heart rate, sleep score, deep and REM minutes, cardio and peak minutes, today's readiness, fatigue, soreness and stress, `rhr_delta` (today minus the 7-day mean), 3-day means of sleep, steps, readiness and fatigue, and the lag features above (yesterday's self-reports and sleep, the change since yesterday, today's state and its streak, 7-day readiness and fatigue mean and readiness spread). Windows are calendar-based, so a gap in the record does not stretch them. Today's readiness and fatigue define today's label, not tomorrow's, so they are fair inputs; the persistence baseline uses them too.
 - **Algorithms.** Logistic regression, KNN, SVM (RBF), Gaussian naive Bayes, decision tree, random forest, extra trees, gradient boosting, histogram gradient boosting, an MLP and a soft-voting ensemble, with class weighting where the algorithm supports it (Ready is the smallest class, 16%).
 - **Validation.** The outer loop holds out one participant; the inner loop tunes hyperparameters with grouped 3-fold CV on the rest. Imputation and scaling are inside the pipeline, so they are fit on training folds only. The selection metric is macro F1, so the small Ready class counts as much as the others.

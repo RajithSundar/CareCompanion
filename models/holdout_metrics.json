@@ -3,59 +3,58 @@
   "train_rows": 1131,
   "test_rows": 292,
   "participants": 16,
-  "selected_model": "RandomForest",
+  "selected_model": "ExtraTrees",
   "selected_params": {
     "clf__max_depth": 10,
     "clf__min_samples_leaf": 3
   },
   "three_class": {
     "model": {
-      "accuracy": 0.6404,
-      "macro_f1": 0.6293
+      "accuracy": 0.6336,
+      "macro_f1": 0.6268
     },
     "persistence": {
       "accuracy": 0.6199,
-      "macro_f1": 0.6203
+      "macro_f1": 0.5943
     },
     "per_class": {
       "Deload Needed": {
-        "precision": 0.675,
-        "recall": 0.658
+        "precision": 0.699,
+        "recall": 0.619
       },
       "Moderate": {
-        "precision": 0.688,
-        "recall": 0.602
+        "precision": 0.657,
+        "recall": 0.591
       },
       "Ready": {
-        "precision": 0.492,
-        "recall": 0.705
+        "precision": 0.486,
+        "recall": 0.791
       }
     },
     "macro_f1_diff_95ci": [
-      -0.0499,
-      0.0655
+      -0.0235,
+      0.0861
     ]
   },
   "binary_deload": {
     "model": {
-      "accuracy": 0.7397,
-      "f1": 0.686,
-      "auc": 0.7895
+      "accuracy": 0.6986,
+      "f1": 0.6765,
+      "auc": 0.7572
     },
     "persistence": {
-      "accuracy": 0.6986,
-      "f1": 0.6271
+      "accuracy": 0.6815,
+      "f1": 0.669
     },
-    "base_rate": 0.411,
+    "base_rate": 0.476,
     "confident_alerts": {
       "threshold": 0.65,
-      "coverage": 0.6404,
-      "days": 187,
-      "model_accuracy": 0.7914,
-      "persistence_accuracy_same_days": 0.7647,
-      "model_accuracy_other_days": 0.6476,
+      "coverage": 0.4452,
+      "days": 130,
+      "model_accuracy": 0.8,
+      "persistence_accuracy_same_days": 0.8,
+      "model_accuracy_other_days": 0.6173,
       "note": "Third use of the locked set (see the comment at CONFIDENT_AT); threshold chosen on the early 80% only."
     }
-  },
-  "locked_set_uses": 3
+  }
 }

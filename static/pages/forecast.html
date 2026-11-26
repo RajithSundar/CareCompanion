@@ -5,11 +5,11 @@
     <section class="page-head">
       <div class="shell page-head-grid">
         <div class="page-head-copy">
-          <h1 class="page-title">Tomorrow’s forecast</h1>
-          <p class="page-lead">What today’s numbers say about tomorrow, for the selected profile and session.</p>
+          <h1 class="page-title">How will you feel tomorrow?</h1>
+          <p class="page-lead">A prediction from today’s numbers and your last few days.</p>
         </div>
         <div class="page-head-aside">
-          <div class="text-xs text-muted mb-2">Session</div>
+          <div class="text-xs text-muted mb-2">Based on</div>
           <div id="overviewSessionSwitcher" class="session-tabs"></div>
         </div>
       </div>
@@ -29,28 +29,29 @@
               <div class="space-y-1">
                 <div class="text-sm text-muted">Tomorrow</div>
                 <div id="mlPredClass" class="forecast-label text-muted">Loading forecast</div>
+                <p id="mlPredMeaning" class="text-sm text-ink-2"></p>
               </div>
-              <div id="mlProbPills" class="prob-bars" aria-label="Class probabilities"></div>
+              <div id="mlProbPills" class="prob-bars" aria-label="How likely each outcome is"></div>
               <p id="overviewAdaptation" class="text-sm text-ink-2"></p>
-              <p class="text-xs text-muted">The model is a demo and its probabilities are not calibrated. See how it compares with simple baselines on the <a href="/data" class="text-cool underline underline-offset-4">Data</a> page.</p>
-              <a href="/coach" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">Ask the coach about it</a>
+              <p class="text-xs text-muted">A best guess, not a certainty, and not medical advice. How often it’s right is on the <a href="/data" class="text-cool underline underline-offset-4">My data</a> page.</p>
+              <a href="/coach" class="inline-flex items-center justify-center px-5 h-11 rounded-md bg-accent text-accent-ink text-sm font-medium hover:opacity-90 whitespace-nowrap btn-transition">Ask the coach what to do</a>
             </div>
           </article>
 
           <article class="panels min-w-0">
             <div class="px-5 py-4 flex items-center justify-between gap-2">
-              <h2 class="text-lg text-ink">Today against baseline</h2>
-              <span class="text-xs text-muted">From the selected session’s day</span>
+              <h2 class="text-lg text-ink">Today vs your usual</h2>
+              <span class="text-xs text-muted">Your usual = your first week’s average</span>
             </div>
             <div class="bg-paper-2 divide-y divide-rule text-sm">
               <div class="grid grid-cols-12 px-4 sm:px-5 py-2.5 text-xs text-muted bg-paper-3">
-                <span class="col-span-5">Biometric signal</span>
-                <span class="col-span-4">Reading</span>
-                <span class="col-span-3 text-right">Baseline delta</span>
+                <span class="col-span-5">Measure</span>
+                <span class="col-span-4">Today</span>
+                <span class="col-span-3 text-right">vs usual</span>
               </div>
 
               <div class="grid grid-cols-12 items-center px-4 sm:px-5 py-3">
-                <span class="col-span-5 text-ink-2">Daily steps</span>
+                <span class="col-span-5 text-ink-2">Steps</span>
                 <span id="kpiSteps" class="col-span-4 measured text-sm text-ink">--</span>
                 <span id="kpiStepsDelta" class="col-span-3 text-right measured text-xs">--</span>
               </div>
@@ -62,13 +63,13 @@
               </div>
 
               <div class="grid grid-cols-12 items-center px-4 sm:px-5 py-3">
-                <span class="col-span-5 text-ink-2">Fitbit sleep score</span>
+                <span class="col-span-5 text-ink-2">Sleep score</span>
                 <span id="kpiSleep" class="col-span-4 measured text-sm text-ink">--</span>
                 <span id="kpiSleepDelta" class="col-span-3 text-right measured text-xs">--</span>
               </div>
 
               <div class="grid grid-cols-12 items-center px-4 sm:px-5 py-3">
-                <span class="col-span-5 text-ink-2">PMSys readiness</span>
+                <span class="col-span-5 text-ink-2">How ready you feel</span>
                 <span id="kpiReadiness" class="col-span-4 measured text-sm text-ink">--</span>
                 <span id="kpiReadinessDelta" class="col-span-3 text-right text-xs font-medium">--</span>
               </div>

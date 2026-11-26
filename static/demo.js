@@ -3,9 +3,9 @@
   if (document.body.dataset.page !== 'demo') return;
 
   const READINGS = [
-    ['resting_heart_rate', 'Resting HR', ' bpm'],
+    ['resting_heart_rate', 'Resting heart rate', ' bpm'],
     ['sleep_score', 'Sleep score', ''],
-    ['readiness', 'Readiness', '/10'],
+    ['readiness', 'Feels ready', '/10'],
     ['steps', 'Steps', '']
   ];
   const num = v => (v === null || v === undefined ? null : Number(v));
@@ -24,7 +24,7 @@
 
   function chips(list, empty) {
     if (!list.length) return `<span class="text-muted">${esc(empty)}</span>`;
-    return list.map(m => `<span class="demo-chip" data-cat="${esc(m.category)}">${esc(m.category === 'Adaptation' ? 'Rule' : m.category)}: ${esc(m.text)}</span>`).join('');
+    return list.map(m => `<span class="demo-chip" data-cat="${esc(m.category)}">${esc(({ Goal: 'Goal', Constraint: 'Injury or limit', Baseline: 'About them', Adaptation: 'Rule' }[m.category] || m.category))}: ${esc(m.text)}</span>`).join('');
   }
 
   function render(data) {
@@ -40,19 +40,19 @@
         <article class="panels demo-card">
           <header class="demo-card-head">
             <h2 class="demo-card-title">${esc(s.label)}<span class="demo-day">${esc(s.day)}</span></h2>
-            <span class="demo-forecast" data-state="${esc(f)}">Tomorrow: ${esc(f)}</span>
+            <span class="demo-forecast" data-state="${esc(f)}">Tomorrow: ${esc({ 'Ready': 'Ready to train', 'Moderate': 'Take it easy', 'Deload Needed': 'Rest day' }[f] || f)}</span>
           </header>
           <div class="demo-readings">${READINGS.map(([k, l, u]) => reading(k, l, u, s.snapshot, prev)).join('')}</div>
           <blockquote class="demo-quote"><span class="demo-quote-label">They said</span>${esc(s.message)}</blockquote>
           <div class="demo-replies">
             <div class="demo-reply is-memory">
-              <div class="demo-reply-label">CareCompanion, with memory</div>
+              <div class="demo-reply-label">Our coach (remembers them)</div>
               ${renderAgentSteps(s.steps)}
               <div class="demo-reply-text">${formatMarkdownSimple(s.advice)}</div>
               ${s.plan ? `<div class="demo-plan"><span class="demo-memory-label">Plan it set</span><ul>${s.plan.map(p => `<li>${esc(p.text)}</li>`).join('')}</ul></div>` : ''}
             </div>
             <div class="demo-reply">
-              <div class="demo-reply-label">Same question, no memory</div>
+              <div class="demo-reply-label">A regular AI (forgets)</div>
               <div class="demo-reply-text">${formatMarkdownSimple(s.stateless_advice)}</div>
             </div>
           </div>
@@ -85,8 +85,8 @@
     const btn = document.getElementById('demoRunBtn');
     const profile = document.getElementById('demoProfile').value;
     btn.disabled = true;
-    btn.textContent = 'Running sessions…';
-    document.getElementById('demoMeta').textContent = 'Running three sessions in order. With a language model this takes up to a minute.';
+    btn.textContent = 'Playing…';
+    document.getElementById('demoMeta').textContent = 'Playing the three check-ins in order. This takes up to a minute.';
     document.getElementById('demoSessions').innerHTML = '';
     try {
       render(await api('/api/demo/run', { method: 'POST', body: { profile } }));
@@ -94,7 +94,7 @@
       document.getElementById('demoMeta').textContent = `The demo did not finish: ${err.message}`;
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Run the 3 sessions again';
+      btn.textContent = 'Play again';
     }
   }
 

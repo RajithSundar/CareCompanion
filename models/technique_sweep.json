@@ -2,107 +2,107 @@
   "rows": 1131,
   "setting": "LOPO on the early 80% of each participant's days",
   "persistence": {
-    "accuracy": 0.5685,
-    "macro_f1": 0.5504
+    "accuracy": 0.5623,
+    "macro_f1": 0.5289
   },
   "feature_sets": {
-    "current": {
+    "original": {
       "LogisticRegression": {
-        "accuracy": 0.5155,
-        "macro_f1": 0.4964
+        "accuracy": 0.4881,
+        "macro_f1": 0.4781
       },
       "RandomForest": {
-        "accuracy": 0.5455,
-        "macro_f1": 0.5276
+        "accuracy": 0.5358,
+        "macro_f1": 0.5218
       },
       "HistGradientBoosting": {
-        "accuracy": 0.5252,
-        "macro_f1": 0.4988
+        "accuracy": 0.5305,
+        "macro_f1": 0.4965
       }
     },
-    "current+lags": {
+    "original+lags": {
       "LogisticRegression": {
-        "accuracy": 0.5455,
-        "macro_f1": 0.526
+        "accuracy": 0.4801,
+        "macro_f1": 0.4744
       },
       "RandomForest": {
-        "accuracy": 0.5906,
-        "macro_f1": 0.5753
+        "accuracy": 0.5694,
+        "macro_f1": 0.5453
       },
       "HistGradientBoosting": {
-        "accuracy": 0.5429,
-        "macro_f1": 0.5162
+        "accuracy": 0.5296,
+        "macro_f1": 0.5058
       }
     },
-    "current+lags+personal": {
+    "original+lags+personal": {
       "LogisticRegression": {
-        "accuracy": 0.5199,
-        "macro_f1": 0.5128
+        "accuracy": 0.4969,
+        "macro_f1": 0.4923
       },
       "RandomForest": {
-        "accuracy": 0.5827,
-        "macro_f1": 0.5686
+        "accuracy": 0.5597,
+        "macro_f1": 0.5419
       },
       "HistGradientBoosting": {
-        "accuracy": 0.5349,
-        "macro_f1": 0.5035
+        "accuracy": 0.5464,
+        "macro_f1": 0.5174
       }
     }
   },
   "algorithms": {
     "LogisticRegression": {
-      "accuracy": 0.5455,
-      "macro_f1": 0.526
+      "accuracy": 0.4969,
+      "macro_f1": 0.4923
     },
     "KNN (k=25)": {
-      "accuracy": 0.481,
-      "macro_f1": 0.413
+      "accuracy": 0.519,
+      "macro_f1": 0.4503
     },
     "SVM (RBF)": {
-      "accuracy": 0.5508,
-      "macro_f1": 0.5242
+      "accuracy": 0.5252,
+      "macro_f1": 0.503
     },
     "GaussianNB": {
-      "accuracy": 0.5119,
-      "macro_f1": 0.4995
+      "accuracy": 0.5172,
+      "macro_f1": 0.4997
     },
     "DecisionTree": {
-      "accuracy": 0.5287,
-      "macro_f1": 0.5139
+      "accuracy": 0.5057,
+      "macro_f1": 0.4903
     },
     "RandomForest": {
-      "accuracy": 0.5906,
-      "macro_f1": 0.5753
+      "accuracy": 0.5597,
+      "macro_f1": 0.5419
     },
     "ExtraTrees": {
-      "accuracy": 0.5721,
-      "macro_f1": 0.5599
+      "accuracy": 0.5579,
+      "macro_f1": 0.5425
     },
     "GradientBoosting": {
-      "accuracy": 0.5729,
-      "macro_f1": 0.5233
+      "accuracy": 0.557,
+      "macro_f1": 0.4889
     },
     "HistGradientBoosting": {
-      "accuracy": 0.5429,
-      "macro_f1": 0.5162
+      "accuracy": 0.5464,
+      "macro_f1": 0.5174
     },
     "MLP": {
-      "accuracy": 0.5031,
-      "macro_f1": 0.4074
+      "accuracy": 0.5146,
+      "macro_f1": 0.4477
     },
     "SoftVoting (LR+RF+HGB+SVM)": {
-      "accuracy": 0.5729,
-      "macro_f1": 0.5459
+      "accuracy": 0.5606,
+      "macro_f1": 0.5355
     },
     "Stacking (LR+RF+HGB -> LR)": {
-      "accuracy": 0.5075,
-      "macro_f1": 0.4951
+      "accuracy": 0.4571,
+      "macro_f1": 0.4542
     }
   },
   "regress_then_rule": {
-    "accuracy": 0.5659,
-    "macro_f1": 0.4657,
+    "accuracy": 0.5199,
+    "macro_f1": 0.4377,
     "rows": 1131
   },
-  "chosen_feature_set": "current+lags"
+  "chosen_feature_set": "original+lags+personal"
 }
