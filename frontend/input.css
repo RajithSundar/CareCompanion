@@ -58,15 +58,15 @@
   --color-case-hi: #F6F7F9;
   --color-case-shine: #FFFFFF;
   --color-case-edge: #9EA3AC;
-  --color-case-gloss: rgba(255, 255, 255, 0.95);
+  --color-case-gloss: rgba(255, 255, 255, 0.55);
   --color-case-back: #DADDE2;
   --color-case-back-2: #F2F3F5;
   /* Polished metal: a dominant tone, a sharp highlight, and two reflection shades. */
-  --color-metal-base: #E6E9ED;
-  --color-metal-shine: #FFFFFF;
-  --color-metal-mid: #AEB4BC;
-  --color-metal-deep: #6F757E;
-  --color-metal-wall: rgba(70, 78, 90, 0.22);
+  --color-metal-base: #E4E7EB;
+  --color-metal-shine: #F8F9FA;
+  --color-metal-mid: #C3C8CF;
+  --color-metal-deep: #979DA6;
+  --color-metal-wall: rgba(70, 78, 90, 0.16);
   --color-sensor: #0B0C0E;
   --color-led: #38E07B;
   --color-glass-steps: #3DDC97;
@@ -100,14 +100,14 @@
   --color-case-hi: #1D1E23;
   --color-case-shine: #8A8F99;
   --color-case-edge: #000000;
-  --color-case-gloss: rgba(255, 255, 255, 0.6);
+  --color-case-gloss: rgba(255, 255, 255, 0.18);
   --color-case-back: #030304;
   --color-case-back-2: #16171B;
-  --color-metal-base: #08090B;
-  --color-metal-shine: #EEF1F5;
-  --color-metal-mid: #3B3F46;
+  --color-metal-base: #0B0C0E;
+  --color-metal-shine: #8C919A;
+  --color-metal-mid: #2C2F35;
   --color-metal-deep: #000000;
-  --color-metal-wall: rgba(0, 0, 0, 0.35);
+  --color-metal-wall: rgba(0, 0, 0, 0.3);
   --color-accent-deep: #8A0012;
 }
 
@@ -306,7 +306,7 @@ button, [role="button"] { -webkit-user-select: none; user-select: none; }
   height: 0;
   transform-style: preserve-3d;
   transform: rotateX(var(--rx)) rotateY(var(--ry));
-  transition: transform var(--dur-long) var(--ease-out);
+  transition: transform 700ms var(--ease-out);   /* the glide back to rest */
 }
 .tracker-stage.is-live .tracker { transition: transform 90ms linear; }
 .tracker-stage.is-dragging .tracker { transition: none; }
@@ -329,22 +329,24 @@ button, [role="button"] { -webkit-user-select: none; user-select: none; }
   height: var(--h);
   border-radius: var(--rad);
 }
-/* Stacked slices give the polished-metal case its depth. Each slice carries a conic "environment
-   reflection" that rotates with the tilt (--sx), so highlights run around the frame like on metal. */
+/* Stacked slices give the brushed-metal case its depth. The reflections are fixed gradients, painted
+   once; only the rim's thin specular streak moves, by transform, so tilting stays cheap. */
 .case-slice {
-  --metal: conic-gradient(from calc(var(--sx, 0) * 3deg),
-    var(--color-metal-base) 0deg, var(--color-metal-shine) 22deg, var(--color-metal-base) 50deg,
-    var(--color-metal-mid) 95deg, var(--color-metal-deep) 130deg, var(--color-metal-mid) 160deg,
-    var(--color-metal-base) 190deg, var(--color-metal-shine) 212deg, var(--color-metal-base) 240deg,
-    var(--color-metal-mid) 285deg, var(--color-metal-deep) 315deg, var(--color-metal-base) 360deg);
-  background: linear-gradient(var(--color-metal-wall), var(--color-metal-wall)), var(--metal);
+  background: linear-gradient(var(--color-metal-wall), var(--color-metal-wall)),
+              linear-gradient(90deg, var(--color-metal-deep), var(--color-metal-mid) 28%, var(--color-metal-base) 55%,
+                                     var(--color-metal-mid) 80%, var(--color-metal-deep));
   transform: translateZ(calc(var(--r) * var(--zf))) scale(var(--s));
 }
-.case-slice.case-rim-wall { background: var(--metal); }
-.case-slice.case-rim {            /* the front bezel: bright metal with a crisp inner and outer edge */
-  background: var(--metal);
-  box-shadow: inset 0 0 0 calc(var(--r) * 0.008) var(--color-metal-shine),
-              inset 0 0 0 calc(var(--r) * 0.02) var(--color-metal-mid);
+.case-slice.case-rim-wall,
+.case-slice.case-rim {            /* the front bezel: metal with reflections running round the frame */
+  background: conic-gradient(from 20deg,
+    var(--color-metal-base) 0deg, var(--color-metal-shine) 25deg, var(--color-metal-base) 60deg,
+    var(--color-metal-mid) 110deg, var(--color-metal-deep) 145deg, var(--color-metal-mid) 175deg,
+    var(--color-metal-base) 205deg, var(--color-metal-shine) 230deg, var(--color-metal-base) 265deg,
+    var(--color-metal-mid) 300deg, var(--color-metal-deep) 330deg, var(--color-metal-base) 360deg);
+}
+.case-slice.case-rim {
+  box-shadow: inset 0 0 0 1px var(--color-metal-mid);
   overflow: hidden;
 }
 .case-slice.case-rim::after {     /* a specular streak sliding across the bezel */

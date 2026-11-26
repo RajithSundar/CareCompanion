@@ -38,12 +38,14 @@
     stage.classList.add('is-live');
     schedule();
   }, { passive: true });
-  stage.addEventListener('pointerleave', () => {
-    if (drag) return;
-    tiltX = 0; tiltY = 0;
-    stage.classList.remove('is-live');
+  // Cursor gone: glide back to the resting pose, turned slightly toward the page (CSS transition).
+  function rest() {
+    tiltX = 0; tiltY = 0; spin = 0; pitch = 0;
+    stage.classList.remove('is-live', 'is-dragging');
     schedule();
-  });
+  }
+  stage.addEventListener('pointerleave', () => { if (!drag) rest(); });
+  stage.addEventListener('blur', () => { if (!drag && !stage.matches(':hover')) rest(); });
 
   // Drag to spin. Direct manipulation, so it also works under reduced motion.
   stage.addEventListener('pointerdown', (e) => {
@@ -63,6 +65,9 @@
     drag = null;
     if (stage.hasPointerCapture(e.pointerId)) stage.releasePointerCapture(e.pointerId);
     stage.classList.remove('is-dragging', 'is-live');
+    const r = stage.getBoundingClientRect();
+    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    if (!inside || e.pointerType === 'touch') rest(); // released off the watch (or a finger lifted)
   };
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
@@ -72,7 +77,7 @@
     if (step) {
       spin += step[0];
       pitch = clamp(pitch + step[1], -30, 30);
-    } else if (e.key === 'Home') {
+    } else if (e.key === 'Home' || e.key === 'Escape') {
       spin = 0; pitch = 0;
     } else {
       return;
