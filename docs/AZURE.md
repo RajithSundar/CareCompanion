@@ -4,8 +4,15 @@ The coach's language model runs on **Azure OpenAI** (part of Azure AI Foundry). 
 
 ## 1. Create the model deployment
 
-1. In the Azure portal, create an **Azure OpenAI** resource (or an Azure AI Foundry project with an Azure OpenAI connection). Pick a region that offers `gpt-4o-mini`.
-2. Open the resource in **Azure AI Foundry**, go to **Deployments**, and deploy `gpt-4o-mini` (Standard). Note the deployment name.
+1. In the Azure portal, create an **Azure OpenAI** resource (not a Foundry project). The demo uses South India; student subscriptions only allow some regions.
+2. Deploy `gpt-4.1-mini` (version 2025-04-14, Global Standard). `gpt-4o-mini` can no longer be deployed. If the Foundry portal keeps sending you to "create a project", deploy from Azure Cloud Shell instead, using the resource ID from the resource's JSON view:
+
+   ```bash
+   az rest --method put --url "https://management.azure.com<resource-id>/deployments/gpt-4.1-mini?api-version=2024-10-01" \
+     --body '{"sku":{"name":"GlobalStandard","capacity":100},"properties":{"model":{"format":"OpenAI","name":"gpt-4.1-mini","version":"2025-04-14"}}}'
+   ```
+
+   Capacity is in thousands of tokens per minute (100 = 100 requests and 100k tokens a minute). One coach reply makes about 5 requests, so 10 is too low.
 3. In the portal, open the resource, then **Keys and Endpoint**. Copy the endpoint (`https://<name>.openai.azure.com/`) and one key.
 
 ## 2. Point the app at it

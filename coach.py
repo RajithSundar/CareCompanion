@@ -70,7 +70,7 @@ def llm_config() -> Optional[Dict[str, str]]:
 def make_llm_client(cfg: Dict[str, str]):
     if cfg["kind"] == "azure":
         return AzureOpenAI(azure_endpoint=cfg["endpoint"], api_key=cfg["api_key"], api_version=cfg["api_version"],
-                           timeout=LLM_TIMEOUT_S, max_retries=1)
+                           timeout=LLM_TIMEOUT_S, max_retries=3)
     return OpenAI(base_url=cfg["base_url"], api_key=cfg["api_key"], timeout=LLM_TIMEOUT_S, max_retries=1)
 
 

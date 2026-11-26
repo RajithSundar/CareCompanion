@@ -24,6 +24,8 @@ import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
+import openai
+
 import coach
 
 log = logging.getLogger("carecompanion.agent")
@@ -244,7 +246,7 @@ def _create(client, cfg: Dict[str, str], messages: List[Dict[str, Any]], tool_ch
         kwargs.update(tools=TOOLS, tool_choice=tool_choice)
     try:
         return client.chat.completions.create(**kwargs)
-    except Exception:
+    except openai.BadRequestError:
         if tool_choice == "required":  # some providers only accept "auto"
             log.info("tool_choice=required rejected; retrying with auto")
             kwargs["tool_choice"] = "auto"

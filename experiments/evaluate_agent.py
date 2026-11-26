@@ -190,7 +190,7 @@ def main():
     args = ap.parse_args()
 
     cfg = None if args.offline else coach.llm_config()
-    client = coach.make_llm_client(cfg) if cfg else None
+    client = coach.make_llm_client(cfg).with_options(max_retries=10) if cfg else None  # wait out rate limits
     profiles = args.profiles.split(",") if args.profiles else [p["id"] for p in demo.profiles()]
     print(f"Evaluating {len(profiles)} profiles with {cfg['provider'] + ': ' + cfg['model'] if cfg else 'offline rules'}")
 

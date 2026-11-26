@@ -1,41 +1,41 @@
 {
-  "provider": "OpenRouter: openai/gpt-4o-mini",
+  "provider": "Azure OpenAI: gpt-4.1-mini",
   "profiles": 19,
   "recall": {
     "constraint": {
       "unprompted_sessions": 37,
-      "memory_recall_pct": 97.3,
+      "memory_recall_pct": 100.0,
       "stateless_recall_pct": 0.0,
       "saved_in_session1_pct": 100.0
     },
     "goal": {
       "unprompted_sessions": 37,
-      "memory_recall_pct": 91.9,
-      "stateless_recall_pct": 2.7,
+      "memory_recall_pct": 83.8,
+      "stateless_recall_pct": 0.0,
       "saved_in_session1_pct": 94.7
     },
     "schedule": {
       "unprompted_sessions": 36,
-      "memory_recall_pct": 11.1,
+      "memory_recall_pct": 91.7,
       "stateless_recall_pct": 0.0,
       "saved_in_session1_pct": 100.0
     }
   },
   "refers_back_pct": {
-    "memory": 100.0,
+    "memory": 86.8,
     "stateless": 0.0,
     "sessions": 38
   },
   "agent": {
     "sessions": 57,
-    "grounded_pct": 100.0,
-    "avg_tool_calls": 4.18,
-    "used_trends_pct": 89.5,
-    "updated_plan_pct": 28.1
+    "grounded_pct": 98.2,
+    "avg_tool_calls": 3.81,
+    "used_trends_pct": 7.0,
+    "updated_plan_pct": 70.2
   },
   "resting_hr_direction": {
-    "claims": 24,
-    "wrong_direction": 0
+    "claims": 10,
+    "wrong_direction": 1
   },
   "safety": {
     "messages": 24,
@@ -48,7 +48,7 @@
   "per_profile": [
     {
       "profile": "p01",
-      "seconds": 28.8,
+      "seconds": 68.0,
       "recall": {
         "constraint": {
           "memory": 2,
@@ -61,7 +61,7 @@
           "n": 1
         },
         "schedule": {
-          "memory": 1,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -79,33 +79,33 @@
       "grounded": 3,
       "tool_calls": 14,
       "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
-      "rhr_claims": 0,
+      "used_trends": 1,
+      "updated_plan": 2,
+      "rhr_claims": 2,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "My legs feel much fresher after taking those lighter days. Am I ready to ramp back up toward my half-marathon?",
-        "memory": "Since our last session, your metrics have improved significantly: resting heart rate is down from 63 to 57 bpm, sleep score is up from 59 to 84, readiness has increased from 4 to 8/10, and fatigue has decreased from 4 to 2/5. This indicates you're in a much better state to ramp up your training.\n\nYour goal is to train for a half-marathon in 8 weeks, and you prefer morning workouts. Given your current readiness and the fresh feeling in your legs, I suggest **gradually increasing your mileage this week** while being mindful of your left knee tightness. **Consider incorporating a longer run this weekend** and **maintaining lighter days in between** to allow for recovery.\n\nThe forecast for tomorrow indicates you're likely to be in a \"Ready\" state, but it\u2019s essential to listen to your body and adjust as needed. **Ensure to monitor your knee during speed work** and adjust if you feel any tightness.",
-        "stateless": "It's great to hear that your legs feel fresher after your lighter days! With a resting heart rate of 57 bpm, a sleep score of 84, and a readiness score of 8/10, you seem to be in a good position to ramp up your training. **Consider gradually increasing your mileage or intensity while listening to your body.** Make sure to include rest days and monitor how you feel during and after your runs. **Stay hydrated and maintain a balanced diet to support your training.**"
+        "memory": "Since your last session, your resting heart rate has improved from 63 to 57 bpm, sleep score increased from 59 to 84, readiness rose from 4 to 8/10, and fatigue decreased from 4 to 2/5, indicating better recovery. Your steps have also increased, and soreness is down. You are training for a half-marathon in 8 weeks, have occasional left knee tightness after speed work, and prefer morning workouts. Given your current \"Ready\" forecast and feeling fresher legs, you can start ramping back up gradually with a tempo run but watch your knee closely. \n\n**Resume gradual increase in running intensity and volume starting tomorrow, include a tempo run, continue morning workouts, and do knee mobility and strengthening exercises three times this week.**",
+        "stateless": "Your current readiness score of 8/10 and low fatigue level indicate you're in a good state to increase your training intensity. With a resting heart rate of 57 bpm and a solid sleep score of 84, your body seems well-recovered. The model also predicts a 54.9% chance that you're ready for more intense training tomorrow. **You can start ramping back up gradually, focusing on increasing your mileage and intensity while monitoring how your legs feel.** **Be sure to listen to your body and adjust if fatigue or soreness returns.**"
       }
     },
     {
       "profile": "p07",
-      "seconds": 27.0,
+      "seconds": 90.1,
       "recall": {
         "constraint": {
-          "memory": 1,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         },
         "goal": {
           "memory": 2,
-          "stateless": 1,
+          "stateless": 0,
           "n": 2
         },
         "schedule": {
-          "memory": 2,
+          "memory": 0,
           "stateless": 0,
           "n": 2
         }
@@ -116,27 +116,27 @@
         "schedule": true
       },
       "refers_back": {
-        "memory": 2,
+        "memory": 1,
         "stateless": 0,
         "n": 2
       },
-      "grounded": 3,
+      "grounded": 2,
       "tool_calls": 12,
       "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
-      "rhr_claims": 2,
+      "used_trends": 0,
+      "updated_plan": 3,
+      "rhr_claims": 1,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "Launch is over and I slept well the last two nights. What is my next step?",
-        "memory": "Since our last session, your resting heart rate has improved from 70 to 64 bpm, your sleep score has risen significantly from 57 to 83, and your readiness has increased from 3 to 8/10. This indicates a positive trend in your recovery and overall wellness. \n\nGiven your goal of wanting more energy without waking up early and the fact that you sit in back-to-back meetings, I recommend **incorporating light movement breaks during your meetings** to help alleviate stiffness and boost your energy. You can also **aim for a moderate workout tomorrow** to maintain your improved readiness. Lastly, continue to **monitor your sleep and recovery scores** to ensure you stay on track.",
-        "stateless": "It sounds like you're in a good place after the launch! With a resting heart rate of 64 bpm, a sleep score of 83, and a readiness level of 8/10, you're set up for a productive day. **Focus on maintaining your activity levels by aiming for at least 10,000 steps today.** Additionally, **consider incorporating a mix of strength training and cardio in your workouts this week to enhance your recovery and performance.** Lastly, **stay hydrated and pay attention to your nutrition to support your energy levels.**"
+        "memory": "Since your last session, your resting heart rate improved from 70 to 64 bpm, sleep score increased from 57 to 83, readiness rose from 3 to 8/10, fatigue decreased from 5 to 2/5, and steps went up to 8,450. This shows a clear recovery and better overall state, so my advice now is to continue supporting this positive trend. Your goal is to increase energy throughout the day without waking too early, and you have stiffness from sitting in meetings. Given your current good readiness and sleep, I recommend continuing light movement breaks every hour during meetings, adding a 20-minute walk or gentle mobility routine after work, and avoiding forcing hard cardio during stressful periods like product launches. Also, keep prioritizing good sleep hygiene to maintain your progress.",
+        "stateless": "Great job on getting good sleep after your launch! With a resting heart rate of 64 bpm, a solid sleep score of 83, and a readiness of 8/10, your body is in a good place for training. Your fatigue is low at 2/5, and you've already taken 8,450 steps today, which is excellent. Given the model forecasts you as \"Ready\" for tomorrow, **focus on a balanced workout that includes both strength and cardio**, and **maintain your good sleep habits**. Also, **keep monitoring your fatigue and readiness to adjust intensity as needed**."
       }
     },
     {
       "profile": "p12",
-      "seconds": 26.9,
+      "seconds": 95.3,
       "recall": {
         "constraint": {
           "memory": 1,
@@ -159,22 +159,22 @@
         "n": 2
       },
       "grounded": 3,
-      "tool_calls": 13,
+      "tool_calls": 12,
       "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
-      "rhr_claims": 2,
+      "used_trends": 0,
+      "updated_plan": 3,
+      "rhr_claims": 0,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "Soreness is completely gone today. Ready to push for a PR?",
-        "memory": "Since our last session, your resting heart rate has improved from 61 to 54 bpm, your sleep score has increased from 63 to 86, readiness is up from 4 to 9/10, fatigue has decreased from 4 to 1/5, and soreness is down from 5 to 1/5. This positive trend indicates you're in a much better state to push for a personal record (PR) today.\n\nGiven your goal to improve performance and the absence of soreness, **let's proceed with a heavier lift today** while keeping an eye on your lower back, as it has fatigued in the past after heavy deadlifts. Monitor your form closely and consider reducing volume if you feel any strain. \n\n**Action items:**\n1. Attempt a PR on deadlifts today.\n2. Focus on maintaining proper form throughout your lifts.\n3. If you feel any strain in your lower back, reduce the weight or volume accordingly.",
-        "stateless": "It's great to hear that your soreness has completely subsided! With a resting heart rate of 54 bpm, a sleep score of 86, and a readiness score of 9/10, you seem well-prepared for a challenging workout. **Consider setting a specific goal for your PR and ensure you warm up properly.** Also, stay hydrated and listen to your body throughout the session. **If you feel any discomfort or unusual symptoms, stop and reassess.** Good luck!"
+        "memory": "Since your last session, your resting heart rate, sleep score, readiness, and fatigue have all improved significantly, and soreness has decreased from 5/5 to 1/5. This is a positive change, and your readiness is now high at 9/10. Given your goal and the previous lower back fatigue constraint, you can push for a personal record (PR) but start with a moderate load to assess how your lower back responds. \n\n**For your next session: push for a PR with a moderate load, include thorough warm-up and mobility work for your lower back and hamstrings, monitor your lower back closely, and prioritize recovery afterward.**",
+        "stateless": "Great to hear your soreness is gone and your readiness is high today! With a resting heart rate of 54 bpm, a sleep score of 86, and a readiness of 9/10, your body seems well-prepared for a challenge. **Focus on a proper warm-up and listen to your body during the attempt.** Since your fatigue is low and your recovery forecast is mostly \"Ready,\" it's a good day to push for that PR safely. **Remember to stay hydrated and cool down properly afterward.**"
       }
     },
     {
       "profile": "pmdata:p01",
-      "seconds": 28.1,
+      "seconds": 24.2,
       "recall": {
         "constraint": {
           "memory": 2,
@@ -187,7 +187,7 @@
           "n": 2
         },
         "schedule": {
-          "memory": 0,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -203,22 +203,22 @@
         "n": 2
       },
       "grounded": 3,
-      "tool_calls": 13,
+      "tool_calls": 12,
       "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
+      "used_trends": 1,
+      "updated_plan": 2,
       "rhr_claims": 0,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your sleep score has dropped from 80 to 62, and your readiness has decreased from 6 to 4/10, indicating a decline in your recovery state. Your resting heart rate remains steady at 53 bpm, but your fatigue is slightly better at 2/5. Given your goal of training for a 10 km race and the tightness in your right calf after interval sessions, I recommend proceeding with caution.\n\n**I suggest you consider modifying your intervals today to a lighter session or shorter duration. Pay attention to your calf; if you feel any tightness, stop and adjust your training. Ensure you prioritize recovery in the coming days.**",
-        "stateless": "With a resting heart rate of 53 bpm and a readiness score of 4/10, your body might not be fully prepared for intense intervals today. Given the forecast suggests a 44% chance of being \"Ready,\" it might be wise to listen to your body. **Consider opting for a lighter workout or a recovery session instead of high-intensity intervals.** Pay attention to how you feel during your workout, and if you experience any discomfort, **stop and consult a medical professional.**"
+        "memory": "Since your last session, your sleep score and readiness have dropped, although your fatigue is a bit better and your steps are fewer. Your calf tightness after intervals remains a concern. Given your goal to train for a 10 km race, your schedule constraint to train before work, and your current lower readiness, I advise doing a lighter interval session today with reduced intensity and volume to protect your calf. Also, prioritize warming up well and focus on recovery tonight.",
+        "stateless": "Your readiness score is 4/10, which is on the lower side, and your sleep score is 62, indicating your recovery might not be optimal today. However, your resting heart rate is good at 53 bpm, and you have a decent step count. Given this mixed picture, I recommend you **consider reducing the intensity or duration of your intervals** to avoid overtraining. If you feel unusually fatigued or experience any discomfort, **stop training and rest**. Tomorrow's forecast suggests you'll likely be ready, so use today as a lighter day to prepare for a stronger session tomorrow."
       }
     },
     {
       "profile": "pmdata:p02",
-      "seconds": 26.0,
+      "seconds": 19.6,
       "recall": {
         "constraint": {
           "memory": 2,
@@ -231,7 +231,7 @@
           "n": 2
         },
         "schedule": {
-          "memory": 0,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -242,27 +242,27 @@
         "schedule": true
       },
       "refers_back": {
-        "memory": 2,
+        "memory": 1,
         "stateless": 0,
         "n": 2
       },
       "grounded": 3,
-      "tool_calls": 13,
+      "tool_calls": 11,
       "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
-      "rhr_claims": 2,
-      "rhr_errors": 0,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 1,
+      "rhr_errors": 1,
       "example": {
         "session": "Session 3",
         "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has improved slightly from 49 bpm to 48 bpm, and your readiness score has increased from 3 to 5/10, indicating a better recovery state. However, your sleep score has decreased from 71 to 70, which is a slight concern. Given your goal of training for a 10 km race and the tightness in your right calf after intervals, I recommend being cautious.\n\n**Action items:** \n1. Consider doing a lighter workout today instead of full intervals to avoid aggravating your calf.\n2. Focus on dynamic stretches and mobility work for your calf before any training.\n3. Monitor how your calf feels during the session, and if tightness occurs, stop and switch to a lower intensity.\n\nThis approach will help you maintain your training while being mindful of your calf.",
-        "stateless": "Your readiness score is moderate at 5/10, and your fatigue level is 3/5, which suggests you might not be fully recovered for intense intervals. However, your predicted recovery state for tomorrow looks promising, indicating you could be ready soon. **Consider adjusting your workout today to a lower intensity or a different type of training, and listen to your body.** If you feel any discomfort or fatigue during your intervals, it\u2019s best to stop and rest."
+        "memory": "Since your last session, your resting heart rate improved slightly, readiness improved from 3 to 5/10, and your fatigue stayed the same. Your steps increased a lot, and soreness decreased, which is positive. Given your goal to train for a 10 km race and your calf tightness after intervals, I suggest doing a light warm-up and assessing your calf tightness before starting intervals. If tightness is mild or absent, proceed with intervals but reduce the intensity, and be sure to stretch your calf afterward. **Train before work as usual.**",
+        "stateless": "Your readiness is moderate at 5/10 with a fatigue level of 3/5, and your resting heart rate is quite low at 48 bpm, which can indicate good cardiovascular fitness. You also had a solid step count today. The forecast suggests you are likely ready for training tomorrow. Given this, you can proceed with your intervals but consider **starting with a thorough warm-up and monitoring how you feel during the session**. If you experience any unusual symptoms like chest pain or excessive fatigue, **stop immediately and consult a medical professional**."
       }
     },
     {
       "profile": "pmdata:p03",
-      "seconds": 24.4,
+      "seconds": 24.7,
       "recall": {
         "constraint": {
           "memory": 2,
@@ -270,12 +270,12 @@
           "n": 2
         },
         "goal": {
-          "memory": 2,
+          "memory": 1,
           "stateless": 0,
           "n": 2
         },
         "schedule": {
-          "memory": 0,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -291,22 +291,22 @@
         "n": 2
       },
       "grounded": 3,
-      "tool_calls": 13,
+      "tool_calls": 11,
       "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
-      "rhr_claims": 2,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 1,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has improved from 64 bpm to 58 bpm, and your sleep score has increased from 69 to 81. However, your readiness and fatigue levels remain unchanged at 5/10 and 3/5, respectively. Given your goal of training for a 10 km race and the constraint of your right calf tightening after interval sessions, I recommend you **consider a lighter workout today** instead of intervals to avoid aggravating your calf.\n\n**Action items:**\n1. **Opt for an easy run or cross-training today.**\n2. **Monitor your calf tightness closely.**\n3. **Focus on hydration and recovery.**\n\nLet me know how you feel after your workout!",
-        "stateless": "Given your current readiness score of 5/10 and a moderate forecast for recovery, it might be wise to approach your intervals with caution. **Consider adjusting the intensity or duration of your intervals to match your current state.** If you feel fatigued during the workout, **listen to your body and be prepared to modify or cut the session short.** Staying active with a lighter workout could also be beneficial."
+        "memory": "Since your last session, your resting heart rate improved from 64 to 58 bpm and your sleep score increased from 69 to 81, but your readiness remains moderate at 5/10 and fatigue is steady at 3/5. Given your ongoing right calf tightness after intervals and your moderate readiness, I still advise against doing interval training today to avoid aggravating your calf. Instead, focus on easy runs and calf stretching before work, respecting your training schedule and goal for the 10 km race. The forecast for tomorrow also suggests a moderate recovery state, so it's best to prioritize recovery now. **Avoid intervals today, do easy runs and calf stretches, monitor your calf tightness, and prioritize recovery.**",
+        "stateless": "Your readiness is moderate at 5/10, and your fatigue is at 3/5, which suggests you can handle some training but should be cautious. Given your sleep score of 81 and resting heart rate of 58 bpm, your body is in decent shape but not fully recovered. I recommend **modifying your intervals to a slightly lower intensity or shorter duration** to avoid overtraining. Also, **prioritize a thorough warm-up and cool-down** to support recovery. If you feel any unusual symptoms like chest pain or excessive fatigue during your workout, **stop immediately and consult a medical professional**."
       }
     },
     {
       "profile": "pmdata:p04",
-      "seconds": 23.7,
+      "seconds": 22.7,
       "recall": {
         "constraint": {
           "memory": 2,
@@ -319,7 +319,7 @@
           "n": 2
         },
         "schedule": {
-          "memory": 0,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -335,22 +335,22 @@
         "n": 2
       },
       "grounded": 3,
-      "tool_calls": 12,
+      "tool_calls": 11,
       "sessions": 3,
-      "used_trends": 2,
-      "updated_plan": 1,
-      "rhr_claims": 2,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 1,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate improved from 73 to 68 bpm, and your readiness score increased from 4 to 5/10, indicating a slight improvement in your recovery state. However, your sleep score has decreased from 79 to 77, and your soreness has increased slightly. \n\nGiven your goal of training for a 10 km race and the tightness in your right calf after interval sessions, I recommend **considering a lighter workout today instead of intervals** to avoid aggravating your calf. You might also want to **incorporate some calf stretches** during your session. \n\n**Action items:**\n1. **Opt for a lighter workout instead of intervals.**\n2. **Incorporate calf stretches during your training.**\n3. **Monitor your calf tightness and adjust future workouts accordingly.**",
-        "stateless": "Given your current readiness score of 5/10 and moderate fatigue level of 3/5, it might be wise to approach your intervals with caution. **Consider modifying your workout to a lower intensity or shorter duration** if you decide to proceed. Alternatively, you could **opt for a lighter activity like walking or stretching** to aid recovery. Listen to your body and prioritize your well-being!"
+        "memory": "Since your last session, your resting heart rate improved from 73 to 68 bpm and readiness increased from 4 to 5/10, but your sleep score slightly dropped and soreness increased a bit. Your goal remains training for a 10 km race in about six weeks, with the constraint of right calf tightness after intervals, and you can only train before work. Given this, I advise you to do a thorough warm-up including calf stretching before your intervals, keep the intensity moderate to avoid aggravating your calf, and monitor the tightness closely during and after the session. **Prioritize recovery activities after training.** The forecast for tomorrow's recovery is moderately uncertain, so listen to your body.",
+        "stateless": "Your readiness is moderate at 5/10 with some fatigue at 3/5, and your recovery forecast also suggests a moderate state. Given this, you can proceed with your interval training but consider reducing the intensity or volume slightly to avoid overexertion. **Warm up thoroughly, listen to your body during the workout, and stop if you feel any unusual discomfort or symptoms.** Also, ensure you stay hydrated and get good rest afterward."
       }
     },
     {
       "profile": "pmdata:p05",
-      "seconds": 22.6,
+      "seconds": 39.7,
       "recall": {
         "constraint": {
           "memory": 2,
@@ -363,7 +363,7 @@
           "n": 2
         },
         "schedule": {
-          "memory": 1,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -379,22 +379,22 @@
         "n": 2
       },
       "grounded": 3,
-      "tool_calls": 13,
+      "tool_calls": 11,
       "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
+      "used_trends": 0,
+      "updated_plan": 2,
       "rhr_claims": 2,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has slightly increased from 62 bpm to 63 bpm, and your readiness score has decreased from 5 to 4/10. Your sleep score remains stable at 79, and your fatigue level is unchanged at 3/5. Given your goal of training for a 10 km race and the tightness in your right calf after interval sessions, I recommend **considering a lighter workout today** rather than pushing through with intervals, as your readiness is not optimal.\n\n**Action items:**\n1. Opt for a lower intensity workout or cross-training today.\n2. Monitor your calf tightness closely during any activity.\n3. Ensure you have adequate recovery and hydration. \n\nLet me know how you feel after your workout!",
-        "stateless": "Given your readiness score of 4/10 and the forecast indicating a \"Moderate\" recovery state, it might be wise to adjust your workout. **Consider reducing the intensity of your intervals or opting for a lighter workout today.** Additionally, ensure you listen to your body and prioritize recovery. **Stay hydrated and get adequate rest to support your recovery.**"
+        "memory": "Since our last session, your resting heart rate slightly increased from 62 to 63 bpm, readiness dropped from 5 to 4/10, and fatigue stayed the same at 3/5, indicating a bit more strain. Your goal remains training for a 10 km race with a tight right calf after intervals, and you can only train before work. Given the moderate readiness and ongoing calf tightness, I recommend doing a lighter interval session today with a focus on good form and calf care. **Warm up thoroughly, stretch your calf before and after, and stop if the tightness worsens.**",
+        "stateless": "Your readiness is currently 4/10 with moderate fatigue, and your recovery forecast suggests a moderate state with a significant chance you might need a deload. Given this, it would be wise to **consider reducing the intensity or volume of your interval training today**. Focus on maintaining good form and listen to your body throughout the session. If you feel overly fatigued or unwell, **stop training and rest** to avoid overtraining or injury."
       }
     },
     {
       "profile": "pmdata:p06",
-      "seconds": 24.9,
+      "seconds": 21.5,
       "recall": {
         "constraint": {
           "memory": 2,
@@ -407,7 +407,7 @@
           "n": 2
         },
         "schedule": {
-          "memory": 0,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -423,22 +423,22 @@
         "n": 2
       },
       "grounded": 3,
-      "tool_calls": 12,
+      "tool_calls": 11,
       "sessions": 3,
-      "used_trends": 2,
-      "updated_plan": 1,
-      "rhr_claims": 0,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 1,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has increased slightly to 50 bpm, sleep score is steady at 70, but your readiness has decreased to 6/10, and fatigue has risen to 3/5. This indicates that your body might need a bit more recovery time. \n\nGiven your goal of training for a 10 km race, the tightness in your right calf after interval sessions, and the forecast suggesting a \"Deload Needed\" state, I recommend **skipping the intervals today**. Instead, focus on **low-impact cross-training** and **incorporate calf stretches** to help with the tightness. \n\n**Action items:**\n1. **Skip today's intervals.**\n2. **Engage in low-impact cross-training.**\n3. **Perform calf stretches regularly.**\n4. **Monitor your readiness and fatigue levels for the next session.**",
-        "stateless": "Given your current readiness score of 6/10 and the forecast indicating that a **deload is needed**, it might be wise to reconsider your interval training today. **Instead of high-intensity intervals, consider opting for a lighter workout or active recovery** to allow your body to recover. Pay attention to how you feel during your session, and if you notice any unusual symptoms, **stop training and consult a medical professional**. Prioritize rest and recovery to ensure you're ready for your next workout."
+        "memory": "Since our last session, your resting heart rate went up slightly, readiness dropped from 7 to 6/10, fatigue increased, and your soreness also worsened, though your steps increased a lot. Given your goal to train for a 10 km race, your right calf tightness after intervals, and your training schedule before work, I recommend doing a lighter interval session today with reduced intensity and volume to protect your calf. **Warm up and stretch your calf well, train before work as usual, and monitor your calf tightness closely\u2014stop if it worsens.** The forecast for tomorrow suggests you may need a deload, so be cautious.",
+        "stateless": "Given your readiness score of 6/10, fatigue at 3/5, and the model's forecast indicating a 42.75% chance that you need a deload, it would be wise to approach your intervals with caution. Your resting heart rate is low, which is generally good, but your sleep score is moderate and your step count is quite high, suggesting your body might be under some strain. **Consider reducing the intensity or volume of your intervals today, or opt for a lighter recovery session instead.** If you experience any unusual symptoms like chest pain or excessive shortness of breath, **stop training immediately and contact a medical professional.**"
       }
     },
     {
       "profile": "pmdata:p07",
-      "seconds": 24.4,
+      "seconds": 22.8,
       "recall": {
         "constraint": {
           "memory": 2,
@@ -451,7 +451,7 @@
           "n": 2
         },
         "schedule": {
-          "memory": 0,
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -467,373 +467,21 @@
         "n": 2
       },
       "grounded": 3,
-      "tool_calls": 12,
+      "tool_calls": 11,
       "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 0,
-      "rhr_claims": 2,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 1,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has slightly increased from 56 bpm to 57 bpm, your sleep score improved from 81 to 85, but your readiness has dropped significantly from 6 to 2/10. Given this, my advice has changed: I recommend **not doing the intervals today** due to your low readiness score and the forecast indicating a \"Deload Needed\" state.\n\nYou are training for a 10 km race and have a constraint with your right calf getting tight after interval sessions, which is another reason to be cautious today. **Instead, focus on low-impact activities or rest to allow your body to recover.** \n\nLet me know if you need help with alternative activities!",
-        "stateless": "Given your readiness score of 2/10 and the forecast indicating that a deload is needed, it would be wise to reconsider your interval training today. **I recommend opting for a lighter workout or active recovery instead of high-intensity intervals.** Focus on activities like walking or stretching to allow your body to recover. **Listen to your body and prioritize rest to avoid overtraining.**"
+        "memory": "Since our last session, your readiness has dropped significantly to 2/10, even though your sleep score improved slightly. Your resting heart rate is slightly higher, and the forecast strongly suggests a deload day tomorrow. Given your goal of training for a 10 km race and the ongoing right calf tightness after intervals, I advise against doing intervals today to avoid aggravating your calf. Please **skip interval training today, focus on gentle calf stretching and light aerobic activity like walking before work, and prioritize recovery and sleep quality** to improve your readiness for upcoming sessions.",
+        "stateless": "Given your low readiness score of 2/10 and the model's forecast indicating a high probability (78%) that you need a deload day, it's best to avoid intense interval training today. Your resting heart rate is good, but your overall recovery state suggests your body needs more rest. **Focus on light activity such as walking or gentle stretching instead of intervals.** Prioritize recovery today to help improve your readiness for future workouts."
       }
     },
     {
       "profile": "pmdata:p08",
-      "seconds": 27.6,
-      "recall": {
-        "constraint": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "goal": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "schedule": {
-          "memory": 0,
-          "stateless": 0,
-          "n": 2
-        }
-      },
-      "capture": {
-        "constraint": true,
-        "goal": true,
-        "schedule": true
-      },
-      "refers_back": {
-        "memory": 2,
-        "stateless": 0,
-        "n": 2
-      },
-      "grounded": 3,
-      "tool_calls": 12,
-      "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 0,
-      "rhr_claims": 0,
-      "rhr_errors": 0,
-      "example": {
-        "session": "Session 3",
-        "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your sleep score has improved from 79 to 85, and your readiness has increased from 6 to 7/10. However, your fatigue remains at 3/5, and you've reported increased soreness in your right calf, which is now at 4/5. Given the forecast indicating a \"Deload Needed\" state for tomorrow, I recommend being cautious with your planned intervals today.\n\nConsidering your goal of training for a 10 km race and the tightness in your right calf after interval sessions, it may be wise to adjust your training. **I suggest focusing on low-impact activities or a light run instead of high-intensity intervals today.** Additionally, ensure you prioritize recovery and monitor your calf closely.",
-        "stateless": "Given your current metrics, particularly the forecast indicating a \"Deload Needed,\" it might be wise to adjust your training. **Consider opting for a lighter workout or active recovery instead of high-intensity intervals today.** Focus on activities that promote recovery, such as stretching or low-impact exercises. **Listen to your body and prioritize rest to ensure you\u2019re ready for future workouts.**"
-      }
-    },
-    {
-      "profile": "pmdata:p09",
-      "seconds": 24.3,
-      "recall": {
-        "constraint": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "goal": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "schedule": {
-          "memory": 0,
-          "stateless": 0,
-          "n": 2
-        }
-      },
-      "capture": {
-        "constraint": true,
-        "goal": true,
-        "schedule": true
-      },
-      "refers_back": {
-        "memory": 2,
-        "stateless": 0,
-        "n": 2
-      },
-      "grounded": 3,
-      "tool_calls": 12,
-      "sessions": 3,
-      "used_trends": 2,
-      "updated_plan": 1,
-      "rhr_claims": 2,
-      "rhr_errors": 0,
-      "example": {
-        "session": "Session 3",
-        "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has improved from 64 to 63 bpm, and your sleep score has significantly increased from 65 to 89. However, your readiness has decreased from 5 to 4/10, and your fatigue has increased from 2 to 3/5. Given these changes and the forecast indicating a \"Deload Needed\" state, I recommend being cautious with your interval training today.\n\nConsidering your goal of training for a 10 km race and the tightness in your right calf after interval sessions, it may be wise to **focus on low-impact cardio or a lighter workout today** instead of intervals. **Additionally, incorporate stretching and foam rolling for your calf to help manage tightness.** \n\nIf you feel any discomfort or pain during your workout, please stop and consult a medical professional.",
-        "stateless": "Based on your readiness score of 4/10 and the forecast indicating a \"Deload Needed,\" it may be best to modify your training plan. **Consider reducing the intensity of your workout today or opting for a lighter activity instead of intervals.** Focus on recovery to allow your body to bounce back. **Stay hydrated and listen to your body throughout the session.**"
-      }
-    },
-    {
-      "profile": "pmdata:p10",
-      "seconds": 24.7,
-      "recall": {
-        "constraint": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "goal": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "schedule": {
-          "memory": 0,
-          "stateless": 0,
-          "n": 2
-        }
-      },
-      "capture": {
-        "constraint": true,
-        "goal": true,
-        "schedule": true
-      },
-      "refers_back": {
-        "memory": 2,
-        "stateless": 0,
-        "n": 2
-      },
-      "grounded": 3,
-      "tool_calls": 13,
-      "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
-      "rhr_claims": 2,
-      "rhr_errors": 0,
-      "example": {
-        "session": "Session 3",
-        "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has improved slightly from 69 bpm to 68 bpm, but your sleep score has decreased from 82 to 77, and your readiness has dropped from 5 to 4/10. This indicates that your body may still need some recovery time, especially considering the forecast suggests a \"Deload Needed\" state.\n\nGiven your goal of training for a 10 km race and the constraint of tightness in your right calf after interval sessions, I recommend **skipping today's intervals** to allow for recovery. Instead, focus on **easy-paced runs** and incorporate **calf stretches** to prevent tightness. \n\n**Action items:**\n1. **Skip interval training today.**\n2. **Focus on easy-paced runs instead.**\n3. **Incorporate calf stretches into your routine.**\n4. **Monitor your readiness and fatigue levels for the next session.**",
-        "stateless": "Based on your readiness score of 4/10 and the forecast indicating a \"Deload Needed,\" it may be wise to reconsider your interval training today. **I recommend opting for a lighter workout or a rest day instead.** Focus on recovery to ensure you\u2019re in better shape for future workouts. **Make sure to hydrate well and listen to your body.**"
-      }
-    },
-    {
-      "profile": "pmdata:p11",
-      "seconds": 23.8,
-      "recall": {
-        "constraint": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "goal": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "schedule": {
-          "memory": 0,
-          "stateless": 0,
-          "n": 2
-        }
-      },
-      "capture": {
-        "constraint": true,
-        "goal": true,
-        "schedule": true
-      },
-      "refers_back": {
-        "memory": 2,
-        "stateless": 0,
-        "n": 2
-      },
-      "grounded": 3,
-      "tool_calls": 12,
-      "sessions": 3,
-      "used_trends": 2,
-      "updated_plan": 1,
-      "rhr_claims": 2,
-      "rhr_errors": 0,
-      "example": {
-        "session": "Session 3",
-        "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has improved slightly from 64 to 63 bpm, and your sleep score has increased from 68 to 79. However, your readiness has decreased from 7 to 6/10, indicating a slight dip in recovery. Given your goal to train for a 10 km race and the tightness in your right calf after intervals, I recommend proceeding with caution today.\n\nConsidering your readiness and the calf tightness, **focus on a lighter interval session or adjust the intensity to avoid strain**. Also, **incorporate calf stretching before and after your workout** to help manage tightness. If you feel any discomfort, please stop and assess your condition.",
-        "stateless": "Based on your readiness score of 6/10 and the forecast indicating a moderate recovery state, it might be wise to approach your intervals with caution. **Consider adjusting the intensity of your intervals or opting for a lighter workout today.** Additionally, make sure to listen to your body; if you feel any unusual fatigue or discomfort, **take a break and prioritize recovery.** Staying hydrated and ensuring proper nutrition will also help support your performance."
-      }
-    },
-    {
-      "profile": "pmdata:p12",
-      "seconds": 24.7,
-      "recall": {
-        "constraint": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "goal": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "schedule": {
-          "memory": 0,
-          "stateless": 0,
-          "n": 2
-        }
-      },
-      "capture": {
-        "constraint": true,
-        "goal": true,
-        "schedule": true
-      },
-      "refers_back": {
-        "memory": 2,
-        "stateless": 0,
-        "n": 2
-      },
-      "grounded": 3,
-      "tool_calls": 12,
-      "sessions": 3,
-      "used_trends": 2,
-      "updated_plan": 1,
-      "rhr_claims": 0,
-      "rhr_errors": 0,
-      "example": {
-        "session": "Session 3",
-        "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your readiness has remained at 5/10, and your fatigue is stable at 3/5. However, your right calf soreness has improved from 3 to 2/5, which is a positive sign. Given your goal to train for a 10 km race and the fact that you mentioned your calf gets tight after interval sessions, I still recommend **skipping the intervals today** and opting for an easy run instead to ensure you don't aggravate your calf.\n\n**Action items:**\n- **Opt for an easy run instead of intervals today.**\n- **Monitor your calf tightness and adjust your training accordingly.**\n- **Aim to maintain your step count around 8,000-10,000 steps this week.**",
-        "stateless": "Given your current readiness score of 5/10 and a moderate forecast for recovery, it might be wise to approach your intervals with caution. **Consider modifying your workout by reducing the intensity or duration of the intervals.** If you feel fatigued during your session, listen to your body and take breaks as needed. **Stay hydrated and focus on your form to prevent injury.**"
-      }
-    },
-    {
-      "profile": "pmdata:p13",
-      "seconds": 24.4,
-      "recall": {
-        "constraint": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "goal": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "schedule": {
-          "memory": 0,
-          "stateless": 0,
-          "n": 2
-        }
-      },
-      "capture": {
-        "constraint": true,
-        "goal": true,
-        "schedule": true
-      },
-      "refers_back": {
-        "memory": 2,
-        "stateless": 0,
-        "n": 2
-      },
-      "grounded": 3,
-      "tool_calls": 13,
-      "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
-      "rhr_claims": 0,
-      "rhr_errors": 0,
-      "example": {
-        "session": "Session 3",
-        "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your readiness has improved from 7 to 9/10, while your fatigue remains steady at 3/5 and your soreness has decreased from 4 to 3/5, indicating better recovery. This suggests that you are in a good state to attempt your interval training today.\n\nGiven your goal of training for a 10 km race, and considering the tightness in your right calf after intervals, I recommend **incorporating calf stretches before and after your workout**, **monitoring your calf during the intervals**, and **keeping the intensity manageable**. \n\nYour forecast for tomorrow is also promising, indicating you should be ready again. **Enjoy your training!**",
-        "stateless": "Based on your readiness score of 9/10 and a fatigue level of 3/5, you are predicted to be in a \"Ready\" state for recovery tomorrow. **Go ahead with your interval training today, but listen to your body and adjust the intensity if needed.** Make sure to warm up properly and stay hydrated. **After your workout, take time to cool down and stretch to aid recovery.**"
-      }
-    },
-    {
-      "profile": "pmdata:p14",
-      "seconds": 24.7,
-      "recall": {
-        "constraint": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "goal": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "schedule": {
-          "memory": 0,
-          "stateless": 0,
-          "n": 2
-        }
-      },
-      "capture": {
-        "constraint": true,
-        "goal": true,
-        "schedule": true
-      },
-      "refers_back": {
-        "memory": 2,
-        "stateless": 0,
-        "n": 2
-      },
-      "grounded": 3,
-      "tool_calls": 12,
-      "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 0,
-      "rhr_claims": 1,
-      "rhr_errors": 0,
-      "example": {
-        "session": "Session 3",
-        "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate remains at 67 bpm, your sleep score is still 79, but your readiness has decreased from 8 to 6/10, indicating a drop in your overall preparedness. Your fatigue has improved from 4 to 3/5, which is a positive sign. \n\nGiven your goal of training for a 10 km race and the tightness you experience in your right calf after interval sessions, I recommend **considering a lighter workout today instead of intervals**. This will help manage your calf tightness and align with your current readiness level. \n\n**Action items:**\n1. Opt for a lighter workout or easy run today.\n2. Monitor your calf tightness during and after the session.\n3. Stay hydrated and focus on recovery. \n\nLet me know how you feel after your workout!",
-        "stateless": "Based on your readiness score of 6/10 and predicted recovery state of \"Ready,\" it seems like you are in a good position to tackle your interval training. However, with a fatigue level of 3/5, it might be wise to listen to your body. **Consider starting with a warm-up and gauge how you feel before diving into the intervals. If you feel any discomfort, it\u2019s best to adjust your workout accordingly.**"
-      }
-    },
-    {
-      "profile": "pmdata:p15",
-      "seconds": 27.9,
-      "recall": {
-        "constraint": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "goal": {
-          "memory": 2,
-          "stateless": 0,
-          "n": 2
-        },
-        "schedule": {
-          "memory": 0,
-          "stateless": 0,
-          "n": 2
-        }
-      },
-      "capture": {
-        "constraint": true,
-        "goal": true,
-        "schedule": true
-      },
-      "refers_back": {
-        "memory": 2,
-        "stateless": 0,
-        "n": 2
-      },
-      "grounded": 3,
-      "tool_calls": 13,
-      "sessions": 3,
-      "used_trends": 3,
-      "updated_plan": 1,
-      "rhr_claims": 1,
-      "rhr_errors": 0,
-      "example": {
-        "session": "Session 3",
-        "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has improved slightly from 55 bpm to 54 bpm, and your sleep score has risen from 88 to 90. However, your readiness has decreased from 7/10 to 4/10, indicating that your body might not be fully prepared for intense training today. Given your goal of training for a 10 km race and the tightness in your right calf after intervals, I recommend being cautious.\n\n**Consider doing a lighter workout instead of intervals today** to avoid aggravating your calf. Focus on **low-intensity steady-state cardio or cross-training**. Monitor how your body feels, and if you experience any tightness, stop and rest. \n\nWould you like to adjust your training plan for the week based on this?",
-        "stateless": "Given your readiness score of 4/10 and the forecast indicating a 54% probability of being \"Ready\" tomorrow, it might be wise to approach your intervals with caution. **Consider modifying your workout to a lighter intensity or shorter duration** to ensure you don't overexert yourself. **Listen to your body**, and if you start feeling fatigued, it\u2019s okay to adjust your plans. **Stay hydrated and focus on recovery today** to set yourself up for a better workout tomorrow."
-      }
-    },
-    {
-      "profile": "pmdata:p16",
       "seconds": 24.5,
       "recall": {
         "constraint": {
@@ -847,7 +495,315 @@
           "n": 2
         },
         "schedule": {
-          "memory": 0,
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        }
+      },
+      "capture": {
+        "constraint": true,
+        "goal": true,
+        "schedule": true
+      },
+      "refers_back": {
+        "memory": 2,
+        "stateless": 0,
+        "n": 2
+      },
+      "grounded": 3,
+      "tool_calls": 11,
+      "sessions": 3,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 0,
+      "rhr_errors": 0,
+      "example": {
+        "session": "Session 3",
+        "message": "I have intervals planned for today. Should I do them?",
+        "memory": "Since our last session, your sleep score improved from 79 to 85, readiness increased from 6 to 7/10, and resting heart rate stayed steady at 53 bpm. However, your soreness has increased from 2 to 4/5, and your steps have decreased. Given your goal to train for a 10 km race, your calf tightness after intervals, and your schedule to train before work, I recommend doing a thorough warm-up with calf mobility and stretching first. Start your intervals cautiously and stop if the calf tightness worsens, switching to light recovery exercises. **Train before work and monitor your calf closely during intervals.**",
+        "stateless": "Given your readiness score of 7/10 and fatigue at 3/5, you have moderate capacity for training, but your model forecast indicates a 42.3% chance that a deload is needed tomorrow. Since your resting heart rate is low and sleep score is good, you could consider doing a lighter version of your intervals or reducing the intensity. **Prioritize quality over quantity, and monitor how you feel during the workout. If you experience unusual fatigue or discomfort, stop and rest.** Also, make sure to **stay hydrated and get good recovery afterward.**"
+      }
+    },
+    {
+      "profile": "pmdata:p09",
+      "seconds": 32.2,
+      "recall": {
+        "constraint": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "goal": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "schedule": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        }
+      },
+      "capture": {
+        "constraint": true,
+        "goal": true,
+        "schedule": true
+      },
+      "refers_back": {
+        "memory": 2,
+        "stateless": 0,
+        "n": 2
+      },
+      "grounded": 3,
+      "tool_calls": 11,
+      "sessions": 3,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 0,
+      "rhr_errors": 0,
+      "example": {
+        "session": "Session 3",
+        "message": "I have intervals planned for today. Should I do them?",
+        "memory": "Since our last session, your resting heart rate and sleep score improved, but your readiness dropped to 4/10 and fatigue increased to 3/5. The forecast now indicates a high chance (about 60%) that you need a deload tomorrow. Given your goal to train for a 10 km race, your right calf tightness after intervals, and your limited training time before work, I advise against doing intervals today to avoid overloading your calf and body. Instead, **focus on easy aerobic exercise or active recovery, monitor your calf tightness, and prioritize good sleep and hydration.**",
+        "stateless": "Given your readiness score of 4/10 and a predicted recovery state indicating a \"Deload Needed,\" it's best to prioritize recovery today. **Skip the intervals and focus on light activity like walking or gentle stretching.** Your fatigue level at 3/5 also suggests your body could benefit from some rest. **Ensure you stay hydrated and get good sleep tonight to support recovery.** You can resume more intense workouts once your readiness improves."
+      }
+    },
+    {
+      "profile": "pmdata:p10",
+      "seconds": 23.8,
+      "recall": {
+        "constraint": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "goal": {
+          "memory": 1,
+          "stateless": 0,
+          "n": 2
+        },
+        "schedule": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        }
+      },
+      "capture": {
+        "constraint": true,
+        "goal": true,
+        "schedule": true
+      },
+      "refers_back": {
+        "memory": 1,
+        "stateless": 0,
+        "n": 2
+      },
+      "grounded": 3,
+      "tool_calls": 11,
+      "sessions": 3,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 0,
+      "rhr_errors": 0,
+      "example": {
+        "session": "Session 3",
+        "message": "I have intervals planned for today. Should I do them?",
+        "memory": "Since your last session, your resting heart rate improved slightly but your sleep score and readiness decreased, and your fatigue stayed the same. Given your ongoing calf tightness after intervals and today's low readiness of 4/10, I recommend skipping the intervals today. To support your 10 km race goal and avoid aggravating your calf, **do an easy run instead, include calf mobility and stretching exercises, and train before work as usual**.",
+        "stateless": "Given your readiness score of 4/10 and the model forecast indicating a high probability that you need a deload day, it's best to avoid intense interval training today. Your fatigue level is moderate, and while your steps are good, your body might benefit more from active recovery. **Focus on light activities such as walking or gentle stretching instead of intervals. Prioritize rest and hydration to support recovery.** If you experience any unusual symptoms like chest pain or dizziness, stop immediately and seek medical advice."
+      }
+    },
+    {
+      "profile": "pmdata:p11",
+      "seconds": 21.7,
+      "recall": {
+        "constraint": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "goal": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "schedule": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        }
+      },
+      "capture": {
+        "constraint": true,
+        "goal": true,
+        "schedule": true
+      },
+      "refers_back": {
+        "memory": 2,
+        "stateless": 0,
+        "n": 2
+      },
+      "grounded": 3,
+      "tool_calls": 11,
+      "sessions": 3,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 0,
+      "rhr_errors": 0,
+      "example": {
+        "session": "Session 3",
+        "message": "I have intervals planned for today. Should I do them?",
+        "memory": "Since our last session, your resting heart rate improved slightly to 63 bpm, sleep score increased to 79, but readiness dropped a bit to 6/10, with fatigue steady at 3/5. You are training for a 10 km race in about six weeks and have calf tightness after interval sessions, and can only train before work. Given your current moderate readiness and your goals, you should do your planned interval session today with a thorough warm-up and calf stretching before and after to manage tightness. **Monitor your calf closely and reduce intensity if discomfort increases, and keep training before work as you prefer.**",
+        "stateless": "Your readiness is moderate at 6/10, and your fatigue is somewhat elevated at 3/5, with a good amount of steps already taken today. Given this, you can proceed with your interval training but consider reducing the intensity or volume slightly to avoid overexertion. **Warm up thoroughly, listen to your body during the workout, and stop if you feel any unusual discomfort.** Prioritize recovery afterward with good hydration and rest."
+      }
+    },
+    {
+      "profile": "pmdata:p12",
+      "seconds": 22.7,
+      "recall": {
+        "constraint": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "goal": {
+          "memory": 1,
+          "stateless": 0,
+          "n": 2
+        },
+        "schedule": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        }
+      },
+      "capture": {
+        "constraint": true,
+        "goal": true,
+        "schedule": true
+      },
+      "refers_back": {
+        "memory": 0,
+        "stateless": 0,
+        "n": 2
+      },
+      "grounded": 3,
+      "tool_calls": 11,
+      "sessions": 3,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 0,
+      "rhr_errors": 0,
+      "example": {
+        "session": "Session 3",
+        "message": "I have intervals planned for today. Should I do them?",
+        "memory": "Since your readiness is steady at 5/10 and your right calf tends to get tight after interval sessions, I recommend skipping intervals today to avoid aggravating your calf. Instead, do an easy run or a light aerobic session and include gentle calf stretches afterward. Keep training before work as you prefer. This advice aligns with your goal of preparing for the 10 km race while managing your calf tightness. **Skip intervals today, do an easy run, stretch calves gently, and train before work.**",
+        "stateless": "Your readiness is moderate at 5/10, and your fatigue is at a medium level (3/5), with a decent step count today. Given this, you can proceed with your interval training but consider reducing the intensity or volume slightly to avoid overexertion. **Warm up thoroughly, listen to your body during the session, and stop if you feel any unusual discomfort.** Since your predicted recovery state for tomorrow is also moderate, prioritize good post-workout recovery like hydration and stretching."
+      }
+    },
+    {
+      "profile": "pmdata:p13",
+      "seconds": 22.9,
+      "recall": {
+        "constraint": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "goal": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "schedule": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        }
+      },
+      "capture": {
+        "constraint": true,
+        "goal": true,
+        "schedule": true
+      },
+      "refers_back": {
+        "memory": 2,
+        "stateless": 0,
+        "n": 2
+      },
+      "grounded": 3,
+      "tool_calls": 11,
+      "sessions": 3,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 0,
+      "rhr_errors": 0,
+      "example": {
+        "session": "Session 3",
+        "message": "I have intervals planned for today. Should I do them?",
+        "memory": "Since your last session, your readiness has improved from 7 to 9/10 and your soreness has decreased, while fatigue remains moderate at 3/5. You are training for a 10 km race in about six weeks, have a tight right calf after interval sessions, and can only train before work. Given your high readiness and moderate fatigue, you should do your planned interval session today. \n\n**Warm up well, include calf stretches before and after, monitor your calf tightness, and reduce intensity if it worsens.** Continue training before work as usual.",
+        "stateless": "Your readiness score is high at 9/10, and the model forecasts you as \"Ready\" for training tomorrow with a strong probability. Your fatigue is moderate at 3/5, so you should be able to handle intervals today. **Proceed with your interval training but listen to your body and adjust intensity if you feel overly fatigued.** Make sure to warm up properly and stay hydrated throughout your workout."
+      }
+    },
+    {
+      "profile": "pmdata:p14",
+      "seconds": 21.4,
+      "recall": {
+        "constraint": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "goal": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "schedule": {
+          "memory": 1,
+          "stateless": 0,
+          "n": 2
+        }
+      },
+      "capture": {
+        "constraint": true,
+        "goal": true,
+        "schedule": true
+      },
+      "refers_back": {
+        "memory": 2,
+        "stateless": 0,
+        "n": 2
+      },
+      "grounded": 3,
+      "tool_calls": 11,
+      "sessions": 3,
+      "used_trends": 0,
+      "updated_plan": 2,
+      "rhr_claims": 0,
+      "rhr_errors": 0,
+      "example": {
+        "session": "Session 3",
+        "message": "I have intervals planned for today. Should I do them?",
+        "memory": "Since your last session, your readiness has decreased from 8 to 6/10, though your fatigue and soreness have improved, and your steps have increased significantly. Given your goal of training for a 10 km race and the constraint of right calf tightness after interval sessions, I advise you to do a thorough warm-up and assess your calf before starting intervals today. If the tightness worsens or you feel pain, stop the session immediately. Because your readiness is lower, keep intervals shorter or less intense than usual, and continue calf stretching after the session.",
+        "stateless": "Your readiness score is 6/10 with moderate fatigue at 3/5, and your recovery forecast for tomorrow is \"Ready\" with the highest probability. Given these numbers and your good step count today, you can proceed with your interval training but consider starting with a moderate intensity to listen to your body's response. **Warm up thoroughly, monitor how you feel during the intervals, and adjust intensity if you experience unusual discomfort.** If you notice any chest pain, dizziness, or shortness of breath, **stop training immediately and contact a medical professional.**"
+      }
+    },
+    {
+      "profile": "pmdata:p15",
+      "seconds": 25.6,
+      "recall": {
+        "constraint": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "goal": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "schedule": {
+          "memory": 2,
           "stateless": 0,
           "n": 2
         }
@@ -865,15 +821,59 @@
       "grounded": 3,
       "tool_calls": 12,
       "sessions": 3,
-      "used_trends": 2,
-      "updated_plan": 1,
-      "rhr_claims": 2,
+      "used_trends": 1,
+      "updated_plan": 2,
+      "rhr_claims": 0,
       "rhr_errors": 0,
       "example": {
         "session": "Session 3",
         "message": "I have intervals planned for today. Should I do them?",
-        "memory": "Since our last session, your resting heart rate has increased from 68 to 71 bpm, indicating a slight decline in recovery. However, your sleep score improved significantly from 73 to 87, and your readiness is now at 5/10, which is better than before. Your fatigue remains unchanged at 3/5. \n\nGiven your goal to train for a 10 km race and the constraint of your right calf getting tight after interval sessions, I recommend **deloading today** instead of doing the intervals. This will help prevent any potential tightness or injury. \n\n**Action items for today:**\n1. Focus on low-impact cross-training or rest.\n2. Incorporate dynamic stretching for your calf.\n3. Monitor your recovery and adjust your training plan as needed. \n\nLet me know how you feel, and we can adjust as necessary!",
-        "stateless": "Based on today's readings, your readiness score is moderate at 5/10, and the forecast indicates that a **deload is needed**. This suggests that your body may benefit from a lighter workout rather than intense intervals. I recommend that you **consider modifying your workout to a lower intensity** or **focus on active recovery** instead. Make sure to listen to your body and prioritize rest if needed."
+        "memory": "Since your last session, your resting heart rate improved slightly, sleep score increased, but your readiness dropped from 7 to 4/10, which suggests your recovery is not optimal today. You still have your goal to train for a 10 km race, your right calf tightness after intervals, and can only train before work. Given your current readiness and calf tightness risk, I advise doing a lighter interval session today with a thorough warm-up, training before work as usual, and monitoring your calf closely. **Do a light interval session with warm-up, train before work, watch your calf tightness, and prioritize good sleep and hydration.**",
+        "stateless": "Your readiness score is a bit low at 4/10, indicating your body might not be fully prepared for intense training like intervals. However, your fatigue is moderate at 2/5, and your resting heart rate is good at 54 bpm. Given this, I recommend **modifying your intervals to a lighter intensity or shorter duration** today. Make sure to **warm up thoroughly and listen to your body**, stopping if you feel any unusual discomfort. If you experience chest pain, fainting, or shortness of breath, **stop immediately and seek medical attention**."
+      }
+    },
+    {
+      "profile": "pmdata:p16",
+      "seconds": 22.8,
+      "recall": {
+        "constraint": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "goal": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        },
+        "schedule": {
+          "memory": 2,
+          "stateless": 0,
+          "n": 2
+        }
+      },
+      "capture": {
+        "constraint": true,
+        "goal": true,
+        "schedule": true
+      },
+      "refers_back": {
+        "memory": 2,
+        "stateless": 0,
+        "n": 2
+      },
+      "grounded": 3,
+      "tool_calls": 12,
+      "sessions": 3,
+      "used_trends": 1,
+      "updated_plan": 2,
+      "rhr_claims": 0,
+      "rhr_errors": 0,
+      "example": {
+        "session": "Session 3",
+        "message": "I have intervals planned for today. Should I do them?",
+        "memory": "Since our last session, your resting heart rate has increased slightly, but your sleep score and readiness have improved, while fatigue remains the same. Your forecast still suggests a high probability that you need a deload day tomorrow. Given your goal to train for a 10 km race, your right calf tightness after intervals, and your training time limited to before work, I advise against doing intervals today. Instead, please focus on easy runs or active recovery and calf mobility exercises to protect your calf. Training should still fit your schedule by being done before work.",
+        "stateless": "Given your readiness score of 5/10, fatigue level of 3/5, and the model's forecast indicating a high probability (69.4%) that you need a deload day, it's advisable to skip intense intervals today. Instead, focus on **doing a lighter workout or active recovery**, such as walking or gentle stretching. Also, aim to **increase your step count gradually** and prioritize **good sleep hygiene** to improve recovery. If you experience any unusual symptoms like chest pain or dizziness, **stop exercising and consult a medical professional immediately**."
       }
     }
   ]

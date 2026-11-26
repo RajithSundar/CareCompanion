@@ -40,25 +40,26 @@ The first model call must use a tool, the loop stops after 4 rounds, and tools o
 
 ### Does memory change the advice?
 
-`experiments/evaluate_agent.py` runs the 3-session demo for all 19 profiles (3 personas, 16 real PMData participants) and asks the same questions of a stateless assistant (same model, same day, no memory). It checks, with keywords, whether a reply brings back what the person said in Session 1 when the new message does not mention it. Final run with GPT-4o-mini via OpenRouter (`models/agent_eval.json`):
+`experiments/evaluate_agent.py` runs the 3-session demo for all 19 profiles (3 personas, 16 real PMData participants) and asks the same questions of a stateless assistant (same model, same day, no memory). It checks, with keywords, whether a reply brings back what the person said in Session 1 when the new message does not mention it. The deployed coach runs on **Azure OpenAI, gpt-4.1-mini** (`models/agent_eval.json`); the earlier final run on GPT-4o-mini via OpenRouter is kept for comparison (`models/agent_eval_openrouter_4o-mini.json`). The stateless assistant scored 0 to 3% on every recall row with both models.
 
-| | With memory (agent) | Without memory |
+| Recalled unprompted in Sessions 2 and 3 | Agent, Azure gpt-4.1-mini | Agent, GPT-4o-mini | Without memory |
+|---|---|---|---|
+| Injury or constraint from Session 1 (37 sessions) | **100%** | 97% | 0% |
+| Goal (37) | **84%** | 92% | 0 to 3% |
+| Schedule limit (36) | **92%** | 11% | 0% |
+| Refers back to the previous session (38) | **87%** | 100% | 0% |
+
+| Agent behaviour (57 sessions) | Azure gpt-4.1-mini | GPT-4o-mini |
 |---|---|---|
-| Injury or constraint from Session 1 recalled, unprompted (37 sessions) | **97%** | 0% |
-| Goal recalled, unprompted (37) | **92%** | 3% |
-| Schedule limit recalled, unprompted (36) | 11% | 0% |
-| Refers back to the previous session (38) | **100%** | 0% |
+| Read saved facts and earlier sessions before answering | 98% | 100% |
+| Facts saved in Session 1: injury / goal / schedule | 100% / 95% / 100% | 100% / 95% / 100% |
+| Tool calls per reply | 3.8 | 4.2 |
+| Looked at trends / updated the plan | 7% / 70% | 90% / 28% |
+| Resting-HR changes described in the wrong direction | 1 of 10 | 0 of 24 |
 
-| Agent behaviour (57 sessions) | |
-|---|---|
-| Read saved facts and earlier sessions before answering | 100% |
-| Facts saved in Session 1: injury / goal / schedule | 100% / 95% / 100% |
-| Tool calls per reply | 4.2 |
-| Looked at trends / updated the plan | 90% / 28% |
-| Resting-HR changes described in the wrong direction | 0 of 24 |
-| Safety screen on 24 labelled messages (14 red flags, 10 look-alikes) | 100% recall, 100% precision |
+Safety screen on 24 labelled messages (14 red flags, 10 look-alikes): 100% recall, 100% precision. It is rule-based, so the model does not affect it.
 
-How it got here, honestly: the first run (`models/agent_eval_v1.json`) found the agent recalled goals in 68% and schedules in 3% of sessions and never updated the plan; the prompt now names schedule limits and asks for a plan update when advice changes (`agent_eval_v2.json`: 86% and 19%). That run also showed the model sometimes called a rising resting HR an improvement (about 3 in 10 claims), so `get_past_sessions` now returns the changes with the direction already judged; the final run had none. One stroke-sign phrasing in the safety set was missed at first and the pattern was widened, so the safety score is not from an untouched test set. Between runs the recall numbers move by several points (schedule recall was 19% in the second run and 11% in the final one). Schedule limits are saved reliably but rarely used in later advice; that is the clearest remaining weakness. Keyword checks measure recall, not whether the advice is good.
+How it got here, honestly: the first run (`models/agent_eval_v1.json`) found the agent recalled goals in 68% and schedules in 3% of sessions and never updated the plan; the prompt now names schedule limits and asks for a plan update when advice changes (`agent_eval_v2.json`: 86% and 19%). That run also showed the model sometimes called a rising resting HR an improvement (about 3 in 10 claims), so `get_past_sessions` now returns the changes with the direction already judged; the GPT-4o-mini final run had none and the gpt-4.1-mini run had one. One stroke-sign phrasing in the safety set was missed at first and the pattern was widened, so the safety score is not from an untouched test set. The two models trade strengths: gpt-4.1-mini uses schedule limits and updates the plan far more often, but rarely calls `get_trends` and refers back less often. Recall numbers also move by several points between runs of the same model. Keyword checks measure recall, not whether the advice is good.
 
 ## Results
 
@@ -139,7 +140,7 @@ pytest -q
 
 ## LLM configuration
 
-Copy `.env.example` to `.env` and set one key. The server uses OpenRouter if `OPENROUTER_API_KEY` is set, otherwise Groq if `GROQ_API_KEY` is set. Keys stay on the server; the browser never sees or sends one. Without a key the coach gives a rule-based reply built from the forecast and the saved memories.
+Copy `.env.example` to `.env` and set one provider. The server uses Azure OpenAI if `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY` and `AZURE_OPENAI_DEPLOYMENT` are all set (see `docs/AZURE.md`), otherwise OpenRouter if `OPENROUTER_API_KEY` is set, otherwise Groq if `GROQ_API_KEY` is set. Keys stay on the server; the browser never sees or sends one. Without a key the coach gives a rule-based reply built from the forecast and the saved memories.
 
 Optional limits (defaults in brackets): `CC_COACH_PER_10MIN` (15) and `CC_COACH_PER_DAY` (60) LLM replies per IP, `CC_LLM_GLOBAL_PER_DAY` (500) in total, `CC_WRITES_PER_MIN` (60) writes per IP.
 
