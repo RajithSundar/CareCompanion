@@ -61,6 +61,12 @@
   --color-case-gloss: rgba(255, 255, 255, 0.95);
   --color-case-back: #DADDE2;
   --color-case-back-2: #F2F3F5;
+  /* Polished metal: a dominant tone, a sharp highlight, and two reflection shades. */
+  --color-metal-base: #E6E9ED;
+  --color-metal-shine: #FFFFFF;
+  --color-metal-mid: #AEB4BC;
+  --color-metal-deep: #6F757E;
+  --color-metal-wall: rgba(70, 78, 90, 0.22);
   --color-sensor: #0B0C0E;
   --color-led: #38E07B;
   --color-glass-steps: #3DDC97;
@@ -97,6 +103,11 @@
   --color-case-gloss: rgba(255, 255, 255, 0.6);
   --color-case-back: #030304;
   --color-case-back-2: #16171B;
+  --color-metal-base: #08090B;
+  --color-metal-shine: #EEF1F5;
+  --color-metal-mid: #3B3F46;
+  --color-metal-deep: #000000;
+  --color-metal-wall: rgba(0, 0, 0, 0.35);
   --color-accent-deep: #8A0012;
 }
 
@@ -318,27 +329,31 @@ button, [role="button"] { -webkit-user-select: none; user-select: none; }
   height: var(--h);
   border-radius: var(--rad);
 }
-/* Stacked slices give the glossy case its depth: a domed back, straight walls, a polished front chamfer. */
+/* Stacked slices give the polished-metal case its depth. Each slice carries a conic "environment
+   reflection" that rotates with the tilt (--sx), so highlights run around the frame like on metal. */
 .case-slice {
-  background: color-mix(in srgb, var(--color-case-hi) calc(var(--m) * 1%), var(--color-case));
+  --metal: conic-gradient(from calc(var(--sx, 0) * 3deg),
+    var(--color-metal-base) 0deg, var(--color-metal-shine) 22deg, var(--color-metal-base) 50deg,
+    var(--color-metal-mid) 95deg, var(--color-metal-deep) 130deg, var(--color-metal-mid) 160deg,
+    var(--color-metal-base) 190deg, var(--color-metal-shine) 212deg, var(--color-metal-base) 240deg,
+    var(--color-metal-mid) 285deg, var(--color-metal-deep) 315deg, var(--color-metal-base) 360deg);
+  background: linear-gradient(var(--color-metal-wall), var(--color-metal-wall)), var(--metal);
   transform: translateZ(calc(var(--r) * var(--zf))) scale(var(--s));
 }
-.case-slice.case-rim {            /* the front rim: lacquer-like bands plus a moving specular streak */
-  background: linear-gradient(135deg, var(--color-case-shine) 0%, var(--color-case-hi) 16%, var(--color-case) 40%,
-              var(--color-case-edge) 58%, var(--color-case-hi) 82%, var(--color-case-shine) 100%);
-  box-shadow: inset 0 calc(var(--r) * 0.012) 0 var(--color-case-gloss), inset 0 calc(var(--r) * -0.012) 0 var(--color-case-edge);
+.case-slice.case-rim-wall { background: var(--metal); }
+.case-slice.case-rim {            /* the front bezel: bright metal with a crisp inner and outer edge */
+  background: var(--metal);
+  box-shadow: inset 0 0 0 calc(var(--r) * 0.008) var(--color-metal-shine),
+              inset 0 0 0 calc(var(--r) * 0.02) var(--color-metal-mid);
   overflow: hidden;
 }
-.case-slice.case-rim::after {
+.case-slice.case-rim::after {     /* a specular streak sliding across the bezel */
   content: "";
   position: absolute;
   inset: -40% -70%;
   background: linear-gradient(115deg, transparent 44%, var(--color-case-gloss) 49%, transparent 53%);
   transform: translateX(calc(var(--sx, 0) * 1.4%));
   pointer-events: none;
-}
-.case-slice.case-rim-wall { /* the wall just behind the rim catches a bright edge */
-  background: linear-gradient(135deg, var(--color-case-shine), var(--color-case-hi) 30%, var(--color-case) 65%, var(--color-case-hi));
 }
 .case-back {
   transform: translateZ(calc(var(--t) / -2 - 1px)) rotateY(180deg) scale(0.84);
@@ -380,10 +395,10 @@ button, [role="button"] { -webkit-user-select: none; user-select: none; }
 .side-btn.side-left { left: calc(var(--w) / -2 - var(--bd) / 2 - 2px); }
 
 .glass {
-  transform: translateZ(calc(var(--t) / 2 + 1px)) scale(0.955);
+  transform: translateZ(calc(var(--t) / 2 + 1px)) scale(0.9);
   background: var(--color-glass);
   padding: calc(var(--r) * 0.1);
-  box-shadow: inset 0 0 0 1px var(--color-glass-rule);
+  box-shadow: inset 0 0 0 1px var(--color-glass-rule), 0 0 0 calc(var(--r) * 0.012) var(--color-metal-deep);
   overflow: hidden;
 }
 .glass::after {                    /* reflection that slides as the watch turns */

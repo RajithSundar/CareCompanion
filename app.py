@@ -402,16 +402,19 @@ _PAGE_CACHE: Dict[str, Any] = {}
 def assemble_page(name: str) -> str:
     """Assemble static/pages/<name>.html with the shared partials. Cached until any source file changes."""
     parts = STATIC_DIR / "partials"
-    sources = [STATIC_DIR / "pages" / f"{name}.html", *(parts / f for f in ("head.html", "header.html", "footer.html", "chrome.html"))]
+    sources = [STATIC_DIR / "pages" / f"{name}.html", *(parts / f for f in ("head.html", "header.html", "footer.html", "chrome.html")),
+               *(STATIC_DIR / f for f in ("app.css", "app.js", "tracker.js", "demo.js", "login.js"))]
     key = tuple(p.stat().st_mtime for p in sources)
     cached = _PAGE_CACHE.get(name)
     if cached and cached[0] == key:
         return cached[1]
-    page, head, header, footer, chrome = (p.read_text(encoding="utf-8") for p in sources)
+    page, head, header, footer, chrome = (p.read_text(encoding="utf-8") for p in sources[:5])
     meta = PAGES[name]
+    version = str(int(max((STATIC_DIR / f).stat().st_mtime for f in ("app.css", "app.js", "tracker.js", "demo.js", "login.js"))))
     head = (head.replace("{{title}}", meta["title"])
                 .replace("{{description}}", meta["description"])
-                .replace("{{scripts}}", PAGE_SCRIPTS.get(name, "")))
+                .replace("{{scripts}}", PAGE_SCRIPTS.get(name, "").replace('.js"', '.js?v={{v}}"'))
+                .replace("{{v}}", version))
     header = header.replace(f'data-nav="{name}" class="nav-link"', f'data-nav="{name}" class="nav-link" aria-current="page"')
     html = (page.replace("<!-- @head -->", head)
                 .replace("<!-- @header -->", header)
