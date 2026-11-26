@@ -5,44 +5,72 @@
   const stage = document.getElementById('trackerStage');
   if (!stage) return;
 
+  const tracker = document.getElementById('tracker');
+  const glassSheen = document.getElementById('trkGlassSheen');
+  const rimSheen = document.getElementById('trkRimSheen');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const BASE = { rx: -6, ry: -24 };
-  let tiltX = 0;     // from cursor position over the hero
-  let tiltY = 0;
-  let spin = 0;      // from dragging and the arrow keys
-  let pitch = 0;
+
+  // Performance: only transforms change per frame, written straight onto the elements that move
+  // (no CSS variables on the stage, which would restyle every element in the watch), from one
+  // requestAnimationFrame loop that stops as soon as the watch settles.
+  const REST = { rx: -6, ry: -24 };   // resting pose, turned toward the page copy
+  const FOLLOW = 0.22;                // easing while the cursor is on the watch
+  const GLIDE = 0.075;                // easing on the way back to rest
+  let tiltX = 0, tiltY = 0;           // from the cursor
+  let spin = 0, pitch = 0;            // from dragging and the arrow keys
+  let cur = { ...REST };
+  let ease = GLIDE;
   let frame = 0;
   let drag = null;
+  let rect = null;                    // stage bounds, cached so pointermove never forces layout
 
   const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const target = () => ({ rx: clamp(REST.rx + pitch + tiltY, -45, 30), ry: REST.ry + spin + tiltX });
 
-  function apply() {
-    frame = 0;
-    const rx = clamp(BASE.rx + pitch + tiltY, -45, 30);
-    const ry = BASE.ry + spin + tiltX;
-    stage.style.setProperty('--rx', `${rx.toFixed(2)}deg`);
-    stage.style.setProperty('--ry', `${ry.toFixed(2)}deg`);
-    stage.style.setProperty('--sx', (Math.sin((ry * Math.PI) / 180) * 45).toFixed(2));
+  function draw() {
+    tracker.style.transform = `rotateX(${cur.rx.toFixed(2)}deg) rotateY(${cur.ry.toFixed(2)}deg)`;
+    const sx = Math.sin((cur.ry * Math.PI) / 180) * 45;
+    glassSheen.style.transform = `translateX(${sx.toFixed(1)}%)`;
+    rimSheen.style.transform = `translateX(${(sx * 1.4).toFixed(1)}%)`;
   }
-  function schedule() { if (!frame) frame = requestAnimationFrame(apply); }
 
-  // Cursor over the watch: it tilts toward the pointer. Nothing moves when the cursor is elsewhere.
-  // Skipped under reduced motion.
+  function step() {
+    frame = 0;
+    const t = target();
+    const k = drag || reduce.matches ? 1 : ease;
+    cur.rx += (t.rx - cur.rx) * k;
+    cur.ry += (t.ry - cur.ry) * k;
+    if (Math.abs(t.rx - cur.rx) < 0.02 && Math.abs(t.ry - cur.ry) < 0.02) cur = t; // settled: loop ends
+    else frame = requestAnimationFrame(step);
+    draw();
+  }
+  function schedule(k) { ease = k; if (!frame) frame = requestAnimationFrame(step); }
+
+  const measure = () => { rect = stage.getBoundingClientRect(); };
+  stage.addEventListener('pointerenter', measure);
+  window.addEventListener('resize', () => { rect = null; }, { passive: true });
+  window.addEventListener('scroll', () => { rect = null; }, { passive: true });
+
+  // Cursor over the watch: it tilts toward the pointer. Skipped under reduced motion.
   stage.addEventListener('pointermove', (e) => {
-    if (reduce.matches || drag || e.pointerType === 'touch') return;
-    const r = stage.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    tiltX = px * 50;
-    tiltY = -py * 30;
-    stage.classList.add('is-live');
-    schedule();
+    if (drag) {
+      spin = drag.spin + (e.clientX - drag.x) * 0.6;
+      pitch = clamp(drag.pitch - (e.clientY - drag.y) * 0.3, -30, 30);
+      schedule(1);
+      return;
+    }
+    if (reduce.matches || e.pointerType === 'touch') return;
+    if (!rect) measure();
+    tiltX = ((e.clientX - rect.left) / rect.width - 0.5) * 50;
+    tiltY = -((e.clientY - rect.top) / rect.height - 0.5) * 30;
+    schedule(FOLLOW);
   }, { passive: true });
-  // Cursor gone: glide back to the resting pose, turned slightly toward the page (CSS transition).
+
+  // Cursor gone: glide back to the resting pose.
   function rest() {
     tiltX = 0; tiltY = 0; spin = 0; pitch = 0;
-    stage.classList.remove('is-live', 'is-dragging');
-    schedule();
+    stage.classList.remove('is-dragging');
+    schedule(GLIDE);
   }
   stage.addEventListener('pointerleave', () => { if (!drag) rest(); });
   stage.addEventListener('blur', () => { if (!drag && !stage.matches(':hover')) rest(); });
@@ -52,39 +80,32 @@
     if (e.button !== 0) return;
     drag = { x: e.clientX, y: e.clientY, spin, pitch };
     stage.setPointerCapture(e.pointerId);
-    stage.classList.add('is-dragging', 'is-live');
-  });
-  stage.addEventListener('pointermove', (e) => {
-    if (!drag) return;
-    spin = drag.spin + (e.clientX - drag.x) * 0.6;
-    pitch = clamp(drag.pitch - (e.clientY - drag.y) * 0.3, -30, 30);
-    schedule();
+    stage.classList.add('is-dragging');
   });
   const endDrag = (e) => {
     if (!drag) return;
     drag = null;
     if (stage.hasPointerCapture(e.pointerId)) stage.releasePointerCapture(e.pointerId);
-    stage.classList.remove('is-dragging', 'is-live');
-    const r = stage.getBoundingClientRect();
-    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+    stage.classList.remove('is-dragging');
+    measure();
+    const inside = e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom;
     if (!inside || e.pointerType === 'touch') rest(); // released off the watch (or a finger lifted)
   };
   stage.addEventListener('pointerup', endDrag);
   stage.addEventListener('pointercancel', endDrag);
 
   stage.addEventListener('keydown', (e) => {
-    const step = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, 8], ArrowDown: [0, -8] }[e.key];
-    if (step) {
-      spin += step[0];
-      pitch = clamp(pitch + step[1], -30, 30);
+    const k = { ArrowLeft: [-20, 0], ArrowRight: [20, 0], ArrowUp: [0, 8], ArrowDown: [0, -8] }[e.key];
+    if (k) {
+      spin += k[0];
+      pitch = clamp(pitch + k[1], -30, 30);
     } else if (e.key === 'Home' || e.key === 'Escape') {
       spin = 0; pitch = 0;
     } else {
       return;
     }
     e.preventDefault();
-    stage.classList.remove('is-live');
-    schedule();
+    schedule(FOLLOW);
   });
 
   const el = id => document.getElementById(id);
@@ -137,5 +158,5 @@
   };
   // No profile within a few seconds (server down, offline): show a labelled random sample.
   setTimeout(() => { if (!received) render(null); }, 3000);
-  apply();
+  draw();
 })();
