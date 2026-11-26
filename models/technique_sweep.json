@@ -1,0 +1,108 @@
+{
+  "rows": 1131,
+  "setting": "LOPO on the early 80% of each participant's days",
+  "persistence": {
+    "accuracy": 0.5685,
+    "macro_f1": 0.5504
+  },
+  "feature_sets": {
+    "current": {
+      "LogisticRegression": {
+        "accuracy": 0.5155,
+        "macro_f1": 0.4964
+      },
+      "RandomForest": {
+        "accuracy": 0.5455,
+        "macro_f1": 0.5276
+      },
+      "HistGradientBoosting": {
+        "accuracy": 0.5252,
+        "macro_f1": 0.4988
+      }
+    },
+    "current+lags": {
+      "LogisticRegression": {
+        "accuracy": 0.5455,
+        "macro_f1": 0.526
+      },
+      "RandomForest": {
+        "accuracy": 0.5906,
+        "macro_f1": 0.5753
+      },
+      "HistGradientBoosting": {
+        "accuracy": 0.5429,
+        "macro_f1": 0.5162
+      }
+    },
+    "current+lags+personal": {
+      "LogisticRegression": {
+        "accuracy": 0.5199,
+        "macro_f1": 0.5128
+      },
+      "RandomForest": {
+        "accuracy": 0.5827,
+        "macro_f1": 0.5686
+      },
+      "HistGradientBoosting": {
+        "accuracy": 0.5349,
+        "macro_f1": 0.5035
+      }
+    }
+  },
+  "algorithms": {
+    "LogisticRegression": {
+      "accuracy": 0.5455,
+      "macro_f1": 0.526
+    },
+    "KNN (k=25)": {
+      "accuracy": 0.481,
+      "macro_f1": 0.413
+    },
+    "SVM (RBF)": {
+      "accuracy": 0.5508,
+      "macro_f1": 0.5242
+    },
+    "GaussianNB": {
+      "accuracy": 0.5119,
+      "macro_f1": 0.4995
+    },
+    "DecisionTree": {
+      "accuracy": 0.5287,
+      "macro_f1": 0.5139
+    },
+    "RandomForest": {
+      "accuracy": 0.5906,
+      "macro_f1": 0.5753
+    },
+    "ExtraTrees": {
+      "accuracy": 0.5721,
+      "macro_f1": 0.5599
+    },
+    "GradientBoosting": {
+      "accuracy": 0.5729,
+      "macro_f1": 0.5233
+    },
+    "HistGradientBoosting": {
+      "accuracy": 0.5429,
+      "macro_f1": 0.5162
+    },
+    "MLP": {
+      "accuracy": 0.5031,
+      "macro_f1": 0.4074
+    },
+    "SoftVoting (LR+RF+HGB+SVM)": {
+      "accuracy": 0.5729,
+      "macro_f1": 0.5459
+    },
+    "Stacking (LR+RF+HGB -> LR)": {
+      "accuracy": 0.5075,
+      "macro_f1": 0.4951
+    }
+  },
+  "regress_then_rule": {
+    "accuracy": 0.5659,
+    "macro_f1": 0.4657,
+    "rows": 1131
+  },
+  "chosen_feature_set": "current+lags"
+}

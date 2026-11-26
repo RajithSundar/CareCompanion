@@ -351,6 +351,23 @@ function renderOverview() {
       </div>
     `).join('')
     : '<p class="text-xs text-muted">Model metrics unavailable. Run train_model.py.</p>';
+
+  const h = state.modelInfo && state.modelInfo.holdout;
+  const pct = v => `${(v * 100).toFixed(1)}%`;
+  $('holdoutGrid').innerHTML = h && h.three_class && h.binary_deload ? [
+    { name: "Tomorrow's state (3 classes)", model: `Accuracy ${pct(h.three_class.model.accuracy)}, macro F1 ${pct(h.three_class.model.macro_f1)}`,
+      base: `Persistence ${pct(h.three_class.persistence.accuracy)}, ${pct(h.three_class.persistence.macro_f1)}` },
+    { name: 'Deload tomorrow? (yes/no)', model: `Accuracy ${pct(h.binary_deload.model.accuracy)}, AUC ${h.binary_deload.model.auc.toFixed(2)}`,
+      base: `Persistence ${pct(h.binary_deload.persistence.accuracy)}` },
+    h.binary_deload.confident_alerts ? { name: 'Confident deload alerts', model: `Right on ${pct(h.binary_deload.confident_alerts.model_accuracy)} of ${pct(h.binary_deload.confident_alerts.coverage)} of days`,
+      base: `Persistence ${pct(h.binary_deload.confident_alerts.persistence_accuracy_same_days)} on those days` } : null
+  ].filter(Boolean).map(r => `
+      <div class="p-2.5 rounded border bg-paper-2 border-rule">
+        <div class="text-xs font-medium text-muted">${esc(r.name)}</div>
+        <div class="text-sm measured mt-0.5 text-ink">${esc(r.model)}</div>
+        <div class="text-xs measured mt-0.5 text-muted">${esc(r.base)}</div>
+      </div>`).join('')
+    : '<p class="text-xs text-muted">Locked-test results unavailable. Run experiments/evaluate_holdout.py.</p>';
 }
 
 function renderLedger() {

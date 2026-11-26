@@ -45,7 +45,8 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.dummy import DummyClassifier
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import (ExtraTreesClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier,
+                              RandomForestClassifier, VotingClassifier)
 from sklearn.impute import SimpleImputer
 from sklearn.inspection import permutation_importance
 from sklearn.linear_model import LogisticRegression
@@ -56,8 +57,13 @@ from sklearn.metrics import (
     precision_recall_fscore_support,
 )
 from sklearn.model_selection import GridSearchCV, GroupKFold, LeaveOneGroupOut
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
 
 from features import BASE_COLS, FEATURE_COLS, engineer_features
 
@@ -213,31 +219,40 @@ def add_next_day_target(df: pd.DataFrame) -> pd.DataFrame:
     return df[df[TARGET].notna() & consecutive].reset_index(drop=True)
 
 
+def _imp(*steps):
+    return Pipeline([("impute", SimpleImputer(strategy="median")), *steps])
+
+
 def make_candidates():
-    """Each candidate: a pipeline plus the grid searched inside every training fold."""
+    """Each candidate: a pipeline plus the grid searched inside every training fold.
+
+    One of each common supervised family: linear, instance-based, kernel, probabilistic,
+    single tree, bagged trees, boosted trees, neural network, and a soft-voting ensemble.
+    Imputation and scaling sit inside the pipeline, so they are fit on training folds only.
+    """
+    rf = _imp(("clf", RandomForestClassifier(n_estimators=300, random_state=42, class_weight="balanced", n_jobs=-1)))
+    lr = _imp(("scale", StandardScaler()), ("clf", LogisticRegression(max_iter=3000, class_weight="balanced")))
+    et = _imp(("clf", ExtraTreesClassifier(n_estimators=300, random_state=42, class_weight="balanced", n_jobs=-1)))
     return {
-        "RandomForest": (
-            Pipeline([
-                ("impute", SimpleImputer(strategy="median")),
-                ("clf", RandomForestClassifier(n_estimators=200, random_state=42, class_weight="balanced")),
-            ]),
-            {"clf__max_depth": [4, 8, None], "clf__min_samples_leaf": [1, 5]},
-        ),
-        "GradientBoosting": (
-            Pipeline([
-                ("impute", SimpleImputer(strategy="median")),
-                ("clf", GradientBoostingClassifier(n_estimators=150, random_state=42)),
-            ]),
-            {"clf__learning_rate": [0.03, 0.06], "clf__max_depth": [2, 4]},
-        ),
-        "LogisticRegression": (
-            Pipeline([
-                ("impute", SimpleImputer(strategy="median")),
-                ("scale", StandardScaler()),
-                ("clf", LogisticRegression(max_iter=2000, class_weight="balanced")),
-            ]),
-            {"clf__C": [0.1, 1.0, 10.0]},
-        ),
+        "LogisticRegression": (lr, {"clf__C": [0.1, 1.0, 10.0]}),
+        "KNN": (_imp(("scale", StandardScaler()), ("clf", KNeighborsClassifier(weights="distance"))),
+                {"clf__n_neighbors": [15, 35, 75]}),
+        "SVM (RBF)": (_imp(("scale", StandardScaler()), ("clf", SVC(class_weight="balanced", probability=True, random_state=42))),
+                      {"clf__C": [0.3, 1.0, 3.0]}),
+        "GaussianNB": (_imp(("scale", StandardScaler()), ("clf", GaussianNB())), {}),
+        "DecisionTree": (_imp(("clf", DecisionTreeClassifier(class_weight="balanced", random_state=42))),
+                         {"clf__max_depth": [3, 5], "clf__min_samples_leaf": [10, 30]}),
+        "RandomForest": (rf, {"clf__max_depth": [6, 10], "clf__min_samples_leaf": [3, 8]}),
+        "ExtraTrees": (et, {"clf__max_depth": [6, 10], "clf__min_samples_leaf": [3, 8]}),
+        "GradientBoosting": (_imp(("clf", GradientBoostingClassifier(n_estimators=150, random_state=42))),
+                             {"clf__learning_rate": [0.03, 0.06], "clf__max_depth": [2, 3]}),
+        "HistGradientBoosting": (_imp(("clf", HistGradientBoostingClassifier(max_iter=200, l2_regularization=1.0,
+                                                                            class_weight="balanced", random_state=42))),
+                                 {"clf__learning_rate": [0.03, 0.08], "clf__max_depth": [2, 4]}),
+        "MLP": (_imp(("scale", StandardScaler()), ("clf", MLPClassifier((32,), max_iter=2000, early_stopping=True, random_state=42))),
+                {"clf__alpha": [1e-3, 1e-1]}),
+        "SoftVoting (LR+RF+ET)": (VotingClassifier([("lr", lr), ("rf", rf), ("et", et)], voting="soft"),
+                                  {"rf__clf__min_samples_leaf": [3, 8]}),
     }
 
 
@@ -299,7 +314,7 @@ def main():
     oof = {name: np.empty(len(y), dtype=object) for name in candidates}
     oof_proba = {name: np.zeros((len(y), len(classes))) for name in candidates}
     chosen_params = {name: [] for name in candidates}
-    perm_rows = {name: [] for name in candidates}
+    fold_models = {name: [] for name in candidates}
     majority_pred = np.empty(len(y), dtype=object)
 
     for fold_i, (tr, te) in enumerate(folds, start=1):
@@ -315,10 +330,7 @@ def main():
             proba = best.predict_proba(X.iloc[te])
             order = [list(best.classes_).index(c) for c in classes]
             oof_proba[name][te] = proba[:, order]
-            pi = permutation_importance(
-                best, X.iloc[te], y.iloc[te], scoring="f1_macro", n_repeats=5, random_state=42
-            )
-            perm_rows[name].append(pi.importances_mean)
+            fold_models[name].append(best)
 
     comparison = []
     for name in candidates:
@@ -349,8 +361,10 @@ def main():
     print(f"\nSelected by pooled LOPO macro F1: {best_name} ({best_row['macro_f1']:.4f})")
 
     # ----- Permutation importance, averaged across held-out participants -----
-    pi_mean = np.mean(np.vstack(perm_rows[best_name]), axis=0)
-    pi_std = np.std(np.vstack(perm_rows[best_name]), axis=0)
+    perm_rows = [permutation_importance(m, X.iloc[te], y.iloc[te], scoring="f1_macro", n_repeats=5, random_state=42).importances_mean
+                 for m, (_, te) in zip(fold_models[best_name], folds)]
+    pi_mean = np.mean(np.vstack(perm_rows), axis=0)
+    pi_std = np.std(np.vstack(perm_rows), axis=0)
     importances = {
         col: {"mean": round(float(m), 4), "std": round(float(s), 4)}
         for col, m, s in sorted(zip(FEATURE_COLS, pi_mean, pi_std), key=lambda t: -t[1])

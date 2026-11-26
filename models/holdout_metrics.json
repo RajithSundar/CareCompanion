@@ -5,13 +5,13 @@
   "participants": 16,
   "selected_model": "RandomForest",
   "selected_params": {
-    "clf__max_depth": 8,
-    "clf__min_samples_leaf": 5
+    "clf__max_depth": 10,
+    "clf__min_samples_leaf": 3
   },
   "three_class": {
     "model": {
-      "accuracy": 0.613,
-      "macro_f1": 0.6102
+      "accuracy": 0.6404,
+      "macro_f1": 0.6293
     },
     "persistence": {
       "accuracy": 0.6199,
@@ -19,28 +19,28 @@
     },
     "per_class": {
       "Deload Needed": {
-        "precision": 0.648,
+        "precision": 0.675,
         "recall": 0.658
       },
       "Moderate": {
-        "precision": 0.644,
-        "recall": 0.523
+        "precision": 0.688,
+        "recall": 0.602
       },
       "Ready": {
-        "precision": 0.5,
-        "recall": 0.75
+        "precision": 0.492,
+        "recall": 0.705
       }
     },
     "macro_f1_diff_95ci": [
-      -0.0722,
-      0.05
+      -0.0499,
+      0.0655
     ]
   },
   "binary_deload": {
     "model": {
-      "accuracy": 0.7158,
-      "f1": 0.6556,
-      "auc": 0.7633
+      "accuracy": 0.7397,
+      "f1": 0.686,
+      "auc": 0.7895
     },
     "persistence": {
       "accuracy": 0.6986,
@@ -49,12 +49,13 @@
     "base_rate": 0.411,
     "confident_alerts": {
       "threshold": 0.65,
-      "coverage": 0.5103,
-      "days": 149,
-      "model_accuracy": 0.7718,
-      "persistence_accuracy_same_days": 0.7584,
-      "model_accuracy_other_days": 0.6573,
-      "note": "Second use of the locked set; threshold chosen on the early 80% only."
+      "coverage": 0.6404,
+      "days": 187,
+      "model_accuracy": 0.7914,
+      "persistence_accuracy_same_days": 0.7647,
+      "model_accuracy_other_days": 0.6476,
+      "note": "Third use of the locked set (see the comment at CONFIDENT_AT); threshold chosen on the early 80% only."
     }
-  }
+  },
+  "locked_set_uses": 3
 }

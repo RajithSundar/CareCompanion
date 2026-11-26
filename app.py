@@ -253,6 +253,20 @@ class BiometricInput(BaseModel):
     steps_3d_avg: float = Field(ge=0, le=100_000)
     readiness_3d_avg: float = Field(ge=0, le=10)
     fatigue_3d_avg: float = Field(ge=1, le=5)
+    # Yesterday and the past week (features.LAG_COLS). The ones that need an earlier day
+    # may be missing (None), and the model's imputer fills them.
+    readiness_lag1: Optional[float] = Field(default=None, ge=0, le=10)
+    fatigue_lag1: Optional[float] = Field(default=None, ge=1, le=5)
+    soreness_lag1: Optional[float] = Field(default=None, ge=1, le=5)
+    stress_lag1: Optional[float] = Field(default=None, ge=1, le=5)
+    sleep_lag1: Optional[float] = Field(default=None, ge=0, le=100)
+    readiness_change: Optional[float] = Field(default=None, ge=-10, le=10)
+    fatigue_change: Optional[float] = Field(default=None, ge=-4, le=4)
+    today_state_num: Optional[float] = Field(default=None, ge=0, le=2)
+    state_streak: Optional[float] = Field(default=None, ge=1, le=10_000)
+    readiness_7d_avg: Optional[float] = Field(default=None, ge=0, le=10)
+    fatigue_7d_avg: Optional[float] = Field(default=None, ge=1, le=5)
+    readiness_7d_std: Optional[float] = Field(default=None, ge=0, le=10)
 
 
 assert set(BiometricInput.model_fields) == set(FEATURE_COLS), "BiometricInput must match features.FEATURE_COLS"
@@ -273,7 +287,8 @@ def run_ml_prediction(biometrics: BiometricInput) -> Optional[Dict[str, Any]]:
     if not bundle:
         return None
     cols = bundle["feature_cols"]
-    row = pd.DataFrame([biometrics.model_dump()])[cols]
+    values = biometrics.model_dump()
+    row = pd.DataFrame([{c: (float("nan") if values.get(c) is None else float(values[c])) for c in cols}])[cols]
     model = bundle["model"]
     pred_class = str(model.predict(row)[0])
     probs = model.predict_proba(row)[0]
@@ -607,7 +622,12 @@ def get_model_info():
     }
     if not bundle:
         return {"trained": False, "message": "Run `python train_model.py` first.", **llm_info}
-    return {"trained": True, **metrics, **llm_info}
+    holdout_path = MODELS_DIR / "holdout_metrics.json"
+    holdout = None
+    if holdout_path.exists():
+        h = json.loads(holdout_path.read_text(encoding="utf-8"))
+        holdout = {"test_rows": h.get("test_rows"), "three_class": h.get("three_class"), "binary_deload": h.get("binary_deload")}
+    return {"trained": True, **metrics, "holdout": holdout, **llm_info}
 
 
 @app.post("/api/predict")

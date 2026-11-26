@@ -107,7 +107,21 @@ def test_server_features_match_training_pipeline():
     for idx in (0, 1, 6, 15):
         bio = app.build_biometrics_from_days(days, idx)
         for col in features.FEATURE_COLS:
-            assert getattr(bio, col) == pytest.approx(p01.iloc[idx][col], abs=0.01), col
+            got = getattr(bio, col)
+            got = float("nan") if got is None else got
+            assert got == pytest.approx(p01.iloc[idx][col], abs=0.01, nan_ok=True), col
+
+
+def test_lag_features_use_the_previous_calendar_day():
+    days = [dict(DAY, readiness=8, fatigue=2, date="2024-01-01"), dict(DAY, readiness=7, fatigue=2, date="2024-01-02"),
+            dict(DAY, readiness=3, fatigue=5, date="2024-01-05")]
+    d1 = features.features_for_app_day(days, 1)
+    assert d1["readiness_lag1"] == 8 and d1["readiness_change"] == -1
+    assert d1["today_state_num"] == 2 and d1["state_streak"] == 2       # Ready two days running
+    d2 = features.features_for_app_day(days, 2)                         # two-day gap before Jan 5
+    assert d2["readiness_lag1"] is None and d2["readiness_change"] is None
+    assert d2["today_state_num"] == 0 and d2["state_streak"] == 1
+    assert features.features_for_app_day(days, 0)["readiness_lag1"] is None
 
 
 def test_rolling_windows_are_calendar_based():

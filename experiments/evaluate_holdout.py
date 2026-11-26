@@ -23,8 +23,9 @@ from extra_features import split_by_time  # noqa: E402
 OUT = Path(__file__).resolve().parents[1] / "models" / "holdout_metrics.json"
 
 # Chosen on the early 80% in explore_more.py, fixed before this script's second run.
-# The locked set was first used for the 3-class and plain binary results; the confident-alert
-# numbers below are its second use.
+# Uses of the locked set: (1) 3-class and plain binary results with the original features;
+# (2) the confident-alert numbers; (3) the current results, after the lag features and the
+# wider set of algorithms were chosen on the early 80% (experiments/explore_techniques.py).
 CONFIDENT_AT = 0.65
 
 
@@ -77,7 +78,7 @@ def main():
         "model_accuracy": round(accuracy_score(yte_b[sure], pb[sure]), 4),
         "persistence_accuracy_same_days": round(accuracy_score(yte_b[sure], pers_b[sure]), 4),
         "model_accuracy_other_days": round(accuracy_score(yte_b[~sure], pb[~sure]), 4),
-        "note": "Second use of the locked set; threshold chosen on the early 80% only.",
+        "note": "Third use of the locked set (see the comment at CONFIDENT_AT); threshold chosen on the early 80% only.",
     }
 
     # Bootstrap the 3-class macro-F1 difference (model - persistence) over test rows.
