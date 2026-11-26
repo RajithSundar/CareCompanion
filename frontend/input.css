@@ -53,11 +53,14 @@
   --color-shadow: rgba(27, 27, 29, 0.16);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --dur-long: 420ms;
-  --color-case: #2B2F36;
-  --color-case-hi: #5A606B;
-  --color-case-shine: #9AA1AC;
-  --color-case-back: #16181C;
-  --color-case-back-2: #25282E;
+  /* Light: glossy white case. Walls shade to cool grey so the form still reads on white paper. */
+  --color-case: #C3C7CE;
+  --color-case-hi: #F6F7F9;
+  --color-case-shine: #FFFFFF;
+  --color-case-edge: #9EA3AC;
+  --color-case-gloss: rgba(255, 255, 255, 0.95);
+  --color-case-back: #DADDE2;
+  --color-case-back-2: #F2F3F5;
   --color-sensor: #0B0C0E;
   --color-led: #38E07B;
   --color-glass-steps: #3DDC97;
@@ -86,9 +89,14 @@
   --color-bad-soft: #1F0206;
   --color-focus: #E8142D;
   --color-shadow: rgba(138, 0, 18, 0.35);
-  --color-case: #1A1B1E;
-  --color-case-hi: #4A4D54;
-  --color-case-shine: #9097A1;
+  /* Dark: glossy black case, lit by a cool specular highlight. */
+  --color-case: #020203;
+  --color-case-hi: #1D1E23;
+  --color-case-shine: #8A8F99;
+  --color-case-edge: #000000;
+  --color-case-gloss: rgba(255, 255, 255, 0.6);
+  --color-case-back: #030304;
+  --color-case-back-2: #16171B;
   --color-accent-deep: #8A0012;
 }
 
@@ -310,13 +318,27 @@ button, [role="button"] { -webkit-user-select: none; user-select: none; }
   height: var(--h);
   border-radius: var(--rad);
 }
-/* Stacked slices give the aluminium case its depth: a domed back, straight walls, a polished front chamfer. */
+/* Stacked slices give the glossy case its depth: a domed back, straight walls, a polished front chamfer. */
 .case-slice {
   background: color-mix(in srgb, var(--color-case-hi) calc(var(--m) * 1%), var(--color-case));
   transform: translateZ(calc(var(--r) * var(--zf))) scale(var(--s));
 }
-.case-slice:last-of-type {
-  background: linear-gradient(135deg, var(--color-case-shine), var(--color-case-hi) 35%, var(--color-case) 70%, var(--color-case-hi));
+.case-slice.case-rim {            /* the front rim: lacquer-like bands plus a moving specular streak */
+  background: linear-gradient(135deg, var(--color-case-shine) 0%, var(--color-case-hi) 16%, var(--color-case) 40%,
+              var(--color-case-edge) 58%, var(--color-case-hi) 82%, var(--color-case-shine) 100%);
+  box-shadow: inset 0 calc(var(--r) * 0.012) 0 var(--color-case-gloss), inset 0 calc(var(--r) * -0.012) 0 var(--color-case-edge);
+  overflow: hidden;
+}
+.case-slice.case-rim::after {
+  content: "";
+  position: absolute;
+  inset: -40% -70%;
+  background: linear-gradient(115deg, transparent 44%, var(--color-case-gloss) 49%, transparent 53%);
+  transform: translateX(calc(var(--sx, 0) * 1.4%));
+  pointer-events: none;
+}
+.case-slice.case-rim-wall { /* the wall just behind the rim catches a bright edge */
+  background: linear-gradient(135deg, var(--color-case-shine), var(--color-case-hi) 30%, var(--color-case) 65%, var(--color-case-hi));
 }
 .case-back {
   transform: translateZ(calc(var(--t) / -2 - 1px)) rotateY(180deg) scale(0.84);
